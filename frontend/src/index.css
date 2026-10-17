@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+/* ===== Plasm Design Tokens (from tokens.json) ===== */
+
+:root {
+  /* Background & Surface */
+  --color-bg: #f0f4f8;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f7f9fc;
+  --color-border: #d8dee6;
+
+  /* Primary (Blue) */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #dbeafe;
+
+  /* Text */
+  --color-text: #1a2332;
+  --color-text-muted: #5a6a7e;
+
+  /* Danger */
+  --color-danger: #dc2626;
+  --color-danger-light: #fef2f2;
+  --color-danger-border: #fecaca;
+
+  /* Warning */
+  --color-warning: #f59e0b;
+  --color-warning-light: #fffbeb;
+  --color-warning-border: #fde68a;
+
+  /* Success */
+  --color-success: #16a34a;
+  --color-success-light: #f0fdf4;
+  --color-success-border: #bbf7d0;
+
+  /* Blood Types */
+  --color-blood-a: #e74c3c;
+  --color-blood-b: #3498db;
+  --color-blood-o: #2ecc71;
+  --color-blood-ab: #9b59b6;
+
+  /* Typography */
+  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-full: 99px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 20px;
+  --space-7: 24px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,.1);
+}
+
+/* ===== Dark Theme ===== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #0f1419;
+    --color-surface: #1c2430;
+    --color-surface-alt: #232d3b;
+    --color-border: #2e3a4a;
+    --color-text: #e2e8f0;
+    --color-text-muted: #8899aa;
+    --color-primary: #3b82f6;
+    --color-primary-hover: #60a5fa;
+    --color-primary-light: #1e3a5f;
+    --color-danger-light: #3b1515;
+    --color-danger-border: #7f1d1d;
+    --color-warning-light: #3b2f0a;
+    --color-warning-border: #78600a;
+    --color-success-light: #0a3b1a;
+    --color-success-border: #0a6b2a;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,.4);
+  }
+}
+
+/* ===== Base ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: var(--color-primary-light);
+  color: var(--color-text);
+}

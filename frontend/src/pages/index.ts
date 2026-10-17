@@ -1,0 +1,8 @@
+export { default as DashboardPage } from './dashboard/DashboardPage'
+export { default as StoragePage } from './storage/StoragePage'
+export { default as WithdrawPage } from './withdraw/WithdrawPage'
+export { default as SearchPage } from './search/SearchPage'
+export { default as MapPage } from './map/MapPage'
+export { default as LogPage } from './log/LogPage'
+export { default as SettingsPage } from './settings/SettingsPage'
+export { default as LoginPage } from './auth/LoginPage'

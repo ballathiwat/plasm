@@ -1,0 +1,92 @@
+/* frontend/src/globals.css */
+@import "tailwindcss";
+
+/* ── Tailwind v4 Theme Override ── */
+/* Tailwind v4 อ่าน @theme เพื่อ set ค่า default font, color ฯลฯ */
+/* preflight ใช้ --font-sans เป็น body font-family โดยอัตโนมัติ */
+@theme {
+  --font-sans: 'Noto Sans Thai Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+/* ── Plasm Design System Tokens ── */
+/* ใช้ :root สำหรับ custom tokens ที่ไม่ได้ผ่าน Tailwind */
+:root {
+  /* Surfaces */
+  --bg: #f0f4f8;
+  --surface: #ffffff;
+  --surface-alt: #f7f9fc;
+  --border: #d8dee6;
+
+  /* Text */
+  --text: #1a2332;
+  --text-muted: #5a6a7e;
+
+  /* Primary (Blue) */
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #dbeafe;
+
+  /* Danger */
+  --danger: #dc2626;
+  --danger-light: #fef2f2;
+  --danger-border: #fecaca;
+
+  /* Warning */
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --warning-border: #fde68a;
+
+  /* Success */
+  --success: #16a34a;
+  --success-light: #f0fdf4;
+  --success-border: #bbf7d0;
+
+  /* Blood Types */
+  --blood-a: #e74c3c;
+  --blood-b: #3498db;
+  --blood-o: #2ecc71;
+  --blood-ab: #9b59b6;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 20px;
+  --space-7: 24px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-full: 99px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,.1);
+}
+
+/* ── Base Styles ── */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  color: var(--text);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--primary); }
+a:hover { color: var(--primary-hover); }
+::selection { background-color: var(--primary-light); color: var(--primary); }
