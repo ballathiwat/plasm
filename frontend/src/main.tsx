@@ -3,8 +3,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
-
-import '@fontsource-variable/noto-sans-thai'
 import './globals.css'
 
 // ===== Fake Backend — ลบบรรทัดนี้เมื่อเชื่อม API จริง =====

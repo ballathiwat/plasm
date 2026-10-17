@@ -2,73 +2,59 @@
 @import "tailwindcss";
 
 /* ── Tailwind v4 Theme Override ── */
-/* Tailwind v4 อ่าน @theme เพื่อ set ค่า default font, color ฯลฯ */
-/* preflight ใช้ --font-sans เป็น body font-family โดยอัตโนมัติ */
 @theme {
-  --font-sans: 'Noto Sans Thai Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-sans: 'IBM Plex Sans Thai', 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
-/* ── Plasm Design System Tokens ── */
-/* ใช้ :root สำหรับ custom tokens ที่ไม่ได้ผ่าน Tailwind */
+/* ── Plasm Design System Tokens (updated) ── */
 :root {
-  /* Surfaces */
-  --bg: #f0f4f8;
-  --surface: #ffffff;
-  --surface-alt: #f7f9fc;
-  --border: #d8dee6;
+  --primary: #2563EB;
+  --primary-hover: #1D4ED8;
+  --primary-pressed: #1E40AF;
 
-  /* Text */
-  --text: #1a2332;
-  --text-muted: #5a6a7e;
+  --background: #FAFAFA;
+  --surface: #FFFFFF;
+  --surface-raised: #F4F4F5;
+  --border: #E4E4E7;
 
-  /* Primary (Blue) */
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-light: #dbeafe;
+  --text-primary: #18181B;
+  --text-secondary: #71717A;
+  --text-disabled: #A1A1AA;
 
-  /* Danger */
-  --danger: #dc2626;
-  --danger-light: #fef2f2;
-  --danger-border: #fecaca;
+  /* Blood group identity */
+  --group-a: #3B82F6;
+  --group-b: #10B981;
+  --group-o: #F59E0B;
+  --group-ab: #8B5CF6;
+  --group-a-surface: #DBEAFE;
+  --group-b-surface: #D1FAE5;
+  --group-o-surface: #FEF3C7;
+  --group-ab-surface: #EDE9FE;
 
-  /* Warning */
-  --warning: #f59e0b;
-  --warning-light: #fffbeb;
-  --warning-border: #fde68a;
+  /* Stock status */
+  --stock-normal: #10B981;
+  --stock-warning: #F59E0B;
+  --stock-danger: #EF4444;
 
-  /* Success */
-  --success: #16a34a;
-  --success-light: #f0fdf4;
-  --success-border: #bbf7d0;
-
-  /* Blood Types */
-  --blood-a: #e74c3c;
-  --blood-b: #3498db;
-  --blood-o: #2ecc71;
-  --blood-ab: #9b59b6;
+  /* Semantic surfaces */
+  --danger-surface: #FEF2F2;
+  --danger-ink: #991B1B;
+  --warning-surface: #FFFBEB;
+  --warning-ink: #92400E;
+  --success-surface: #F0FDF4;
+  --success-ink: #166534;
 
   /* Spacing */
-  --space-1: 4px;
-  --space-2: 6px;
-  --space-3: 8px;
-  --space-4: 12px;
-  --space-5: 16px;
-  --space-6: 20px;
-  --space-7: 24px;
-
-  /* Radius */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 10px;
   --radius-full: 99px;
 
-  /* Shadow */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,.1);
+  --shadow-sm: 0 1px 3px rgba(26,35,50,0.08);
+  --shadow-md: 0 12px 28px rgba(26,35,50,0.14);
 }
 
-/* ── Base Styles ── */
 html, body, #root {
   margin: 0;
   padding: 0;
@@ -76,17 +62,19 @@ html, body, #root {
   width: 100%;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
-  color: var(--text);
-  background-color: var(--bg);
+  color: var(--text-primary);
+  background-color: var(--background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 a { color: var(--primary); }
 a:hover { color: var(--primary-hover); }
-::selection { background-color: var(--primary-light); color: var(--primary); }
+::selection { background-color: #DBEAFE; color: var(--primary); }
+
+@keyframes plasm-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes plasm-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes plasm-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }

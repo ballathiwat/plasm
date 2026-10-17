@@ -1,6 +1,6 @@
 // frontend/src/components/layout/Sidebar.tsx
 
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, LogOut } from 'lucide-react'
 import { MENU_ITEMS, type UserRole } from '../../types/navigation'
 
 interface SidebarProps {
@@ -9,6 +9,7 @@ interface SidebarProps {
   activeModule: string
   onNavigate: (key: string) => void
   role: UserRole
+  onLogout?: () => void
 }
 
 export default function Sidebar({
@@ -17,6 +18,7 @@ export default function Sidebar({
   activeModule,
   onNavigate,
   role,
+  onLogout,
 }: SidebarProps) {
   const filteredMenu = MENU_ITEMS.filter((m) => m.roles.includes(role))
 
@@ -58,15 +60,7 @@ export default function Sidebar({
             P
           </div>
           {!collapsed && (
-            <span
-              style={{
-                fontFamily: 'var(--font-sans)',
-                fontWeight: 700,
-                fontSize: 17,
-                color: '#fff',
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <span style={{ fontWeight: 700, fontSize: 17, color: '#fff', whiteSpace: 'nowrap' }}>
               Plasm
             </span>
           )}
@@ -75,17 +69,10 @@ export default function Sidebar({
           onClick={onToggleCollapse}
           aria-label="ย่อ/ขยายเมนู"
           style={{
-            width: 24,
-            height: 24,
-            borderRadius: 'var(--radius-sm)',
+            width: 24, height: 24, borderRadius: 'var(--radius-sm)',
             background: 'rgba(255,255,255,0.12)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            border: 'none',
-            flexShrink: 0,
-            color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', border: 'none', flexShrink: 0, color: '#fff',
           }}
         >
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -103,29 +90,17 @@ export default function Sidebar({
               onClick={() => onNavigate(item.key)}
               title={collapsed ? item.label : undefined}
               style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
+                width: '100%', display: 'flex', alignItems: 'center', gap: 12,
                 padding: collapsed ? '10px 0' : '10px 12px',
                 justifyContent: collapsed ? 'center' : 'flex-start',
-                borderRadius: 'var(--radius-sm)',
-                border: 'none',
-                cursor: 'pointer',
+                borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer',
                 marginBottom: 2,
                 background: isActive ? 'rgba(255,255,255,0.18)' : 'transparent',
-                color: '#fff',
-                fontFamily: 'var(--font-sans)',
-                fontSize: 14,
-                fontWeight: 500,
+                color: '#fff', fontSize: 14, fontWeight: 500,
                 transition: 'background 0.15s',
               }}
-              onMouseEnter={(e) => {
-                if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.08)'
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) e.currentTarget.style.background = 'transparent'
-              }}
+              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
+              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
             >
               <Icon size={20} />
               {!collapsed && item.label}
@@ -133,6 +108,33 @@ export default function Sidebar({
           )
         })}
       </nav>
+
+      {/* Logout */}
+      <div style={{ padding: '8px 8px 12px', borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+        <button
+          onClick={onLogout}
+          title={collapsed ? 'ออกจากระบบ' : undefined}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+            padding: collapsed ? '10px 0' : '10px 12px',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer',
+            background: 'transparent', color: 'rgba(255,255,255,0.7)',
+            fontSize: 14, fontWeight: 500, transition: 'background 0.15s, color 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.08)'
+            e.currentTarget.style.color = '#fff'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent'
+            e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
+          }}
+        >
+          <LogOut size={20} />
+          {!collapsed && 'ออกจากระบบ'}
+        </button>
+      </div>
     </aside>
   )
 }
