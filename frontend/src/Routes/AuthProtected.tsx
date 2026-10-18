@@ -9,19 +9,24 @@ interface AuthUser {
   role: UserRole
 }
 
-// ===== Simple auth hook (เหมือน dormitory) =====
+// ===== Simple auth hook =====
 export function useAuth(): { isAuthenticated: boolean; user: AuthUser } {
   const token = sessionStorage.getItem('authToken')
   const userStr = sessionStorage.getItem('authUser')
 
   if (token && userStr) {
-    return { isAuthenticated: true, user: JSON.parse(userStr) }
+    try {
+      return { isAuthenticated: true, user: JSON.parse(userStr) }
+    } catch {
+      sessionStorage.removeItem('authToken')
+      sessionStorage.removeItem('authUser')
+    }
   }
 
-  // Default: auto-login as admin (dev mode)
+  // ไม่มี token → ไม่ authenticated
   return {
-    isAuthenticated: true,
-    user: { id: '1', name: 'ผู้ดูแลระบบ', role: 'ADMIN' },
+    isAuthenticated: false,
+    user: { id: '', name: '', role: 'STAFF' },
   }
 }
 
@@ -41,7 +46,7 @@ export function AuthProtected({
   return <>{children}</>
 }
 
-// ===== Public guard (ถ้า login แล้ว redirect ไป dashboard) =====
+// ===== Public guard =====
 export function PublicGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
 

@@ -5,10 +5,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './globals.css'
 
-// ===== Fake Backend — ลบบรรทัดนี้เมื่อเชื่อม API จริง =====
-import fakeBackend from './helpers/fakeBackend'
-fakeBackend()
-// ============================================================
+// ลบ fakeBackend() ออกทั้งหมด
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

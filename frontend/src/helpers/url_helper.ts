@@ -1,32 +1,31 @@
 // frontend/src/helpers/url_helper.ts
 //
 // รวม API URL ทั้งหมดไว้ที่เดียว
-// Pattern เหมือน dormitory-management-system:
-//   url_helper.ts  →  กำหนด URL
-//   api_helper.ts  →  axios wrapper (get/post/put/delete)
-//   backend_helper.ts  →  function เรียก API แต่ละตัว
+// Pattern: url_helper → apiAdapter → services / backend_helper
+
+const API = '/api/v1'
 
 // ===== Auth =====
-export const POST_LOGIN = '/auth/login'
-export const POST_LOGOUT = '/auth/logout'
+export const POST_LOGIN = `${API}/auth/login`
+export const POST_LOGOUT = `${API}/auth/logout`
 
 // ===== Boxes =====
-export const GET_BOXES = '/boxes'
-export const GET_BOX_DETAIL = '/boxes' // + /:id
-export const POST_BOX = '/boxes'
-export const PATCH_BOX_WITHDRAW = '/boxes' // + /:id/withdraw
+export const GET_BOXES = `${API}/boxes`
+export const GET_BOX_DETAIL = `${API}/boxes`       // + /:id
+export const POST_BOX = `${API}/boxes`
+export const PATCH_BOX_WITHDRAW = `${API}/boxes`    // + /:id/withdraw
 
 // ===== Units =====
-export const GET_UNITS = '/units'
-export const GET_UNIT_SEARCH = '/units/search' // ?q=
-export const PATCH_UNIT_WITHDRAW = '/units' // + /:id/withdraw
+export const GET_UNITS = `${API}/units`
+export const GET_UNIT_SEARCH = `${API}/units/search` // ?q=
+export const PATCH_UNIT_WITHDRAW = `${API}/units`    // + /:id/withdraw
 
 // ===== Stock =====
-export const GET_STOCK_SUMMARY = '/stock/summary'
+export const GET_STOCK_SUMMARY = `${API}/stock/summary`
 
 // ===== Log =====
-export const GET_LOG = '/log'
+export const GET_LOG = `${API}/log`
 
 // ===== Settings =====
-export const GET_SETTINGS = '/settings'
-export const PUT_SETTINGS = '/settings'
+export const GET_SETTINGS = `${API}/settings`
+export const PUT_SETTINGS = `${API}/settings`

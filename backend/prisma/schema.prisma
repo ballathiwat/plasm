@@ -1,0 +1,127 @@
+// prisma/schema.prisma
+// Plasm — ระบบจัดการคลังพลาสมา
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== ผู้ใช้ระบบ =====
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  name      String
+  role      Role     @default(STAFF)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  logs LogEntry[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+// ===== กล่องพลาสมา =====
+model Box {
+  id             String          @id @default(cuid())
+  boxLabel       String          @unique @map("box_label")
+  type           PlasmaType      @default(FFP)
+  blood          BloodGroup
+  location       StorageLocation
+  shelf          String
+  collectionDate DateTime        @map("collection_date") @db.Date
+  status         BoxStatus       @default(STORED)
+  storedAt       DateTime        @default(now()) @map("stored_at")
+  withdrawnAt    DateTime?       @map("withdrawn_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  units Unit[]
+  logs  LogEntry[]
+
+  @@index([blood, status])
+  @@index([location, shelf])
+  @@map("boxes")
+}
+
+enum PlasmaType {
+  FFP
+  Cryo
+}
+
+enum BloodGroup {
+  A
+  B
+  O
+  AB
+}
+
+enum StorageLocation {
+  ROOM
+  CABINET
+}
+
+enum BoxStatus {
+  STORED
+  WITHDRAWN
+}
+
+// ===== หน่วยพลาสมา (Unit) ในกล่อง =====
+model Unit {
+  id         String     @id @default(cuid())
+  unitNumber String     @unique @map("unit_number")
+  boxId      String     @map("box_id")
+  status     UnitStatus @default(STORED)
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  box Box @relation(fields: [boxId], references: [id])
+
+  @@index([unitNumber])
+  @@map("units")
+}
+
+enum UnitStatus {
+  STORED
+  WITHDRAWN
+}
+
+// ===== ประวัติการทำงาน =====
+model LogEntry {
+  id        String    @id @default(cuid())
+  action    LogAction
+  boxId     String?   @map("box_id")
+  detail    String
+  userId    String?   @map("user_id")
+  timestamp DateTime  @default(now())
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  box  Box?  @relation(fields: [boxId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([timestamp(sort: Desc)])
+  @@map("log_entries")
+}
+
+enum LogAction {
+  STORE
+  WITHDRAW
+}
+
+// ===== ตั้งค่าระบบ =====
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value Json
+
+  @@map("settings")
+}
