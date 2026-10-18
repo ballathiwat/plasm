@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Package, PackageOpen, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react'
 import type { BloodGroup, LogEntry } from '../../types/models'
-import { getStockSummary, getLog } from '../../helpers/backend_helper'
+import { getStockSummary, getStockDaily, getLog } from '../../helpers/backend_helper'
 
 // ── Design tokens ──
 const GROUP_COLOR: Record<BloodGroup, string> = {
@@ -18,6 +18,12 @@ const GROUP_SURFACE: Record<BloodGroup, string> = {
 interface StockData {
   stocks: Record<BloodGroup, number>
   minimum: Record<BloodGroup, number>
+  change: Record<BloodGroup, number>
+}
+
+interface DailyData {
+  label: string
+  value: number
 }
 
 const levelOf = (c: number, m: number) =>
@@ -34,36 +40,25 @@ const lvBorderColor = (lv: string) =>
 
 export default function DashboardPage() {
   const [stockData, setStockData] = useState<StockData | null>(null)
+  const [dailyData, setDailyData] = useState<DailyData[]>([])
   const [logEntries, setLogEntries] = useState<LogEntry[]>([])
 
   useEffect(() => {
     getStockSummary().then((data: any) => setStockData(data)).catch(() => {})
+    getStockDaily(7).then((data: any) => setDailyData(data)).catch(() => {})
     getLog().then((data: any) => setLogEntries(data)).catch(() => {})
   }, [])
 
   if (!stockData) return null
 
-  const { stocks, minimum } = stockData
+  const { stocks, minimum, change } = stockData
   const groups: BloodGroup[] = ['A', 'B', 'O', 'AB']
   const total = groups.reduce((s, g) => s + stocks[g], 0)
 
   const lowGroups = groups.filter((g) => levelOf(stocks[g], minimum[g]) === 'danger')
   const warnGroups = groups.filter((g) => levelOf(stocks[g], minimum[g]) === 'warning')
 
-  // Mock 7-day data + dates
-  const now = new Date()
-  const weekData = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(now)
-    d.setDate(d.getDate() - (6 - i))
-    return {
-      label: `${d.getDate()}/${d.getMonth() + 1}`,
-      value: [10, 18, 9, 14, 24, 7, 9][i],
-    }
-  })
-  const maxW = Math.max(...weekData.map((d) => d.value))
-
-  // Mock % change
-  const pctChange: Record<BloodGroup, number> = { A: 4, B: 7, O: -3, AB: -5 }
+  const maxW = Math.max(...dailyData.map((d) => d.value), 1)
 
   return (
     <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
@@ -148,7 +143,7 @@ export default function DashboardPage() {
           const min = minimum[g]
           const lv = levelOf(count, min)
           const color = lvBorderColor(lv)
-          const pct = pctChange[g]
+          const pct = change[g] || 0
           const progress = Math.min(count / min, 1.5)
 
           return (
@@ -291,36 +286,43 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 7-Day Storage */}
+        {/* 7-Day Storage — ข้อมูลจริง */}
         <div style={{
           background: 'var(--surface, #fff)', border: '1px solid var(--border, #E4E4E7)',
           borderRadius: 'var(--radius-lg, 10px)', boxShadow: 'var(--shadow-sm)', padding: 20,
         }}>
           <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 20 }}>การจัดเก็บ 7 วันล่าสุด</h3>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 160 }}>
-            {weekData.map((d, i) => {
-              const isLast = i === weekData.length - 1
-              return (
-                <div key={i} style={{
-                  flex: 1, display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end',
-                }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    {d.value}
-                  </span>
-                  <div style={{
-                    width: '100%', maxWidth: 48,
-                    height: `${(d.value / maxW) * 100}%`,
-                    borderRadius: '6px 6px 2px 2px',
-                    background: isLast ? 'var(--primary, #2563EB)' : 'var(--group-a-surface, #DBEAFE)',
-                    transformOrigin: 'bottom',
-                    animation: `plasm-rise 0.7s cubic-bezier(.2,.8,.2,1) ${i * 0.05}s both`,
-                  }} />
-                  <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{d.label}</span>
-                </div>
-              )
-            })}
-          </div>
+          {dailyData.length > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 160 }}>
+              {dailyData.map((d, i) => {
+                const isLast = i === dailyData.length - 1
+                return (
+                  <div key={i} style={{
+                    flex: 1, display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end',
+                  }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      {d.value}
+                    </span>
+                    <div style={{
+                      width: '100%', maxWidth: 48,
+                      height: `${(d.value / maxW) * 100}%`,
+                      minHeight: d.value > 0 ? 4 : 0,
+                      borderRadius: '6px 6px 2px 2px',
+                      background: isLast ? 'var(--primary, #2563EB)' : 'var(--group-a-surface, #DBEAFE)',
+                      transformOrigin: 'bottom',
+                      animation: `plasm-rise 0.7s cubic-bezier(.2,.8,.2,1) ${i * 0.05}s both`,
+                    }} />
+                    <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{d.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: 13 }}>
+              ยังไม่มีข้อมูล
+            </div>
+          )}
         </div>
       </div>
 

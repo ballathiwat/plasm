@@ -38,6 +38,9 @@ export const withdrawUnit = (unitId: string) =>
 export const getStockSummary = () =>
   apiAdapter.get(url.GET_STOCK_SUMMARY)
 
+export const getStockDaily = (days = 7) =>
+  apiAdapter.get(url.GET_STOCK_DAILY, { days: String(days) })
+
 // ===== Log =====
 export const getLog = (params?: Record<string, string>) =>
   apiAdapter.get(url.GET_LOG, params)
