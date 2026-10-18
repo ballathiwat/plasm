@@ -1,20 +1,14 @@
-// frontend/src/Routes/allRoutes.tsx
-
 import { Navigate } from 'react-router-dom'
 
-// Pages
 import DashboardPage from '../pages/dashboard/DashboardPage'
-import StoragePage from '../pages/storage/StoragePage'
-import WithdrawPage from '../pages/withdraw/WithdrawPage'
-import SearchPage from '../pages/search/SearchPage'
+import StoragePage from '../pages/storage'
+import WithdrawPage from '../pages/withdraw'
+import SearchPage from '../pages/search'
 import MapPage from '../pages/map/MapPage'
 import LogPage from '../pages/log/LogPage'
 import SettingsPage from '../pages/settings/SettingsPage'
-
-// Auth
 import LoginPage from '../pages/auth/LoginPage'
 
-// ===== Route Type =====
 export interface RouteConfig {
   path: string
   component: React.ReactNode
@@ -22,7 +16,6 @@ export interface RouteConfig {
   roles?: ('ADMIN' | 'STAFF')[]
 }
 
-// ===== Private Routes (ต้อง login + มี Layout) =====
 const authProtectedRoutes: RouteConfig[] = [
   { path: '/', component: <DashboardPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/storage', component: <StoragePage />, roles: ['ADMIN', 'STAFF'] },
@@ -34,7 +27,6 @@ const authProtectedRoutes: RouteConfig[] = [
   { path: '*', component: <Navigate to="/" replace /> },
 ]
 
-// ===== Public Routes =====
 const publicRoutes: RouteConfig[] = [
   { path: '/login', component: <LoginPage /> },
 ]
