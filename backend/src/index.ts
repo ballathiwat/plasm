@@ -13,6 +13,7 @@ import unitRoutes from './routes/units'
 import stockRoutes from './routes/stock'
 import logRoutes from './routes/log'
 import settingsRoutes from './routes/settings'
+import usersRoutes from './routes/users'
 
 dotenv.config()
 
@@ -37,6 +38,7 @@ app.use('/api/v1/units', authGuard, unitRoutes)
 app.use('/api/v1/stock', authGuard, stockRoutes)
 app.use('/api/v1/log', authGuard, logRoutes)
 app.use('/api/v1/settings', authGuard, settingsRoutes)
+app.use('/api/v1/users', authGuard, usersRoutes)
 
 // ===== Start =====
 app.listen(PORT, () => {

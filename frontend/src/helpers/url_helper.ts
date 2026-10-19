@@ -27,6 +27,11 @@ export const GET_STOCK_DAILY = `${API}/stock/daily`
 // ===== Log =====
 export const GET_LOG = `${API}/log`
 
+// ===== Users =====
+export const GET_USERS = `${API}/users`
+export const POST_USER = `${API}/users`
+export const PATCH_USER = `${API}/users`    // + /:id
+
 // ===== Settings =====
 export const GET_SETTINGS = `${API}/settings`
 export const PUT_SETTINGS = `${API}/settings`

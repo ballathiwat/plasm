@@ -4,9 +4,9 @@ import DashboardPage from '../pages/dashboard/DashboardPage'
 import StoragePage from '../pages/storage'
 import WithdrawPage from '../pages/withdraw'
 import SearchPage from '../pages/search'
-import MapPage from '../pages/map/MapPage'
-import LogPage from '../pages/log/LogPage'
-import SettingsPage from '../pages/settings/SettingsPage'
+import MapPage from '../pages/map'
+import LogPage from '../pages/log'
+import SettingsPage from '../pages/settings'
 import LoginPage from '../pages/auth/LoginPage'
 
 export interface RouteConfig {
