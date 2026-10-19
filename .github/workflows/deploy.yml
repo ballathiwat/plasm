@@ -1,0 +1,39 @@
+name: Deploy Plasm
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SERVER_TAILSCALE_IP }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/deploy_key athiwat@${{ secrets.SERVER_TAILSCALE_IP }} << 'ENDSSH'
+            cd /home/athiwat/plasm
+            git pull origin main
+
+            cd backend
+            npm install
+            npx prisma migrate deploy
+            npx prisma generate
+            pm2 restart plasm-backend
+
+            cd ../frontend
+            npm install
+            npm run build
+          ENDSSH
