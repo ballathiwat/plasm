@@ -14,16 +14,13 @@ jobs:
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
 
-      - name: Setup SSH Key
+      - name: Deploy via SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.SERVER_TAILSCALE_IP }} >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Deploy
-        run: |
-          ssh -i ~/.ssh/deploy_key athiwat@${{ secrets.SERVER_TAILSCALE_IP }} << 'ENDSSH'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key athiwat@${{ secrets.SERVER_TAILSCALE_IP }} << 'ENDSSH'
             cd /home/athiwat/plasm
             git pull origin main
 
