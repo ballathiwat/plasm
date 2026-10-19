@@ -6,6 +6,7 @@ import useStorage from './services/useStorage'
 import StorageNewBoxForm from './components/StorageNewBoxForm'
 import StorageBoxList from './components/StorageBoxList'
 import StorageToast from './components/StorageToast'
+import BarcodeLabel from './components/BarcodeLabel'
 
 const StoragePage = () => {
   const {
@@ -18,12 +19,15 @@ const StoragePage = () => {
     toast,
     availableShelves,
     boxLabel,
+    printData,
     handleFormChange,
     setUnitInput,
     handleAddUnit,
     handleUnitKeyDown,
     handleRemoveUnit,
     handleSubmit,
+    handlePrintBox,
+    closePrint,
     dismissToast,
   } = useStorage()
 
@@ -31,6 +35,11 @@ const StoragePage = () => {
     <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
 
       <StorageToast toast={toast} onDismiss={dismissToast} />
+
+      {/* Barcode print modal */}
+      {printData && (
+        <BarcodeLabel data={printData} onClose={closePrint} />
+      )}
 
       {/* Subtitle */}
       <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
@@ -55,6 +64,7 @@ const StoragePage = () => {
       <StorageBoxList
         boxes={boxes}
         loading={loading}
+        onPrintBox={handlePrintBox}
       />
     </div>
   )

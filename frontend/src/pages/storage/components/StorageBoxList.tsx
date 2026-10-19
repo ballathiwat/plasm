@@ -2,6 +2,7 @@
 //  src/pages/storage/components/StorageBoxList.tsx
 // ============================================================
 
+import { Printer } from 'lucide-react'
 import type { BloodGroup } from '../../../types/models'
 import type { StorageBoxItem } from '../services/StorageType'
 
@@ -17,9 +18,10 @@ const GROUP_SURFACE: Record<BloodGroup, string> = {
 interface Props {
   boxes: StorageBoxItem[]
   loading: boolean
+  onPrintBox: (box: StorageBoxItem) => void
 }
 
-export default function StorageBoxList({ boxes, loading }: Props) {
+export default function StorageBoxList({ boxes, loading, onPrintBox }: Props) {
   return (
     <div style={{
       background: 'var(--surface, #fff)',
@@ -78,16 +80,32 @@ export default function StorageBoxList({ boxes, loading }: Props) {
                 </div>
               </div>
 
-              {/* Right: location badge */}
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '5px 14px', borderRadius: 'var(--radius-sm, 6px)',
-                border: '1px solid var(--border, #E4E4E7)',
-                fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)',
-                whiteSpace: 'nowrap',
-              }}>
-                {box.location === 'room' ? 'ห้อง' : 'ตู้'} -30°C · {box.shelf}
-              </span>
+              {/* Right: print button + location badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  onClick={() => onPrintBox(box)}
+                  title="พิมพ์บาร์โค้ด"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 32, height: 32, borderRadius: 'var(--radius-sm, 6px)',
+                    border: '1px solid var(--border, #E4E4E7)',
+                    background: 'transparent', cursor: 'pointer',
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  <Printer size={14} />
+                </button>
+
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '5px 14px', borderRadius: 'var(--radius-sm, 6px)',
+                  border: '1px solid var(--border, #E4E4E7)',
+                  fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {box.location === 'room' ? 'ห้อง' : 'ตู้'} -30°C · {box.shelf}
+                </span>
+              </div>
             </div>
           ))}
         </div>

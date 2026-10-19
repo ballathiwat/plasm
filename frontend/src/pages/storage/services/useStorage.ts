@@ -10,6 +10,7 @@ import type {
   ToastState,
 } from './StorageType'
 import { SHELVES_ROOM, SHELVES_CABINET } from './StorageType'
+import type { BarcodeLabelData } from '../components/BarcodeLabel'
 
 const DEFAULT_FORM: StorageFormData = {
   type: 'FFP',
@@ -27,6 +28,9 @@ export default function useStorage() {
   const [unitInput, setUnitInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
+
+  // ── Barcode print ──
+  const [printData, setPrintData] = useState<BarcodeLabelData | null>(null)
 
   // ── Load boxes ──
   const loadBoxes = useCallback(async () => {
@@ -71,7 +75,6 @@ export default function useStorage() {
   const handleFormChange = (field: keyof StorageFormData, value: string) => {
     setForm((f) => {
       const updated = { ...f, [field]: value }
-      // Reset shelf when location changes
       if (field === 'location') {
         const shelves = value === 'room' ? SHELVES_ROOM : SHELVES_CABINET
         updated.shelf = shelves[0]
@@ -85,7 +88,6 @@ export default function useStorage() {
     const trimmed = unitInput.trim().toUpperCase()
     if (!trimmed) return
 
-    // Split by comma, space, or newline
     const newUnits = trimmed
       .split(/[,\s\n]+/)
       .map((u) => u.trim())
@@ -123,7 +125,7 @@ export default function useStorage() {
     setScannedUnits((prev) => prev.filter((u) => u !== unit))
   }
 
-  // ── Submit ──
+  // ── Submit + auto print ──
   const handleSubmit = async () => {
     if (scannedUnits.length === 0) {
       setToast({ type: 'error', msg: 'กรุณาเพิ่ม Unit อย่างน้อย 1 รายการ' })
@@ -131,6 +133,7 @@ export default function useStorage() {
     }
 
     const boxLabel = generateBoxLabel()
+    const unitCount = scannedUnits.length
 
     setSubmitting(true)
     try {
@@ -143,7 +146,19 @@ export default function useStorage() {
         collectionDate: form.collectionDate,
         units: scannedUnits,
       })
-      setToast({ type: 'success', msg: `บันทึกกล่อง ${boxLabel} สำเร็จ (${scannedUnits.length} units)` })
+      setToast({ type: 'success', msg: `บันทึกกล่อง ${boxLabel} สำเร็จ (${unitCount} units)` })
+
+      // Auto open barcode print
+      setPrintData({
+        boxLabel,
+        type: form.type,
+        blood: form.blood,
+        location: form.location,
+        shelf: form.shelf,
+        collectionDate: form.collectionDate,
+        unitCount,
+      })
+
       setScannedUnits([])
       setUnitInput('')
       loadBoxes()
@@ -155,6 +170,20 @@ export default function useStorage() {
     }
   }
 
+  // ── Print existing box ──
+  const handlePrintBox = (box: StorageBoxItem) => {
+    setPrintData({
+      boxLabel: box.boxLabel,
+      type: box.type,
+      blood: box.blood,
+      location: box.location,
+      shelf: box.shelf,
+      collectionDate: box.collectionDate,
+      unitCount: box.units.length,
+    })
+  }
+
+  const closePrint = () => setPrintData(null)
   const dismissToast = () => setToast(null)
 
   return {
@@ -168,6 +197,7 @@ export default function useStorage() {
     toast,
     availableShelves,
     boxLabel: generateBoxLabel(),
+    printData,
     // actions
     handleFormChange,
     setUnitInput,
@@ -175,6 +205,8 @@ export default function useStorage() {
     handleUnitKeyDown,
     handleRemoveUnit,
     handleSubmit,
+    handlePrintBox,
+    closePrint,
     dismissToast,
   }
 }
