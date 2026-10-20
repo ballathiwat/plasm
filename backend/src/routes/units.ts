@@ -32,7 +32,10 @@ router.get('/search', async (req, res) => {
 
     const units = await prisma.unit.findMany({
       where: {
-        unitNumber: { contains: q, mode: 'insensitive' },
+        OR: [
+          { unitNumber: { contains: q, mode: 'insensitive' } },
+          { box: { boxLabel: { contains: q, mode: 'insensitive' } } },
+        ],
       },
       include: {
         box: {
@@ -48,7 +51,7 @@ router.get('/search', async (req, res) => {
           },
         },
       },
-      take: 20,
+      take: 50,
     })
 
     const result = units.map((u) => ({

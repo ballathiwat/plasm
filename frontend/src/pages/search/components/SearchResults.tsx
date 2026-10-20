@@ -54,7 +54,7 @@ export default function SearchResults({ boxGroups, totalUnits, query, searched, 
       }}>
         <Search size={48} style={{ opacity: 0.1, marginBottom: 16 }} />
         <p style={{ fontSize: 15, color: 'var(--text-secondary)' }}>
-          พิมพ์หมายเลข Unit เพื่อค้นหา
+          พิมพ์หมายเลข Unit หรือหมายเลขกล่อง เพื่อค้นหา
         </p>
       </div>
     )

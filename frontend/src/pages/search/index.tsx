@@ -22,9 +22,9 @@ const SearchPage = () => {
 
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>ค้นหา Unit</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>ค้นหา</h2>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-          ค้นหาด้วยหมายเลข Unit เพื่อดูว่าอยู่กล่องไหน ตำแหน่งไหน
+          ค้นหาด้วยหมายเลข Unit หรือหมายเลขกล่อง เพื่อดูตำแหน่งจัดเก็บ
         </p>
       </div>
 
