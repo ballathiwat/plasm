@@ -2,7 +2,8 @@
 //  src/pages/storage/components/StorageBoxList.tsx
 // ============================================================
 
-import { Printer } from 'lucide-react'
+import { useState } from 'react'
+import { Printer, Search } from 'lucide-react'
 import type { BloodGroup } from '../../../types/models'
 import type { StorageBoxItem } from '../services/StorageType'
 
@@ -22,6 +23,19 @@ interface Props {
 }
 
 export default function StorageBoxList({ boxes, loading, onPrintBox }: Props) {
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filtered = boxes.filter((b) => {
+    if (!searchQuery) return true
+    const q = searchQuery.toLowerCase()
+    return (
+      b.boxLabel.toLowerCase().includes(q) ||
+      b.blood.toLowerCase().includes(q) ||
+      b.shelf.toLowerCase().includes(q) ||
+      b.units.some((u) => u.toLowerCase().includes(q))
+    )
+  })
+
   return (
     <div style={{
       background: 'var(--surface, #fff)',
@@ -30,30 +44,58 @@ export default function StorageBoxList({ boxes, loading, onPrintBox }: Props) {
       padding: '24px 28px',
       boxShadow: 'var(--shadow-sm)',
     }}>
-      <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 16, color: 'var(--text-primary)' }}>
-        กล่องที่จัดเก็บแล้ว
-      </h3>
+      {/* Header + Search */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: 16, gap: 12, flexWrap: 'wrap',
+      }}>
+        <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+          กล่องที่จัดเก็บแล้ว
+          <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--text-secondary)', marginLeft: 8 }}>
+            {filtered.length}/{boxes.length}
+          </span>
+        </h3>
+
+        <div style={{ position: 'relative', flex: '0 1 260px' }}>
+          <Search size={14} style={{
+            position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+            color: 'var(--text-secondary)',
+          }} />
+          <input
+            type="text"
+            placeholder="ค้นหากล่อง, หมู่เลือด, unit..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%', padding: '8px 12px 8px 32px',
+              border: '1px solid var(--border, #E4E4E7)',
+              borderRadius: 'var(--radius-sm, 6px)',
+              fontSize: 13, background: 'var(--surface, #fff)',
+              color: 'var(--text-primary)',
+            }}
+          />
+        </div>
+      </div>
 
       {loading ? (
         <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-secondary)' }}>
           กำลังโหลด...
         </div>
-      ) : boxes.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-secondary)' }}>
-          ยังไม่มีกล่องที่จัดเก็บ
+          {searchQuery ? `ไม่พบกล่องที่ตรงกับ "${searchQuery}"` : 'ยังไม่มีกล่องที่จัดเก็บ'}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {boxes.map((box, idx) => (
+          {filtered.map((box, idx) => (
             <div
               key={box.id}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '14px 0',
-                borderBottom: idx < boxes.length - 1 ? '1px solid var(--border, #E4E4E7)' : 'none',
+                borderBottom: idx < filtered.length - 1 ? '1px solid var(--border, #E4E4E7)' : 'none',
               }}
             >
-              {/* Left: badge + label + units */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -63,7 +105,6 @@ export default function StorageBoxList({ boxes, loading, onPrintBox }: Props) {
                 }}>
                   {box.blood}
                 </span>
-
                 <div>
                   <span style={{
                     fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700,
@@ -72,15 +113,13 @@ export default function StorageBoxList({ boxes, loading, onPrintBox }: Props) {
                     {box.boxLabel}
                   </span>
                   <span style={{
-                    fontSize: 13, color: 'var(--text-secondary)',
-                    marginLeft: 10,
+                    fontSize: 13, color: 'var(--text-secondary)', marginLeft: 10,
                   }}>
                     {box.units.length} units
                   </span>
                 </div>
               </div>
 
-              {/* Right: print button + location badge */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <button
                   onClick={() => onPrintBox(box)}

@@ -19,7 +19,7 @@ export default function SearchBar({ query, onChange, onClear }: Props) {
       }} />
       <input
         type="text"
-        placeholder="พิมพ์หมายเลข Unit เช่น U001, A002..."
+        placeholder="พิมพ์หมายเลข Unit หรือกล่อง เช่น U001, FFP-A-0001..."
         value={query}
         onChange={(e) => onChange(e.target.value)}
         autoFocus
