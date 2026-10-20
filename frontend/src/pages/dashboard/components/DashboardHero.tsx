@@ -38,7 +38,7 @@ export default function DashboardHero({ total }: Props) {
           background: '#fff', color: 'var(--primary, #2563EB)',
           fontWeight: 600, fontSize: 13, cursor: 'pointer',
         }}>
-          <Package size={14} /> จัดเก็บกล่องใหม่-2
+          <Package size={14} /> จัดเก็บกล่องใหม่
         </button>
         <button style={{
           display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px',
