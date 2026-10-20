@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 
-import DashboardPage from '../pages/dashboard/DashboardPage'
+import DashboardPage from '../pages/dashboard'
 import StoragePage from '../pages/storage'
 import WithdrawPage from '../pages/withdraw'
 import SearchPage from '../pages/search'
