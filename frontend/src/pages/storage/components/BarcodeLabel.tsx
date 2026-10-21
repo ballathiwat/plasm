@@ -6,12 +6,7 @@ import { useRef, useEffect } from "react";
 import JsBarcode from "jsbarcode";
 import { Printer, X } from "lucide-react";
 
-const GROUP_COLOR_HEX: Record<string, string> = {
-  A: "#3B82F6",
-  B: "#10B981",
-  O: "#F59E0B",
-  AB: "#8B5CF6",
-};
+
 
 export interface BarcodeLabelData {
   boxLabel: string;
@@ -76,6 +71,7 @@ export default function BarcodeLabel({ data, onClose }: Props) {
 <style>
   @page { size: 100mm 55mm; margin: 2mm; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000; }
   html, body { width: 100%; height: 100%; overflow: hidden; }
   body { font-family: Helvetica, Arial, sans-serif; }
   .print-label {
@@ -210,8 +206,9 @@ export default function BarcodeLabel({ data, onClose }: Props) {
                     fontWeight: 800,
                     padding: "3px 10px",
                     borderRadius: 6,
-                    background: data.type === "FFP" ? "#DBEAFE" : "#FEE2E2",
-                    color: data.type === "FFP" ? "#1D4ED8" : "#991B1B",
+                    background: "#fff",
+                    border: "2px solid #000",
+                    color: "#000",
                   }}
                 >
                   {data.type}
@@ -224,8 +221,9 @@ export default function BarcodeLabel({ data, onClose }: Props) {
                     width: 44,
                     height: 44,
                     borderRadius: "50%",
-                    background: GROUP_COLOR_HEX[data.blood] || "#666",
-                    color: "#fff",
+                    background: "#fff",
+                    border: "3px solid #000",
+                    color: "#000",
                     fontSize: 20,
                     fontWeight: 900,
                   }}
