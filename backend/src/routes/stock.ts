@@ -78,41 +78,47 @@ router.get('/summary', async (_req, res) => {
 })
 
 // ===== GET /api/v1/stock/daily?days=7 =====
-// จำนวน unit ที่จัดเก็บ (STORE) แต่ละวัน
+// จำนวน unit ที่นำเข้า/นำออก แยกหมู่เลือด รายวัน (เวลาไทย)
 router.get('/daily', async (req, res) => {
   try {
     const days = Math.min(Number(req.query.days) || 7, 30)
+    const DAY_MS = 86400000
+    const bkk = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' }) // YYYY-MM-DD
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - (days - 1))
-    startDate.setHours(0, 0, 0, 0)
+    const todayStart = new Date(`${bkk(new Date())}T00:00:00+07:00`)
+    const startDate = new Date(todayStart.getTime() - (days - 1) * DAY_MS)
 
     const rows = await prisma.$queryRaw<
-      { day: Date; count: bigint }[]
+      { day: Date; action: string; blood: string; count: bigint }[]
     >`
-      SELECT DATE(le.timestamp) as day, COUNT(le.id) as count
+      SELECT
+        DATE((le.timestamp AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Bangkok') AS day,
+        le.action::text AS action,
+        b.blood::text AS blood,
+        COALESCE(SUM(le.unit_count), 0) AS count
       FROM log_entries le
-      WHERE le.action = 'STORE'
-        AND le.timestamp >= ${startDate}
-      GROUP BY DATE(le.timestamp)
-      ORDER BY day ASC
+      JOIN boxes b ON b.id = le.box_id
+      WHERE le.timestamp >= ${startDate}
+      GROUP BY 1, 2, 3
     `
 
-    // เติมวันที่ไม่มีข้อมูลเป็น 0
-    const result: { label: string; value: number }[] = []
-    for (let i = 0; i < days; i++) {
-      const d = new Date(startDate)
-      d.setDate(d.getDate() + i)
-      const dateStr = d.toISOString().split('T')[0]
-      const found = rows.find((r) => {
-        const rDate = new Date(r.day).toISOString().split('T')[0]
-        return rDate === dateStr
-      })
-      result.push({
-        label: `${d.getDate()}/${d.getMonth() + 1}`,
-        value: found ? Number(found.count) : 0,
-      })
-    }
+    const empty = () => ({ A: 0, B: 0, O: 0, AB: 0 }) as Record<string, number>
+
+    const result = Array.from({ length: days }, (_, i) => {
+      const d = new Date(startDate.getTime() + i * DAY_MS)
+      const date = bkk(d)
+      const [, m, dd] = date.split('-')
+      const store = empty()
+      const withdraw = empty()
+
+      for (const r of rows) {
+        if (new Date(r.day).toISOString().split('T')[0] !== date) continue
+        const target = r.action === 'STORE' ? store : withdraw
+        target[r.blood] = Number(r.count)
+      }
+
+      return { date, label: `${Number(dd)}/${Number(m)}`, store, withdraw }
+    })
 
     res.json(result)
   } catch (error) {
