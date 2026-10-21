@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react'
 import dashboardService from './DashboardService'
 import type { StockSummary, DailyData, LogEntryItem } from './DashboardType'
-import { BLOOD_GROUPS, levelOf } from './DashboardType'
+import { BLOOD_GROUPS, levelOf, sumBlood } from './DashboardType'
 
 export default function useDashboard() {
   const [stockData, setStockData] = useState<StockSummary | null>(null)
@@ -41,7 +41,11 @@ export default function useDashboard() {
     ? BLOOD_GROUPS.filter((g) => levelOf(stockData.stocks[g], stockData.minimum[g]) === 'warning')
     : []
 
-  const maxDailyValue = Math.max(...dailyData.map((d) => d.value), 1)
+  // ค่าสูงสุดของแท่ง (นำเข้า/นำออก) ใช้เป็นสเกลของกราฟ
+  const maxDailyValue = Math.max(
+    ...dailyData.flatMap((d) => [sumBlood(d.store), sumBlood(d.withdraw)]),
+    1,
+  )
 
   return {
     stockData,
