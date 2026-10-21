@@ -11,8 +11,10 @@ export interface StockSummary {
 }
 
 export interface DailyData {
+  date: string
   label: string
-  value: number
+  store: Record<BloodGroup, number>
+  withdraw: Record<BloodGroup, number>
 }
 
 export interface LogEntryItem {
@@ -52,3 +54,6 @@ export const levelColor = (lv: StockLevel) =>
 
 export const levelText = (lv: StockLevel) =>
   lv === 'danger' ? 'ต่ำกว่าขั้นต่ำ' : lv === 'warning' ? 'ใกล้ขั้นต่ำ' : 'ปกติ'
+
+export const sumBlood = (r: Record<BloodGroup, number>) =>
+  BLOOD_GROUPS.reduce((s, g) => s + (r[g] || 0), 0)

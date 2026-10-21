@@ -7,6 +7,7 @@ import DashboardHero from './components/DashboardHero'
 import DashboardAlerts from './components/DashboardAlerts'
 import DashboardStockCards from './components/DashboardStockCards'
 import DashboardCharts from './components/DashboardCharts'
+import DashboardDaily from './components/DashboardDaily'
 import DashboardRecentActivity from './components/DashboardRecentActivity'
 
 const DashboardPage = () => {
@@ -28,7 +29,8 @@ const DashboardPage = () => {
       <DashboardHero total={total} />
       <DashboardAlerts lowGroups={lowGroups} warnGroups={warnGroups} />
       <DashboardStockCards data={stockData} />
-      <DashboardCharts stockData={stockData} dailyData={dailyData} maxDailyValue={maxDailyValue} />
+      <DashboardCharts stockData={stockData} />
+      <DashboardDaily dailyData={dailyData} maxDailyValue={maxDailyValue} />
       <DashboardRecentActivity entries={logEntries} />
     </div>
   )
