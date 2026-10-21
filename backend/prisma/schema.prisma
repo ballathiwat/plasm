@@ -101,6 +101,7 @@ model LogEntry {
   action    LogAction
   boxId     String?   @map("box_id")
   detail    String
+  unitCount Int       @default(0) @map("unit_count")   // เพิ่ม
   userId    String?   @map("user_id")
   timestamp DateTime  @default(now())
   createdAt DateTime  @default(now()) @map("created_at")
@@ -125,3 +126,4 @@ model Setting {
 
   @@map("settings")
 }
+
