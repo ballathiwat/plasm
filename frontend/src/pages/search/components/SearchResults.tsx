@@ -102,7 +102,7 @@ export default function SearchResults({ boxGroups, totalUnits, query, searched, 
                     <MapPin size={11} /> {box.location === 'room' ? 'ห้อง' : 'ตู้'} -30°C · ชั้น {box.shelf}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <Calendar size={11} /> เจาะเก็บ {new Date(box.collectionDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}
+                    <Calendar size={11} /> จัดเก็บ {new Date(box.collectionDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}
                   </span>
                 </div>
               </div>
