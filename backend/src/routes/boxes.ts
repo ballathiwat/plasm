@@ -118,6 +118,7 @@ router.post('/', async (req, res) => {
           create: {
             action: 'STORE',
             detail: `จัดเก็บกล่อง ${boxLabel} จำนวน ${units?.length || 0} units`,
+            unitCount: units?.length || 0,
             userId: req.user?.id,
           },
         },
@@ -165,26 +166,28 @@ router.patch('/:id/withdraw', async (req, res) => {
       return
     }
 
-    const now = new Date()
+   const now = new Date()
+const storedCount = box.units.filter((u) => u.status === 'STORED').length
 
-    await prisma.$transaction([
-      prisma.box.update({
-        where: { id: box.id },
-        data: { status: 'WITHDRAWN', withdrawnAt: now },
-      }),
-      prisma.unit.updateMany({
-        where: { boxId: box.id },
-        data: { status: 'WITHDRAWN' },
-      }),
-      prisma.logEntry.create({
-        data: {
-          action: 'WITHDRAW',
-          boxId: box.id,
-          detail: `นำออกกล่อง ${box.boxLabel} จำนวน ${box.units.length} units`,
-          userId: req.user?.id,
-        },
-      }),
-    ])
+await prisma.$transaction([
+  prisma.box.update({
+    where: { id: box.id },
+    data: { status: 'WITHDRAWN', withdrawnAt: now },
+  }),
+  prisma.unit.updateMany({
+    where: { boxId: box.id },
+    data: { status: 'WITHDRAWN' },
+  }),
+  prisma.logEntry.create({
+    data: {
+      action: 'WITHDRAW',
+      boxId: box.id,
+      detail: `นำออกกล่อง ${box.boxLabel} จำนวน ${storedCount} units`,
+      unitCount: storedCount,
+      userId: req.user?.id,
+    },
+  }),
+])
 
     res.json({ message: `นำออกกล่อง ${box.boxLabel} สำเร็จ` })
   } catch (error) {

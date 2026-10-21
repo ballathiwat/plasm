@@ -1,40 +1,48 @@
 // src/routes/units.ts
 
-import { Router } from 'express'
-import { prisma } from '../lib/prisma'
+import { Router } from "express";
+import { prisma } from "../lib/prisma";
 
-const router = Router()
+const router = Router();
 
 // ===== GET /api/v1/units =====
-router.get('/', async (_req, res) => {
+router.get("/", async (_req, res) => {
   try {
     const units = await prisma.unit.findMany({
       include: {
-        box: { select: { boxLabel: true, blood: true, location: true, shelf: true, status: true } },
+        box: {
+          select: {
+            boxLabel: true,
+            blood: true,
+            location: true,
+            shelf: true,
+            status: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' },
-    })
-    res.json(units)
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(units);
   } catch (error) {
-    console.error('GET /units error:', error)
-    res.status(500).json({ message: 'เกิดข้อผิดพลาด' })
+    console.error("GET /units error:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
   }
-})
+});
 
 // ===== GET /api/v1/units/search?q= =====
-router.get('/search', async (req, res) => {
+router.get("/search", async (req, res) => {
   try {
-    const q = (req.query.q as string || '').trim()
+    const q = ((req.query.q as string) || "").trim();
     if (!q) {
-      res.json([])
-      return
+      res.json([]);
+      return;
     }
 
     const units = await prisma.unit.findMany({
       where: {
         OR: [
-          { unitNumber: { contains: q, mode: 'insensitive' } },
-          { box: { boxLabel: { contains: q, mode: 'insensitive' } } },
+          { unitNumber: { contains: q, mode: "insensitive" } },
+          { box: { boxLabel: { contains: q, mode: "insensitive" } } },
         ],
       },
       include: {
@@ -52,7 +60,7 @@ router.get('/search', async (req, res) => {
         },
       },
       take: 50,
-    })
+    });
 
     const result = units.map((u) => ({
       id: u.id,
@@ -66,55 +74,56 @@ router.get('/search', async (req, res) => {
         location: u.box.location.toLowerCase(),
         shelf: u.box.shelf,
         status: u.box.status.toLowerCase(),
-        collectionDate: u.box.collectionDate.toISOString().split('T')[0],
+        collectionDate: u.box.collectionDate.toISOString().split("T")[0],
       },
-    }))
+    }));
 
-    res.json(result)
+    res.json(result);
   } catch (error) {
-    console.error('GET /units/search error:', error)
-    res.status(500).json({ message: 'เกิดข้อผิดพลาด' })
+    console.error("GET /units/search error:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
   }
-})
+});
 
 // ===== PATCH /api/v1/units/:id/withdraw =====
-router.patch('/:id/withdraw', async (req, res) => {
+router.patch("/:id/withdraw", async (req, res) => {
   try {
     const unit = await prisma.unit.findUnique({
       where: { id: req.params.id },
       include: { box: true },
-    })
+    });
 
     if (!unit) {
-      res.status(404).json({ message: 'ไม่พบ unit' })
-      return
+      res.status(404).json({ message: "ไม่พบ unit" });
+      return;
     }
 
-    if (unit.status === 'WITHDRAWN') {
-      res.status(400).json({ message: 'Unit นี้ถูกนำออกแล้ว' })
-      return
+    if (unit.status === "WITHDRAWN") {
+      res.status(400).json({ message: "Unit นี้ถูกนำออกแล้ว" });
+      return;
     }
 
     await prisma.$transaction([
       prisma.unit.update({
         where: { id: unit.id },
-        data: { status: 'WITHDRAWN' },
+        data: { status: "WITHDRAWN" },
       }),
       prisma.logEntry.create({
         data: {
-          action: 'WITHDRAW',
+          action: "WITHDRAW",
           boxId: unit.boxId,
           detail: `นำออก unit ${unit.unitNumber} จากกล่อง ${unit.box.boxLabel}`,
+          unitCount: 1,
           userId: req.user?.id,
         },
       }),
-    ])
+    ]);
 
-    res.json({ message: `นำออก unit ${unit.unitNumber} สำเร็จ` })
+    res.json({ message: `นำออก unit ${unit.unitNumber} สำเร็จ` });
   } catch (error) {
-    console.error('PATCH /units/:id/withdraw error:', error)
-    res.status(500).json({ message: 'เกิดข้อผิดพลาด' })
+    console.error("PATCH /units/:id/withdraw error:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
   }
-})
+});
 
-export default router
+export default router;
