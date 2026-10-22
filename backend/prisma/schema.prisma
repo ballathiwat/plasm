@@ -155,6 +155,8 @@ model MasterZone {
   active    Boolean       @default(true)
   sort      Int           @default(0)
   shelves   MasterShelf[]
+  boxes Box[]
+
 
   @@map("master_zones")
 }
@@ -180,5 +182,30 @@ model BoxCounter {
 
   @@id([plasmaTypeId, bloodTypeId, year])
   @@map("box_counters")
+}
+
+model Box {
+  id             String    @id @default(cuid())
+  boxLabel       String    @unique @map("box_label")
+  boxName        String?   @map("box_name")
+  type           String
+  blood          String
+  year           Int
+  zoneId         String    @map("zone_id")
+  shelf          String
+  collectionDate DateTime  @map("collection_date") @db.Date
+  status         BoxStatus @default(STORED)
+  storedAt       DateTime  @default(now()) @map("stored_at")
+  withdrawnAt    DateTime? @map("withdrawn_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  zone  MasterZone @relation(fields: [zoneId], references: [id])
+  units Unit[]
+  logs  LogEntry[]
+
+  @@index([blood, status])
+  @@index([zoneId, shelf])
+  @@map("boxes")
 }
 
