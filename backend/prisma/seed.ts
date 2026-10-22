@@ -1,5 +1,5 @@
 // prisma/seed.ts
-// Seed ข้อมูลเริ่มต้น: admin user, settings, sample boxes
+// Seed ข้อมูลเริ่มต้น: admin user, settings, master data, sample boxes
 
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
@@ -48,91 +48,7 @@ async function main() {
   })
   console.log('✅ Minimum stock settings')
 
-  // ===== 4. ตั้งค่า Shelf Positions =====
-  await prisma.setting.upsert({
-    where: { key: 'shelfPositions' },
-    update: {},
-    create: {
-      key: 'shelfPositions',
-      value: {
-        room: ['M1', 'R1', 'R2', 'R3', 'L1', 'L2', 'L3'],
-        cabinet: ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'],
-      },
-    },
-  })
-  console.log('✅ Shelf positions settings')
-
-  // ===== 5. Sample Boxes + Units =====
-  const sampleBoxes = [
-    {
-      boxLabel: 'FFP-A-0001',
-      type: 'FFP' as const,
-      blood: 'A' as const,
-      location: 'ROOM' as const,
-      shelf: 'M1',
-      collectionDate: new Date('2024-10-01'),
-      units: ['A001', 'A002', 'A003', 'A004', 'A005', 'A006', 'A007', 'A008'],
-    },
-    {
-      boxLabel: 'FFP-B-0002',
-      type: 'FFP' as const,
-      blood: 'B' as const,
-      location: 'ROOM' as const,
-      shelf: 'R1',
-      collectionDate: new Date('2024-10-02'),
-      units: ['B001', 'B002', 'B003', 'B004', 'B005', 'B006', 'B007', 'B008', 'B009', 'B010'],
-    },
-    {
-      boxLabel: 'FFP-O-0003',
-      type: 'FFP' as const,
-      blood: 'O' as const,
-      location: 'ROOM' as const,
-      shelf: 'L1',
-      collectionDate: new Date('2024-10-03'),
-      units: ['O001', 'O002', 'O003', 'O004', 'O005', 'O006', 'O007', 'O008'],
-    },
-    {
-      boxLabel: 'FFP-AB-0004',
-      type: 'FFP' as const,
-      blood: 'AB' as const,
-      location: 'CABINET' as const,
-      shelf: 'C1',
-      collectionDate: new Date('2024-10-04'),
-      units: ['AB001', 'AB002', 'AB003', 'AB004', 'AB005'],
-    },
-  ]
-
-  for (const box of sampleBoxes) {
-    const existing = await prisma.box.findUnique({ where: { boxLabel: box.boxLabel } })
-    if (existing) continue
-
-    await prisma.box.create({
-      data: {
-        boxLabel: box.boxLabel,
-        type: box.type,
-        blood: box.blood,
-        location: box.location,
-        shelf: box.shelf,
-        collectionDate: box.collectionDate,
-        status: 'STORED',
-        units: {
-          create: box.units.map((u) => ({ unitNumber: u })),
-        },
-        logs: {
-          create: {
-            action: 'STORE',
-            detail: `จัดเก็บกล่อง ${box.boxLabel} จำนวน ${box.units.length} units`,
-            userId: admin.id,
-          },
-        },
-      },
-    })
-    console.log(`✅ Box: ${box.boxLabel} (${box.units.length} units)`)
-  }
-
-  console.log('\n🎉 Seed completed!')
-
-  // ===== 6. Master data =====
+  // ===== 4. Master data (ต้องมาก่อนกล่อง) =====
   const plasmaTypes = ['FFP', 'Cryo']
   for (const [i, code] of plasmaTypes.entries()) {
     await prisma.masterPlasmaType.upsert({
@@ -167,6 +83,47 @@ async function main() {
   }
   console.log('✅ Master data')
 
+  // ===== 5. Sample Boxes + Units =====
+  const sampleBoxes = [
+    { boxLabel: 'FFP_A_2024_00001',  type: 'FFP', blood: 'A',  legacyKey: 'ROOM',    shelf: 'M1', date: '2024-10-01', units: ['A001', 'A002', 'A003', 'A004', 'A005', 'A006', 'A007', 'A008'] },
+    { boxLabel: 'FFP_B_2024_00001',  type: 'FFP', blood: 'B',  legacyKey: 'ROOM',    shelf: 'R1', date: '2024-10-02', units: ['B001', 'B002', 'B003', 'B004', 'B005', 'B006', 'B007', 'B008', 'B009', 'B010'] },
+    { boxLabel: 'FFP_O_2024_00001',  type: 'FFP', blood: 'O',  legacyKey: 'ROOM',    shelf: 'L1', date: '2024-10-03', units: ['O001', 'O002', 'O003', 'O004', 'O005', 'O006', 'O007', 'O008'] },
+    { boxLabel: 'FFP_AB_2024_00001', type: 'FFP', blood: 'AB', legacyKey: 'CABINET', shelf: 'C1', date: '2024-10-04', units: ['AB001', 'AB002', 'AB003', 'AB004', 'AB005'] },
+  ]
+
+  for (const box of sampleBoxes) {
+    const existing = await prisma.box.findUnique({ where: { boxLabel: box.boxLabel } })
+    if (existing) continue
+
+    const zone = await prisma.masterZone.findUniqueOrThrow({ where: { legacyKey: box.legacyKey } })
+
+    await prisma.box.create({
+      data: {
+        boxLabel: box.boxLabel,
+        type: box.type,
+        blood: box.blood,
+        year: 2024,
+        zoneId: zone.id,
+        shelf: box.shelf,
+        collectionDate: new Date(box.date),
+        status: 'STORED',
+        units: {
+          create: box.units.map((u) => ({ unitNumber: u })),
+        },
+        logs: {
+          create: {
+            action: 'STORE',
+            detail: `จัดเก็บกล่อง ${box.boxLabel} จำนวน ${box.units.length} units`,
+            unitCount: box.units.length,
+            userId: admin.id,
+          },
+        },
+      },
+    })
+    console.log(`✅ Box: ${box.boxLabel} (${box.units.length} units)`)
+  }
+
+  console.log('\n🎉 Seed completed!')
 }
 
 main()
@@ -175,5 +132,3 @@ main()
     process.exit(1)
   })
   .finally(() => prisma.$disconnect())
-
-    
