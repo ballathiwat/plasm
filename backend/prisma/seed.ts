@@ -139,3 +139,38 @@ main()
     process.exit(1)
   })
   .finally(() => prisma.$disconnect())
+
+    // ===== 6. Master data =====
+  const plasmaTypes = ['FFP', 'Cryo']
+  for (const [i, code] of plasmaTypes.entries()) {
+    await prisma.masterPlasmaType.upsert({
+      where: { code }, update: {}, create: { code, sort: i },
+    })
+  }
+
+  const bloodTypes = ['A', 'B', 'O', 'AB']
+  for (const [i, code] of bloodTypes.entries()) {
+    await prisma.masterBloodType.upsert({
+      where: { code }, update: {}, create: { code, sort: i },
+    })
+  }
+
+  const zones = [
+    { name: 'ห้อง -30°C', legacyKey: 'ROOM', shelves: ['M1', 'R1', 'R2', 'R3', 'L1', 'L2', 'L3'] },
+    { name: 'ตู้ -30°C', legacyKey: 'CABINET', shelves: ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'] },
+  ]
+  for (const [i, z] of zones.entries()) {
+    const zone = await prisma.masterZone.upsert({
+      where: { name: z.name },
+      update: {},
+      create: { name: z.name, legacyKey: z.legacyKey, sort: i },
+    })
+    for (const [j, code] of z.shelves.entries()) {
+      await prisma.masterShelf.upsert({
+        where: { zoneId_code: { zoneId: zone.id, code } },
+        update: {},
+        create: { zoneId: zone.id, code, sort: j },
+      })
+    }
+  }
+  console.log('✅ Master data')
