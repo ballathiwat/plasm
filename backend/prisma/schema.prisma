@@ -127,3 +127,58 @@ model Setting {
   @@map("settings")
 }
 
+// ===== Master data =====
+model MasterPlasmaType {
+  id     String  @id @default(cuid())
+  code   String  @unique
+  name   String?
+  active Boolean @default(true)
+  sort   Int     @default(0)
+
+  @@map("master_plasma_types")
+}
+
+model MasterBloodType {
+  id     String  @id @default(cuid())
+  code   String  @unique
+  name   String?
+  active Boolean @default(true)
+  sort   Int     @default(0)
+
+  @@map("master_blood_types")
+}
+
+model MasterZone {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  legacyKey String?       @unique @map("legacy_key") // ROOM / CABINET ใช้ map ข้อมูลเดิมตอนเฟส 2
+  active    Boolean       @default(true)
+  sort      Int           @default(0)
+  shelves   MasterShelf[]
+
+  @@map("master_zones")
+}
+
+model MasterShelf {
+  id     String     @id @default(cuid())
+  zoneId String     @map("zone_id")
+  code   String
+  active Boolean    @default(true)
+  sort   Int        @default(0)
+  zone   MasterZone @relation(fields: [zoneId], references: [id])
+
+  @@unique([zoneId, code])
+  @@map("master_shelves")
+}
+
+// เฟส 2 จะใช้รันเลขกล่อง
+model BoxCounter {
+  plasmaTypeId String @map("plasma_type_id")
+  bloodTypeId  String @map("blood_type_id")
+  year         Int
+  lastNo       Int    @default(0) @map("last_no")
+
+  @@id([plasmaTypeId, bloodTypeId, year])
+  @@map("box_counters")
+}
+
