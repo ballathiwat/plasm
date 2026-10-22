@@ -11,7 +11,7 @@ export default function useSearch() {
   const [results, setResults] = useState<SearchUnitResult[]>([])
   const [searched, setSearched] = useState(false)
   const [loading, setLoading] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const doSearch = async (q: string) => {
     if (!q.trim()) {

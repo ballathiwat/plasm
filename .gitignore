@@ -40,3 +40,5 @@ npm-debug.log*
 tmp/
 temp/
 /cache/
+*.tsbuildinfo
+backend_backup/

@@ -2,7 +2,6 @@
 //  src/pages/settings/services/SettingsType.ts
 // ============================================================
 
-import type { BloodGroup } from '../../../types/models'
 
 export interface MinimumStock {
   A: number

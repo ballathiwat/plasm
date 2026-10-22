@@ -3,7 +3,6 @@
 // ============================================================
 
 import { Package, PackageOpen } from 'lucide-react'
-import type { BloodGroup } from '../../../types/models'
 import type { LogEntryItem } from '../services/LogType'
 
 const GROUP_COLOR: Record<string, string> = {

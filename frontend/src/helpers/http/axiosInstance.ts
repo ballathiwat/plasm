@@ -5,7 +5,7 @@
 import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://192.168.1.117:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 /* ----------------------------------------------------------
    Create dedicated instance
