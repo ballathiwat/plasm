@@ -1,51 +1,60 @@
 // src/routes/log.ts
 
-import { Router } from 'express'
-import { prisma } from '../lib/prisma'
+import { Router } from "express";
+import { prisma } from "../lib/prisma";
+import { locationKey } from "../lib/boxDto";
 
-const router = Router()
+const router = Router();
 
 // ===== GET /api/v1/log =====
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const { action, blood, limit = '50', offset = '0' } = req.query
+    const { action, blood, limit = "50", offset = "0" } = req.query;
 
-    const where: Record<string, unknown> = {}
-    if (action) where.action = (action as string).toUpperCase()
+    const where: Record<string, unknown> = {};
+    if (action) where.action = (action as string).toUpperCase();
     if (blood) {
-      where.box = { blood: (blood as string).toUpperCase() }
+      where.box = { blood: (blood as string).toUpperCase() };
     }
 
     const entries = await prisma.logEntry.findMany({
       where,
       include: {
-        box: { select: { boxLabel: true, type: true, blood: true, location: true, shelf: true } },
+        box: {
+          select: {
+            boxLabel: true,
+            type: true,
+            blood: true,
+            shelf: true,
+            zone: { select: { legacyKey: true, name: true } },
+          },
+        },
         user: { select: { name: true } },
       },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       take: Number(limit),
       skip: Number(offset),
-    })
+    });
 
     const result = entries.map((e) => ({
       id: e.id,
       action: e.action.toLowerCase(),
-      boxLabel: e.box?.boxLabel || '-',
-      type: e.box?.type || 'FFP',
-      blood: e.box?.blood || '-',
+      boxLabel: e.box?.boxLabel || "-",
+      type: e.box?.type || "FFP",
+      blood: e.box?.blood || "-",
       units: [],
-      location: e.box?.location?.toLowerCase(),
+      location: e.box ? locationKey(e.box.zone) : undefined,
       shelf: e.box?.shelf,
       timestamp: e.timestamp.toISOString(),
       detail: e.detail,
       performedBy: e.user?.name,
-    }))
+    }));
 
-    res.json(result)
+    res.json(result);
   } catch (error) {
-    console.error('GET /log error:', error)
-    res.status(500).json({ message: 'เกิดข้อผิดพลาด' })
+    console.error("GET /log error:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
   }
-})
+});
 
-export default router
+export default router;

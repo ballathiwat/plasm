@@ -2,6 +2,7 @@
 
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
+import { locationKey } from "../lib/boxDto";
 
 const router = Router();
 
@@ -14,7 +15,7 @@ router.get("/", async (_req, res) => {
           select: {
             boxLabel: true,
             blood: true,
-            location: true,
+            zone: { select: { legacyKey: true, name: true } },
             shelf: true,
             status: true,
           },
@@ -52,7 +53,7 @@ router.get("/search", async (req, res) => {
             boxLabel: true,
             blood: true,
             type: true,
-            location: true,
+            zone: { select: { legacyKey: true, name: true } },
             shelf: true,
             status: true,
             collectionDate: true,
@@ -71,7 +72,8 @@ router.get("/search", async (req, res) => {
         boxLabel: u.box.boxLabel,
         blood: u.box.blood,
         type: u.box.type,
-        location: u.box.location.toLowerCase(),
+        location: locationKey(u.box.zone),
+        zoneName: u.box.zone.name,
         shelf: u.box.shelf,
         status: u.box.status.toLowerCase(),
         collectionDate: u.box.collectionDate.toISOString().split("T")[0],
