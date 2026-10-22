@@ -4,7 +4,7 @@
 
 import { Package, PackageOpen } from 'lucide-react'
 import type { LogEntryItem } from '../services/LogType'
-import { groupColor,groupSurface, groupInk } from '../../../helpers/blood'
+import {groupSurface, groupInk } from '../../../helpers/blood'
 
 
 

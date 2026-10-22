@@ -3,9 +3,8 @@
 // ============================================================
 
 import { PackageOpen, X, Package, Loader2 } from 'lucide-react'
-import type { BloodGroup } from '../../../types/models'
 import type { WithdrawBoxDetail as BoxDetailType } from '../services/WithdrawType'
-import { groupColor,groupSurface, groupInk } from '../../../helpers/blood'
+import {groupSurface, groupInk } from '../../../helpers/blood'
 
 
 

@@ -3,9 +3,8 @@
 // ============================================================
 
 import { Search, ChevronRight } from 'lucide-react'
-import type { BloodGroup } from '../../../types/models'
 import type { WithdrawBoxItem } from '../services/WithdrawType'
-import { groupColor,groupSurface, groupInk } from '../../../helpers/blood'
+import {groupSurface, groupInk } from '../../../helpers/blood'
 
 
 

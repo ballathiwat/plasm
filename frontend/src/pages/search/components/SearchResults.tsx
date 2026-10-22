@@ -3,9 +3,8 @@
 // ============================================================
 
 import { Package, MapPin, Calendar, Droplets, Search } from 'lucide-react'
-import type { BloodGroup } from '../../../types/models'
 import type { SearchBoxGroup } from '../services/SearchType'
-import { groupColor,groupSurface, groupInk } from '../../../helpers/blood'
+import {groupSurface, groupInk } from '../../../helpers/blood'
 
 
 
