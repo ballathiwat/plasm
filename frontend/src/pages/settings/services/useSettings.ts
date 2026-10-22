@@ -23,7 +23,8 @@ export default function useSettings() {
 
   // ── UI ──
   const [toast, setToast] = useState<ToastState | null>(null)
-  const [activeTab, setActiveTab] = useState<'stock' | 'users'>('stock')
+  const [activeTab, setActiveTab] =
+  useState<'stock' | 'users' | 'plasma' | 'blood' | 'zones'>('stock')
 
   // Auto-hide toast
   useEffect(() => {
@@ -113,5 +114,7 @@ export default function useSettings() {
     userForm, savingUser,
     handleUserFormChange, handleCreateUser, handleToggleActive,
     toast, dismissToast,
+    notify: setToast,            // เพิ่ม
+
   }
 }

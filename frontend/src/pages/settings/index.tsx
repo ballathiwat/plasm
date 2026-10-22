@@ -4,12 +4,18 @@
 
 import { CheckCircle2, AlertCircle, X } from 'lucide-react'
 import useSettings from './services/useSettings'
+import useMasterData from './services/useMasterData'
 import SettingsMinStock from './components/SettingsMinStock'
 import SettingsUsers from './components/SettingsUsers'
+import SettingsCodeList from './components/SettingsCodeList'
+import SettingsZones from './components/SettingsZones'
 
 const TABS = [
   { key: 'stock' as const, label: 'ค่าขั้นต่ำ' },
   { key: 'users' as const, label: 'จัดการผู้ใช้' },
+  { key: 'plasma' as const, label: 'ชนิดพลาสมา' },
+  { key: 'blood' as const, label: 'หมู่เลือด' },
+  { key: 'zones' as const, label: 'สถานที่จัดเก็บ' },
 ]
 
 const SettingsPage = () => {
@@ -22,7 +28,10 @@ const SettingsPage = () => {
     userForm, savingUser,
     handleUserFormChange, handleCreateUser, handleToggleActive,
     toast, dismissToast,
+    notify,
   } = useSettings()
+
+  const master = useMasterData(notify)
 
   return (
     <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
@@ -51,18 +60,22 @@ const SettingsPage = () => {
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>ตั้งค่า</h2>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-          กำหนดค่าขั้นต่ำสต็อกและจัดการบัญชีผู้ใช้
+          กำหนดค่าขั้นต่ำสต็อก จัดการผู้ใช้ และข้อมูลหลักของระบบ
         </p>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid var(--border, #E4E4E7)' }}>
+      <div style={{
+        display: 'flex', gap: 0, marginBottom: 20,
+        borderBottom: '2px solid var(--border, #E4E4E7)',
+        overflowX: 'auto',
+      }}>
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             style={{
-              padding: '10px 20px',
+              padding: '10px 20px', whiteSpace: 'nowrap',
               border: 'none', background: 'transparent',
               fontSize: 14, fontWeight: activeTab === tab.key ? 700 : 500,
               color: activeTab === tab.key ? 'var(--primary, #2563EB)' : 'var(--text-secondary)',
@@ -97,6 +110,41 @@ const SettingsPage = () => {
           onFormChange={handleUserFormChange}
           onCreate={handleCreateUser}
           onToggleActive={handleToggleActive}
+        />
+      )}
+
+      {activeTab === 'plasma' && (
+        <SettingsCodeList
+          title="ชนิดพลาสมา"
+          description="เช่น FFP, Cryo, IFFP"
+          placeholder="ชื่อชนิดใหม่"
+          items={master.plasmaTypes}
+          loading={master.loading}
+          onAdd={(code) => master.addCode('plasma', code)}
+          onToggle={(it) => master.toggleCode('plasma', it)}
+        />
+      )}
+
+      {activeTab === 'blood' && (
+        <SettingsCodeList
+          title="หมู่เลือด"
+          description="เช่น A, B, O, AB, A-"
+          placeholder="หมู่เลือดใหม่"
+          items={master.bloodTypes}
+          loading={master.loading}
+          onAdd={(code) => master.addCode('blood', code)}
+          onToggle={(it) => master.toggleCode('blood', it)}
+        />
+      )}
+
+      {activeTab === 'zones' && (
+        <SettingsZones
+          zones={master.zones}
+          loading={master.loading}
+          onAddZone={master.addZone}
+          onToggleZone={master.toggleZone}
+          onAddShelf={master.addShelf}
+          onToggleShelf={master.toggleShelf}
         />
       )}
     </div>
