@@ -4,7 +4,9 @@
 
 import type { BloodGroup } from '../../../types/models'
 import type { DailyData } from '../services/DashboardType'
-import { BLOOD_GROUPS, GROUP_COLOR, sumBlood } from '../services/DashboardType'
+import { BLOOD_GROUPS, sumBlood } from '../services/DashboardType'
+import { groupSurface, groupInk ,groupColor} from '../../../helpers/blood'
+
 
 const CHART_H = 140
 const STORE_COLOR = '#16A34A'
@@ -31,7 +33,7 @@ function StackedBar({ values, max }: { values: Record<BloodGroup, number>; max: 
               style={{
                 height: (v / max) * CHART_H,
                 minHeight: 3,
-                background: GROUP_COLOR[g],
+                background: groupColor(g),
                 transformOrigin: 'bottom',
                 animation: 'plasm-rise 0.7s cubic-bezier(.2,.8,.2,1) both',
               }}
@@ -85,7 +87,7 @@ export default function DashboardDaily({ dailyData, maxDailyValue }: Props) {
         <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
           {BLOOD_GROUPS.map((g) => (
             <span key={g} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: GROUP_COLOR[g] }} /> {g}
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: groupColor(g) }} /> {g}
             </span>
           ))}
         </div>
@@ -129,11 +131,11 @@ export default function DashboardDaily({ dailyData, maxDailyValue }: Props) {
           }}>
             <span>วันที่</span>
             {BLOOD_GROUPS.map((g) => (
-              <span key={`hs-${g}`} style={{ textAlign: 'center', color: GROUP_COLOR[g] }}>{g}</span>
+              <span key={`hs-${g}`} style={{ textAlign: 'center', color: groupColor(g) }}>{g}</span>
             ))}
             <span style={{ textAlign: 'center' }}>รวม</span>
             {BLOOD_GROUPS.map((g) => (
-              <span key={`hw-${g}`} style={{ textAlign: 'center', color: GROUP_COLOR[g] }}>{g}</span>
+              <span key={`hw-${g}`} style={{ textAlign: 'center', color: groupColor(g) }}>{g}</span>
             ))}
             <span style={{ textAlign: 'center' }}>รวม</span>
           </div>

@@ -22,15 +22,26 @@
   --text-secondary: #71717A;
   --text-disabled: #A1A1AA;
 
-  /* Blood group identity */
-  --group-a: #3B82F6;
-  --group-b: #10B981;
-  --group-o: #F59E0B;
+  /* Blood group identity: A เหลือง / B ชมพู / O ฟ้า / AB ม่วง */
+  --group-a: #EAB308;
+  --group-a-surface: #FEF9C3;
+  --group-a-ink: #854D0E;
+
+  --group-b: #EC4899;
+  --group-b-surface: #FCE7F3;
+  --group-b-ink: #9D174D;
+
+  --group-o: #0EA5E9;
+  --group-o-surface: #E0F2FE;
+  --group-o-ink: #075985;
+
   --group-ab: #8B5CF6;
-  --group-a-surface: #DBEAFE;
-  --group-b-surface: #D1FAE5;
-  --group-o-surface: #FEF3C7;
   --group-ab-surface: #EDE9FE;
+  --group-ab-ink: #5B21B6;
+
+  --group-other: #71717A;
+  --group-other-surface: #F4F4F5;
+  --group-other-ink: #3F3F46;
 
   /* Stock status */
   --stock-normal: #10B981;
@@ -78,3 +89,14 @@ a:hover { color: var(--primary-hover); }
 @keyframes plasm-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes plasm-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes plasm-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ใช้: <span className="blood-badge" data-blood="A"> */
+.blood-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 99px; font-weight: 700;
+  background: var(--group-other-surface); color: var(--group-other-ink);
+}
+.blood-badge[data-blood="A"]  { background: var(--group-a-surface);  color: var(--group-a-ink); }
+.blood-badge[data-blood="B"]  { background: var(--group-b-surface);  color: var(--group-b-ink); }
+.blood-badge[data-blood="O"]  { background: var(--group-o-surface);  color: var(--group-o-ink); }
+.blood-badge[data-blood="AB"] { background: var(--group-ab-surface); color: var(--group-ab-ink); }

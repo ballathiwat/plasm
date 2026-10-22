@@ -3,7 +3,9 @@
 // ============================================================
 
 import type { StockSummary } from '../services/DashboardType'
-import { BLOOD_GROUPS, GROUP_COLOR, GROUP_SURFACE, levelOf, levelColor, levelText } from '../services/DashboardType'
+import { BLOOD_GROUPS, levelOf, levelColor, levelText } from '../services/DashboardType'
+import { groupSurface, groupInk,groupColor } from '../../../helpers/blood'
+
 
 interface Props {
   stockData: StockSummary
@@ -35,7 +37,7 @@ export default function DashboardCharts({ stockData }: Props) {
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   width: 36, height: 36, borderRadius: '50%',
-                  background: GROUP_SURFACE[g], color: GROUP_COLOR[g],
+                  background: groupSurface(g), color: groupColor(g),
                   fontSize: 13, fontWeight: 700,
                 }}>{g}</span>
 

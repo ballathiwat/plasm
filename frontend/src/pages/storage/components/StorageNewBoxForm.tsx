@@ -6,6 +6,8 @@ import { X, Printer } from 'lucide-react'
 import type {
   StorageFormData, MasterOptions, MasterShelf,
 } from '../services/StorageType'
+import { groupSurface, groupInk } from '../../../helpers/blood'
+
 
 const inputStyle: React.CSSProperties = {
   padding: '10px 14px',

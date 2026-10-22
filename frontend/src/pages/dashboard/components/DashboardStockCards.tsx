@@ -4,7 +4,8 @@
 
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { StockSummary } from '../services/DashboardType'
-import { BLOOD_GROUPS, GROUP_COLOR, GROUP_SURFACE, levelOf, levelColor, levelText } from '../services/DashboardType'
+import { BLOOD_GROUPS,levelOf, levelColor, levelText } from '../services/DashboardType'
+import { groupSurface, groupColor, } from '../../../helpers/blood'
 
 interface Props {
   data: StockSummary
@@ -40,7 +41,7 @@ export default function DashboardStockCards({ data }: Props) {
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   width: 32, height: 32, borderRadius: '50%',
-                  background: GROUP_SURFACE[g], color: GROUP_COLOR[g],
+                  background: groupSurface(g), color: groupColor(g),
                   fontSize: 13, fontWeight: 700,
                 }}>{g}</span>
                 <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary, #18181B)' }}>

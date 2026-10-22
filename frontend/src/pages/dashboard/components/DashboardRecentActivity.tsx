@@ -4,8 +4,9 @@
 
 import { Package, PackageOpen } from 'lucide-react'
 import type { BloodGroup } from '../../../types/models'
-import type { LogEntryItem } from '../services/DashboardType'
-import { GROUP_COLOR, GROUP_SURFACE } from '../services/DashboardType'
+import { groupSurface, type LogEntryItem } from '../services/DashboardType'
+import { groupColor, groupInk } from '../../../helpers/blood'
+
 
 interface Props {
   entries: LogEntryItem[]
@@ -68,8 +69,8 @@ export default function DashboardRecentActivity({ entries }: Props) {
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 32, height: 22, borderRadius: 99,
               fontSize: 11, fontWeight: 600,
-              background: GROUP_SURFACE[entry.blood as BloodGroup] || '#f0f0f0',
-              color: GROUP_COLOR[entry.blood as BloodGroup] || '#666',
+              background: groupSurface(entry.blood) || '#f0f0f0',
+              color: groupColor(entry.blood) || '#666',
             }}>
               {entry.blood}
             </span>

@@ -3,6 +3,7 @@
 // ============================================================
 
 import type { BloodGroup } from '../../../types/models'
+export { groupColor, groupSurface, groupInk } from '../../../helpers/blood'
 
 export interface StockSummary {
   stocks: Record<BloodGroup, number>
@@ -32,19 +33,7 @@ export type StockLevel = 'danger' | 'warning' | 'normal'
 
 export const BLOOD_GROUPS: BloodGroup[] = ['A', 'B', 'O', 'AB']
 
-export const GROUP_COLOR: Record<BloodGroup, string> = {
-  A: 'var(--group-a, #3B82F6)',
-  B: 'var(--group-b, #10B981)',
-  O: 'var(--group-o, #F59E0B)',
-  AB: 'var(--group-ab, #8B5CF6)',
-}
 
-export const GROUP_SURFACE: Record<BloodGroup, string> = {
-  A: 'var(--group-a-surface, #DBEAFE)',
-  B: 'var(--group-b-surface, #D1FAE5)',
-  O: 'var(--group-o-surface, #FEF3C7)',
-  AB: 'var(--group-ab-surface, #EDE9FE)',
-}
 
 export const levelOf = (current: number, min: number): StockLevel =>
   current < min ? 'danger' : current < min * 1.2 ? 'warning' : 'normal'
