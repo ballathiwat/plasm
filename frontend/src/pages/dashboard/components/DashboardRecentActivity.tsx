@@ -3,9 +3,8 @@
 // ============================================================
 
 import { Package, PackageOpen } from 'lucide-react'
-import type { BloodGroup } from '../../../types/models'
 import { groupSurface, type LogEntryItem } from '../services/DashboardType'
-import { groupColor, groupInk } from '../../../helpers/blood'
+import { groupColor } from '../../../helpers/blood'
 
 
 interface Props {

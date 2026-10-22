@@ -4,7 +4,7 @@
 
 import type { StockSummary } from '../services/DashboardType'
 import { BLOOD_GROUPS, levelOf, levelColor, levelText } from '../services/DashboardType'
-import { groupSurface, groupInk,groupColor } from '../../../helpers/blood'
+import { groupSurface,groupColor } from '../../../helpers/blood'
 
 
 interface Props {

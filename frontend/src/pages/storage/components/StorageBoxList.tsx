@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { Printer, Search } from "lucide-react";
 import type { StorageBoxItem } from "../services/StorageType";
-import { groupColor,groupSurface, groupInk } from '../../../helpers/blood'
+import {groupSurface, groupInk } from '../../../helpers/blood'
 
 
 

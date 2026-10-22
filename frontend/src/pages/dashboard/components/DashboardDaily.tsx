@@ -5,7 +5,7 @@
 import type { BloodGroup } from '../../../types/models'
 import type { DailyData } from '../services/DashboardType'
 import { BLOOD_GROUPS, sumBlood } from '../services/DashboardType'
-import { groupSurface, groupInk ,groupColor} from '../../../helpers/blood'
+import { groupColor} from '../../../helpers/blood'
 
 
 const CHART_H = 140

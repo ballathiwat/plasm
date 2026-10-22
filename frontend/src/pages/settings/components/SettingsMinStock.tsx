@@ -5,7 +5,7 @@
 import { Save } from 'lucide-react'
 import type { BloodGroup } from '../../../types/models'
 import type { MinimumStock } from '../services/SettingsType'
-import { groupColor,groupSurface, groupInk } from '../../../helpers/blood'
+import {groupSurface, groupInk } from '../../../helpers/blood'
 
 
 interface Props {
