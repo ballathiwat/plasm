@@ -2,42 +2,42 @@
 //  src/pages/storage/services/useStorage.ts
 // ============================================================
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import storageService from './StorageService'
 import type {
   StorageBoxItem,
   StorageFormData,
   ToastState,
+  MasterOptions,
 } from './StorageType'
-import { SHELVES_ROOM, SHELVES_CABINET } from './StorageType'
 import type { BarcodeLabelData } from '../components/BarcodeLabel'
 
-const DEFAULT_FORM: StorageFormData = {
-  type: 'FFP',
-  blood: 'A',
+const EMPTY_FORM: StorageFormData = {
+  boxName: '',
+  type: '',
+  blood: '',
   collectionDate: new Date().toISOString().split('T')[0],
-  location: 'room',
-  shelf: 'M1',
+  zoneId: '',
+  shelf: '',
 }
 
 export default function useStorage() {
   const [boxes, setBoxes] = useState<StorageBoxItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState<StorageFormData>(DEFAULT_FORM)
+  const [master, setMaster] = useState<MasterOptions>({ plasmaTypes: [], bloodTypes: [], zones: [] })
+  const [form, setForm] = useState<StorageFormData>(EMPTY_FORM)
+  const [nextLabel, setNextLabel] = useState('')
   const [scannedUnits, setScannedUnits] = useState<string[]>([])
   const [unitInput, setUnitInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState<ToastState | null>(null)
-
-  // ── Barcode print ──
   const [printData, setPrintData] = useState<BarcodeLabelData | null>(null)
 
   // ── Load boxes ──
   const loadBoxes = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await storageService.getStoredBoxes()
-      setBoxes(data)
+      setBoxes(await storageService.getStoredBoxes())
     } catch {
       setBoxes([])
     } finally {
@@ -47,6 +47,34 @@ export default function useStorage() {
 
   useEffect(() => { loadBoxes() }, [loadBoxes])
 
+  // ── Load master (เฉพาะรายการที่ active) + ตั้งค่าเริ่มต้นของฟอร์ม ──
+  useEffect(() => {
+    Promise.all([
+      storageService.listPlasmaTypes(),
+      storageService.listBloodTypes(),
+      storageService.listZones(),
+    ])
+      .then(([p, b, z]) => {
+        const plasmaTypes = p.filter((x) => x.active)
+        const bloodTypes = b.filter((x) => x.active)
+        const zones = z
+          .filter((x) => x.active)
+          .map((x) => ({ ...x, shelves: x.shelves.filter((s) => s.active) }))
+        setMaster({ plasmaTypes, bloodTypes, zones })
+
+        setForm((f) => ({
+          ...f,
+          type: f.type || plasmaTypes[0]?.code || '',
+          blood: f.blood || bloodTypes[0]?.code || '',
+          zoneId: f.zoneId || zones[0]?.id || '',
+          shelf: f.shelf || zones[0]?.shelves[0]?.code || '',
+        }))
+      })
+      .catch((err: any) => {
+        setToast({ type: 'error', msg: err?.message || 'โหลดข้อมูลหลักไม่สำเร็จ' })
+      })
+  }, [])
+
   // Auto-hide toast
   useEffect(() => {
     if (toast) {
@@ -55,29 +83,32 @@ export default function useStorage() {
     }
   }, [toast])
 
-  // ── Auto-generate box label ──
-  const generateBoxLabel = useCallback(() => {
-    const prefix = `${form.type}-${form.blood}-`
-    const existing = boxes
-      .filter((b) => b.boxLabel.startsWith(prefix))
-      .map((b) => {
-        const num = parseInt(b.boxLabel.replace(prefix, ''), 10)
-        return isNaN(num) ? 0 : num
-      })
-    const next = existing.length > 0 ? Math.max(...existing) + 1 : 1
-    return `${prefix}${String(next).padStart(4, '0')}`
-  }, [boxes, form.type, form.blood])
+  // ── เลขกล่องถัดไป (แสดงตัวอย่างเท่านั้น เลขจริง backend ออกตอนบันทึก) ──
+  const refreshNextLabel = useCallback(async (type: string, blood: string) => {
+    if (!type || !blood) { setNextLabel(''); return }
+    try {
+      const res = await storageService.getNextLabel(type, blood)
+      setNextLabel(res.label)
+    } catch {
+      setNextLabel('')
+    }
+  }, [])
 
-  // ── Available shelves ──
-  const availableShelves = form.location === 'room' ? SHELVES_ROOM : SHELVES_CABINET
+  useEffect(() => { refreshNextLabel(form.type, form.blood) }, [form.type, form.blood, refreshNextLabel])
+
+  // ── Shelves ของสถานที่ที่เลือก ──
+  const availableShelves = useMemo(
+    () => master.zones.find((z) => z.id === form.zoneId)?.shelves ?? [],
+    [master.zones, form.zoneId],
+  )
 
   // ── Form handlers ──
   const handleFormChange = (field: keyof StorageFormData, value: string) => {
     setForm((f) => {
       const updated = { ...f, [field]: value }
-      if (field === 'location') {
-        const shelves = value === 'room' ? SHELVES_ROOM : SHELVES_CABINET
-        updated.shelf = shelves[0]
+      if (field === 'zoneId') {
+        const zone = master.zones.find((z) => z.id === value)
+        updated.shelf = zone?.shelves[0]?.code || ''
       }
       return updated
     })
@@ -88,29 +119,17 @@ export default function useStorage() {
     const trimmed = unitInput.trim().toUpperCase()
     if (!trimmed) return
 
-    const newUnits = trimmed
-      .split(/[,\s\n]+/)
-      .map((u) => u.trim())
-      .filter(Boolean)
-
+    const newUnits = trimmed.split(/[,\s\n]+/).map((u) => u.trim()).filter(Boolean)
     const dupes: string[] = []
     const added: string[] = []
 
     for (const u of newUnits) {
-      if (scannedUnits.includes(u)) {
-        dupes.push(u)
-      } else {
-        added.push(u)
-      }
+      if (scannedUnits.includes(u) || added.includes(u)) dupes.push(u)
+      else added.push(u)
     }
 
-    if (added.length > 0) {
-      setScannedUnits((prev) => [...prev, ...added])
-    }
-    if (dupes.length > 0) {
-      setToast({ type: 'error', msg: `Unit ซ้ำ: ${dupes.join(', ')}` })
-    }
-
+    if (added.length > 0) setScannedUnits((prev) => [...prev, ...added])
+    if (dupes.length > 0) setToast({ type: 'error', msg: `Unit ซ้ำ: ${dupes.join(', ')}` })
     setUnitInput('')
   }
 
@@ -131,40 +150,45 @@ export default function useStorage() {
       setToast({ type: 'error', msg: 'กรุณาเพิ่ม Unit อย่างน้อย 1 รายการ' })
       return
     }
-
-    const boxLabel = generateBoxLabel()
-    const unitCount = scannedUnits.length
+    if (!form.type || !form.blood || !form.zoneId || !form.shelf) {
+      setToast({ type: 'error', msg: 'กรุณาเลือกชนิด หมู่เลือด สถานที่ และชั้นวางให้ครบ' })
+      return
+    }
 
     setSubmitting(true)
     try {
-      await storageService.createBox({
-        boxLabel,
+      const created = await storageService.createBox({
+        boxName: form.boxName.trim() || undefined,
         type: form.type,
         blood: form.blood,
-        location: form.location.toUpperCase(),
+        zoneId: form.zoneId,
         shelf: form.shelf,
         collectionDate: form.collectionDate,
         units: scannedUnits,
       })
-      setToast({ type: 'success', msg: `บันทึกกล่อง ${boxLabel} สำเร็จ (${unitCount} units)` })
 
-      // Auto open barcode print
+      const zoneName = master.zones.find((z) => z.id === form.zoneId)?.name ?? created.zoneName ?? ''
+
+      setToast({ type: 'success', msg: `บันทึกกล่อง ${created.boxLabel} สำเร็จ (${scannedUnits.length} units)` })
+
+      // ใช้เลขที่ backend ออกให้จริง
       setPrintData({
-        boxLabel,
-        type: form.type,
-        blood: form.blood,
-        location: form.location,
-        shelf: form.shelf,
-        collectionDate: form.collectionDate,
-        unitCount,
+        boxLabel: created.boxLabel,
+        type: created.type,
+        blood: created.blood,
+        location: zoneName,
+        shelf: created.shelf,
+        collectionDate: created.collectionDate,
+        unitCount: scannedUnits.length,
       })
 
       setScannedUnits([])
       setUnitInput('')
+      setForm((f) => ({ ...f, boxName: '' }))
       loadBoxes()
+      refreshNextLabel(form.type, form.blood)
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาด'
-      setToast({ type: 'error', msg })
+      setToast({ type: 'error', msg: err?.message || 'เกิดข้อผิดพลาด' })
     } finally {
       setSubmitting(false)
     }
@@ -176,7 +200,7 @@ export default function useStorage() {
       boxLabel: box.boxLabel,
       type: box.type,
       blood: box.blood,
-      location: box.location,
+      location: box.zoneName || String(box.location),
       shelf: box.shelf,
       collectionDate: box.collectionDate,
       unitCount: box.units.length,
@@ -187,26 +211,9 @@ export default function useStorage() {
   const dismissToast = () => setToast(null)
 
   return {
-    // data
-    boxes,
-    loading,
-    form,
-    scannedUnits,
-    unitInput,
-    submitting,
-    toast,
-    availableShelves,
-    boxLabel: generateBoxLabel(),
-    printData,
-    // actions
-    handleFormChange,
-    setUnitInput,
-    handleAddUnit,
-    handleUnitKeyDown,
-    handleRemoveUnit,
-    handleSubmit,
-    handlePrintBox,
-    closePrint,
-    dismissToast,
+    boxes, loading, form, master, scannedUnits, unitInput, submitting, toast,
+    availableShelves, nextLabel, printData,
+    handleFormChange, setUnitInput, handleAddUnit, handleUnitKeyDown,
+    handleRemoveUnit, handleSubmit, handlePrintBox, closePrint, dismissToast,
   }
 }

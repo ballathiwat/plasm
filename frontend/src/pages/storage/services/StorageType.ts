@@ -2,14 +2,18 @@
 //  src/pages/storage/services/StorageType.ts
 // ============================================================
 
-import type { BloodGroup, PlasmaType, StorageLocation, BoxStatus } from '../../../types/models'
+import type { StorageLocation, BoxStatus } from '../../../types/models'
 
 export interface StorageBoxItem {
   id: string
   boxLabel: string
-  type: PlasmaType
-  blood: BloodGroup
-  location: StorageLocation
+  boxName?: string | null
+  type: string
+  blood: string
+  year?: number
+  location: StorageLocation | string
+  zoneId?: string
+  zoneName?: string
   shelf: string
   collectionDate: string
   units: string[]
@@ -18,10 +22,11 @@ export interface StorageBoxItem {
 }
 
 export interface StorageFormData {
-  type: PlasmaType
-  blood: BloodGroup
+  boxName: string
+  type: string
+  blood: string
   collectionDate: string
-  location: StorageLocation
+  zoneId: string
   shelf: string
 }
 
@@ -30,5 +35,38 @@ export interface ToastState {
   msg: string
 }
 
-export const SHELVES_ROOM = ['M1', 'R1', 'R2', 'R3', 'L1', 'L2', 'L3']
-export const SHELVES_CABINET = ['C1', 'C2', 'C3']
+// ── Master data ที่ฟอร์มใช้ ──
+export interface MasterCode {
+  id: string
+  code: string
+  active: boolean
+}
+
+export interface MasterShelf {
+  id: string
+  code: string
+  active: boolean
+}
+
+export interface MasterZone {
+  id: string
+  name: string
+  active: boolean
+  shelves: MasterShelf[]
+}
+
+export interface MasterOptions {
+  plasmaTypes: MasterCode[]
+  bloodTypes: MasterCode[]
+  zones: MasterZone[]
+}
+
+export interface CreateBoxPayload {
+  boxName?: string
+  type: string
+  blood: string
+  zoneId: string
+  shelf: string
+  collectionDate: string
+  units: string[]
+}
