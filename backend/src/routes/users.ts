@@ -78,7 +78,7 @@ router.patch('/:id', adminOnly, async (req, res) => {
     const id = req.params.id as string
     const { name, role, active, password } = req.body
 
-    const data: { name?: string; role?: string; active?: boolean; password?: string } = {}
+    const data: any = {}
     if (name !== undefined) data.name = name
     if (role !== undefined) data.role = role.toUpperCase()
     if (active !== undefined) data.active = active
