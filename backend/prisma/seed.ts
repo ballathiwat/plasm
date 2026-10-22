@@ -131,16 +131,8 @@ async function main() {
   }
 
   console.log('\n🎉 Seed completed!')
-}
 
-main()
-  .catch((e) => {
-    console.error('❌ Seed error:', e)
-    process.exit(1)
-  })
-  .finally(() => prisma.$disconnect())
-
-    // ===== 6. Master data =====
+  // ===== 6. Master data =====
   const plasmaTypes = ['FFP', 'Cryo']
   for (const [i, code] of plasmaTypes.entries()) {
     await prisma.masterPlasmaType.upsert({
@@ -174,3 +166,14 @@ main()
     }
   }
   console.log('✅ Master data')
+
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Seed error:', e)
+    process.exit(1)
+  })
+  .finally(() => prisma.$disconnect())
+
+    
