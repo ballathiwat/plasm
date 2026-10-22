@@ -5,15 +5,9 @@
 import { Package, MapPin, Calendar, Droplets, Search } from 'lucide-react'
 import type { BloodGroup } from '../../../types/models'
 import type { SearchBoxGroup } from '../services/SearchType'
+import { groupColor,groupSurface, groupInk } from '../../../helpers/blood'
 
-const GROUP_COLOR: Record<BloodGroup, string> = {
-  A: 'var(--group-a, #3B82F6)', B: 'var(--group-b, #10B981)',
-  O: 'var(--group-o, #F59E0B)', AB: 'var(--group-ab, #8B5CF6)',
-}
-const GROUP_SURFACE: Record<BloodGroup, string> = {
-  A: 'var(--group-a-surface, #DBEAFE)', B: 'var(--group-b-surface, #D1FAE5)',
-  O: 'var(--group-o-surface, #FEF3C7)', AB: 'var(--group-ab-surface, #EDE9FE)',
-}
+
 
 interface Props {
   boxGroups: SearchBoxGroup[]
@@ -86,7 +80,7 @@ export default function SearchResults({ boxGroups, totalUnits, query, searched, 
               <span style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 38, height: 38, borderRadius: '50%',
-                background: GROUP_SURFACE[box.blood], color: GROUP_COLOR[box.blood],
+                background: groupSurface(box.blood), color: groupInk(box.blood),
                 fontSize: 14, fontWeight: 700, flexShrink: 0,
               }}>{box.blood}</span>
 

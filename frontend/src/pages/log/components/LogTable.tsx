@@ -4,15 +4,9 @@
 
 import { Package, PackageOpen } from 'lucide-react'
 import type { LogEntryItem } from '../services/LogType'
+import { groupColor,groupSurface, groupInk } from '../../../helpers/blood'
 
-const GROUP_COLOR: Record<string, string> = {
-  A: 'var(--group-a, #3B82F6)', B: 'var(--group-b, #10B981)',
-  O: 'var(--group-o, #F59E0B)', AB: 'var(--group-ab, #8B5CF6)',
-}
-const GROUP_SURFACE: Record<string, string> = {
-  A: 'var(--group-a-surface, #DBEAFE)', B: 'var(--group-b-surface, #D1FAE5)',
-  O: 'var(--group-o-surface, #FEF3C7)', AB: 'var(--group-ab-surface, #EDE9FE)',
-}
+
 
 interface Props {
   entries: LogEntryItem[]
@@ -92,8 +86,8 @@ export default function LogTable({ entries, loading, hasMore, onLoadMore }: Prop
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   width: 30, height: 22, borderRadius: 99,
                   fontSize: 11, fontWeight: 700,
-                  background: GROUP_SURFACE[entry.blood] || '#f0f0f0',
-                  color: GROUP_COLOR[entry.blood] || '#666',
+                  background: groupSurface(entry.blood) || '#f0f0f0',
+                  color: groupInk(entry.blood) || '#666',
                 }}>
                   {entry.blood}
                 </span>

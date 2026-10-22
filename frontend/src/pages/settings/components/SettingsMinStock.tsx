@@ -5,15 +5,8 @@
 import { Save } from 'lucide-react'
 import type { BloodGroup } from '../../../types/models'
 import type { MinimumStock } from '../services/SettingsType'
+import { groupColor,groupSurface, groupInk } from '../../../helpers/blood'
 
-const GROUP_COLOR: Record<BloodGroup, string> = {
-  A: 'var(--group-a, #3B82F6)', B: 'var(--group-b, #10B981)',
-  O: 'var(--group-o, #F59E0B)', AB: 'var(--group-ab, #8B5CF6)',
-}
-const GROUP_SURFACE: Record<BloodGroup, string> = {
-  A: 'var(--group-a-surface, #DBEAFE)', B: 'var(--group-b-surface, #D1FAE5)',
-  O: 'var(--group-o-surface, #FEF3C7)', AB: 'var(--group-ab-surface, #EDE9FE)',
-}
 
 interface Props {
   minimumStock: MinimumStock
@@ -47,7 +40,7 @@ export default function SettingsMinStock({ minimumStock, saving, onChange, onSav
             <span style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: 36, height: 36, borderRadius: '50%',
-              background: GROUP_SURFACE[g], color: GROUP_COLOR[g],
+              background: groupSurface(g), color: groupInk(g),
               fontSize: 14, fontWeight: 700, flexShrink: 0,
             }}>{g}</span>
             <div style={{ flex: 1 }}>
