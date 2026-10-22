@@ -31,3 +31,24 @@ export interface ToastState {
   type: 'success' | 'error'
   msg: string
 }
+
+export interface CodeItem {
+  id: string
+  code: string
+  name: string | null
+  active: boolean
+  sort: number
+}
+
+export interface ShelfItem {
+  id: string
+  code: string
+  active: boolean
+}
+
+export interface ZoneItem {
+  id: string
+  name: string
+  active: boolean
+  shelves: ShelfItem[]
+}

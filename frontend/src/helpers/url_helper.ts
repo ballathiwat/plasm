@@ -35,3 +35,9 @@ export const PATCH_USER = `${API}/users`    // + /:id
 // ===== Settings =====
 export const GET_SETTINGS = `${API}/settings`
 export const PUT_SETTINGS = `${API}/settings`
+
+// ===== Master data =====
+export const MASTER_PLASMA_TYPES = `${API}/master/plasma-types`
+export const MASTER_BLOOD_TYPES = `${API}/master/blood-types`
+export const MASTER_ZONES = `${API}/master/zones`
+export const MASTER_SHELVES = `${API}/master/shelves`
