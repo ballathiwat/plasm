@@ -3,13 +3,9 @@
 // ============================================================
 
 import { X, Printer } from 'lucide-react'
-import type { BloodGroup } from '../../../types/models'
-import type { StorageFormData } from '../services/StorageType'
-
-const GROUP_COLOR: Record<BloodGroup, string> = {
-  A: 'var(--group-a, #3B82F6)', B: 'var(--group-b, #10B981)',
-  O: 'var(--group-o, #F59E0B)', AB: 'var(--group-ab, #8B5CF6)',
-}
+import type {
+  StorageFormData, MasterOptions, MasterShelf,
+} from '../services/StorageType'
 
 const inputStyle: React.CSSProperties = {
   padding: '10px 14px',
@@ -22,16 +18,18 @@ const inputStyle: React.CSSProperties = {
 }
 
 const labelStyle: React.CSSProperties = {
+  display: 'block',
   fontSize: 13, fontWeight: 600, color: 'var(--text-primary, #18181B)', marginBottom: 6,
 }
 
 interface Props {
   form: StorageFormData
-  boxLabel: string
+  master: MasterOptions
+  nextLabel: string
   scannedUnits: string[]
   unitInput: string
   submitting: boolean
-  availableShelves: string[]
+  availableShelves: MasterShelf[]
   onFormChange: (field: keyof StorageFormData, value: string) => void
   onUnitInputChange: (value: string) => void
   onAddUnit: () => void
@@ -41,9 +39,11 @@ interface Props {
 }
 
 export default function StorageNewBoxForm({
-  form, boxLabel, scannedUnits, unitInput, submitting, availableShelves,
+  form, master, nextLabel, scannedUnits, unitInput, submitting, availableShelves,
   onFormChange, onUnitInputChange, onAddUnit, onUnitKeyDown, onRemoveUnit, onSubmit,
 }: Props) {
+  const ready = !!(form.type && form.blood && form.zoneId && form.shelf)
+
   return (
     <div style={{
       background: 'var(--surface, #fff)',
@@ -57,38 +57,52 @@ export default function StorageNewBoxForm({
         กล่องใหม่
       </h3>
 
-      {/* ── Row 1: main fields ── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
         gap: 16, marginBottom: 20,
       }}>
-        {/* Box Label (auto) */}
+        {/* เลขกล่อง (อัตโนมัติ) */}
         <div>
           <label style={labelStyle}>หมายเลขกล่อง (อัตโนมัติ)</label>
           <input
             type="text"
-            value={boxLabel}
+            value={nextLabel || '-'}
             readOnly
             style={{ ...inputStyle, background: 'var(--surface-raised, #F4F4F5)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}
           />
         </div>
 
-        {/* Blood Group */}
+        {/* ชื่อกล่อง */}
         <div>
-          <label style={labelStyle}>หมู่เลือด</label>
-          <select
-            value={form.blood}
-            onChange={(e) => onFormChange('blood', e.target.value)}
+          <label style={labelStyle}>ชื่อกล่อง (ไม่บังคับ)</label>
+          <input
+            type="text"
+            placeholder="เช่น กล่องสำรองฉุกเฉิน"
+            value={form.boxName}
+            maxLength={60}
+            onChange={(e) => onFormChange('boxName', e.target.value)}
             style={inputStyle}
-          >
-            {(['A', 'B', 'O', 'AB'] as const).map((g) => (
-              <option key={g} value={g}>{g}</option>
-            ))}
+          />
+        </div>
+
+        {/* ชนิด */}
+        <div>
+          <label style={labelStyle}>ชนิดพลาสมา</label>
+          <select value={form.type} onChange={(e) => onFormChange('type', e.target.value)} style={inputStyle}>
+            {master.plasmaTypes.map((p) => <option key={p.id} value={p.code}>{p.code}</option>)}
           </select>
         </div>
 
-        {/* Collection Date */}
+        {/* หมู่เลือด */}
+        <div>
+          <label style={labelStyle}>หมู่เลือด</label>
+          <select value={form.blood} onChange={(e) => onFormChange('blood', e.target.value)} style={inputStyle}>
+            {master.bloodTypes.map((b) => <option key={b.id} value={b.code}>{b.code}</option>)}
+          </select>
+        </div>
+
+        {/* วันที่เก็บ */}
         <div>
           <label style={labelStyle}>วันที่เก็บ</label>
           <input
@@ -99,33 +113,24 @@ export default function StorageNewBoxForm({
           />
         </div>
 
-        {/* Location */}
+        {/* สถานที่ */}
         <div>
           <label style={labelStyle}>ตำแหน่งจัดเก็บ</label>
-          <select
-            value={form.location}
-            onChange={(e) => onFormChange('location', e.target.value)}
-            style={inputStyle}
-          >
-            <option value="room">ห้อง -30°C</option>
-            <option value="cabinet">ตู้ -30°C</option>
+          <select value={form.zoneId} onChange={(e) => onFormChange('zoneId', e.target.value)} style={inputStyle}>
+            {master.zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
           </select>
         </div>
 
-        {/* Shelf */}
+        {/* ชั้นวาง */}
         <div>
           <label style={labelStyle}>ชั้นวาง</label>
-          <select
-            value={form.shelf}
-            onChange={(e) => onFormChange('shelf', e.target.value)}
-            style={inputStyle}
-          >
-            {availableShelves.map((s) => <option key={s} value={s}>{s}</option>)}
+          <select value={form.shelf} onChange={(e) => onFormChange('shelf', e.target.value)} style={inputStyle}>
+            {availableShelves.map((s) => <option key={s.id} value={s.code}>{s.code}</option>)}
           </select>
         </div>
       </div>
 
-      {/* ── Unit input ── */}
+      {/* Unit input */}
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>
           Unit ที่สแกนแล้ว · {scannedUnits.length} units
@@ -134,7 +139,6 @@ export default function StorageNewBoxForm({
           </span>
         </label>
 
-        {/* Input row */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <input
             type="text"
@@ -156,7 +160,6 @@ export default function StorageNewBoxForm({
           </button>
         </div>
 
-        {/* Unit pills */}
         {scannedUnits.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {scannedUnits.map((unit) => (
@@ -166,15 +169,12 @@ export default function StorageNewBoxForm({
                 border: '1px solid var(--border, #E4E4E7)',
                 background: 'var(--surface, #fff)',
                 fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600,
-                color: GROUP_COLOR[form.blood] || 'var(--text-primary)',
+                color: 'var(--primary, #2563EB)',
               }}>
                 {unit}
                 <button
                   onClick={() => onRemoveUnit(unit)}
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    padding: 0, display: 'flex', alignItems: 'center',
-                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
                 >
                   <X size={13} color="var(--text-secondary)" />
                 </button>
@@ -184,16 +184,16 @@ export default function StorageNewBoxForm({
         )}
       </div>
 
-      {/* ── Submit ── */}
+      {/* Submit */}
       <button
         onClick={onSubmit}
-        disabled={submitting || scannedUnits.length === 0}
+        disabled={submitting || scannedUnits.length === 0 || !ready}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           padding: '12px 28px', borderRadius: 'var(--radius-sm, 6px)',
           border: 'none', background: 'var(--primary, #2563EB)', color: '#fff',
           fontWeight: 600, fontSize: 14, cursor: submitting ? 'wait' : 'pointer',
-          opacity: submitting || scannedUnits.length === 0 ? 0.6 : 1,
+          opacity: submitting || scannedUnits.length === 0 || !ready ? 0.6 : 1,
         }}
       >
         <Printer size={16} />

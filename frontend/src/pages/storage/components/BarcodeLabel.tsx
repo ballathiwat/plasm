@@ -54,10 +54,7 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     }
   }, [data.boxLabel]);
 
-  const locText =
-    data.location === "room" || data.location === "ROOM"
-      ? "ห้อง -30°C"
-      : "ตู้ -30°C";
+  const locText = data.location;
 
   const handlePrint = () => {
     const area = document.getElementById("barcode-print-area");
