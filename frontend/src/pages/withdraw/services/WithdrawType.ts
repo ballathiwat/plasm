@@ -18,6 +18,7 @@ export interface WithdrawBoxItem {
   status: BoxStatus
   storedAt: string
   withdrawnAt?: string
+  boxName?: string | null
 }
 
 // ── Unit detail (from GET /boxes/:id) ──
@@ -43,6 +44,7 @@ export interface WithdrawBoxDetail {
   status: BoxStatus
   storedAt: string
   withdrawnAt?: string
+  boxName?: string | null
 }
 
 // ── Confirm action ──

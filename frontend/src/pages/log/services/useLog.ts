@@ -2,7 +2,7 @@
 //  src/pages/log/services/useLog.ts
 // ============================================================
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import logService from './LogService'
 import type { LogEntryItem, LogFilters } from './LogType'
 
@@ -16,16 +16,16 @@ const INITIAL_FILTERS: LogFilters = {
 const PAGE_SIZE = 30
 
 export default function useLog() {
-  const [entries, setEntries] = useState<LogEntryItem[]>([])
+  const [entries, setEntries] = useState<LogEntryItem[]>([])   // ข้อมูลดิบจาก server
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<LogFilters>(INITIAL_FILTERS)
-  const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
+  const reqId = useRef(0)                                      // กันคำตอบเก่าทับของใหม่
 
-  const loadLog = useCallback(async (reset = false) => {
+  const loadLog = useCallback(async (offset: number) => {
+    const id = ++reqId.current
     setLoading(true)
     try {
-      const offset = reset ? 0 : page * PAGE_SIZE
       const params: Record<string, string> = {
         limit: String(PAGE_SIZE),
         offset: String(offset),
@@ -34,23 +34,19 @@ export default function useLog() {
       if (filters.blood) params.blood = filters.blood
 
       const data = await logService.getLog(params)
+      if (id !== reqId.current) return
 
-      if (reset) {
-        setEntries(data)
-        setPage(0)
-      } else {
-        setEntries((prev) => reset ? data : [...prev, ...data])
-      }
+      setEntries((prev) => (offset === 0 ? data : [...prev, ...data]))
       setHasMore(data.length >= PAGE_SIZE)
     } catch {
-      if (reset) setEntries([])
+      if (id === reqId.current && offset === 0) setEntries([])
     } finally {
-      setLoading(false)
+      if (id === reqId.current) setLoading(false)
     }
-  }, [filters, page])
+  }, [filters.action, filters.blood])
 
-  // Load on mount + filter change
-  useEffect(() => { loadLog(true) }, [filters.action, filters.blood])
+  // โหลดใหม่เมื่อเปลี่ยนตัวกรอง
+  useEffect(() => { loadLog(0) }, [loadLog])
 
   const handleFilterChange = (field: keyof LogFilters, value: string) => {
     setFilters((f) => ({ ...f, [field]: value }))
@@ -59,20 +55,14 @@ export default function useLog() {
   const resetFilters = () => setFilters(INITIAL_FILTERS)
 
   const loadMore = () => {
-    setPage((p) => p + 1)
-    loadLog(false)
+    if (!loading) loadLog(entries.length)
   }
 
-  // Client-side date filter (backend doesn't support date range yet)
+  // Client-side date filter (backend ยังไม่รองรับช่วงวันที่)
   const filteredEntries = entries.filter((e) => {
-    if (filters.dateFrom) {
-      const entryDate = e.timestamp.split('T')[0]
-      if (entryDate < filters.dateFrom) return false
-    }
-    if (filters.dateTo) {
-      const entryDate = e.timestamp.split('T')[0]
-      if (entryDate > filters.dateTo) return false
-    }
+    const entryDate = e.timestamp.split('T')[0]
+    if (filters.dateFrom && entryDate < filters.dateFrom) return false
+    if (filters.dateTo && entryDate > filters.dateTo) return false
     return true
   })
 

@@ -43,6 +43,7 @@ router.get("/", async (req, res) => {
       type: e.box?.type || "FFP",
       blood: e.box?.blood || "-",
       units: [],
+      unitCount: e.unitCount,
       location: e.box ? locationKey(e.box.zone) : undefined,
       zoneName: e.box?.zone?.name,
       shelf: e.box?.shelf,

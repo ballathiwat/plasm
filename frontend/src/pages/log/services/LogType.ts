@@ -15,6 +15,7 @@ export interface LogEntryItem {
   timestamp: string
   detail: string
   performedBy?: string
+  unitCount?: number
 }
 
 export interface LogFilters {

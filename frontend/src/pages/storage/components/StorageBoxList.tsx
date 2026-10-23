@@ -5,9 +5,7 @@
 import { useState } from "react";
 import { Printer, Search } from "lucide-react";
 import type { StorageBoxItem } from "../services/StorageType";
-import {groupSurface, groupInk } from '../../../helpers/blood'
-
-
+import { groupSurface, groupInk } from "../../../helpers/blood";
 
 interface Props {
   boxes: StorageBoxItem[];
@@ -167,6 +165,7 @@ export default function StorageBoxList({ boxes, loading, onPrintBox }: Props) {
                       color: "var(--text-primary)",
                     }}
                   >
+                    {box.boxLabel}
                     {box.boxName && (
                       <span
                         style={{
