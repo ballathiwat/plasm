@@ -27,6 +27,7 @@ export interface LogEntryItem {
   units: string[]
   timestamp: string
   detail: string
+  unitCount?: number
 }
 
 export type StockLevel = 'danger' | 'warning' | 'normal' | 'none'
