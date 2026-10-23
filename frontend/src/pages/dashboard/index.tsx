@@ -12,14 +12,8 @@ import DashboardRecentActivity from './components/DashboardRecentActivity'
 
 const DashboardPage = () => {
   const {
-    stockData,
-    dailyData,
-    logEntries,
-    loading,
-    total,
-    lowGroups,
-    warnGroups,
-    maxDailyValue,
+    stockData, dailyData, logEntries, loading,
+    dailyGroups, total, lowGroups, warnGroups, maxDailyValue,
   } = useDashboard()
 
   if (loading || !stockData) return null
@@ -30,7 +24,7 @@ const DashboardPage = () => {
       <DashboardAlerts lowGroups={lowGroups} warnGroups={warnGroups} />
       <DashboardStockCards data={stockData} />
       <DashboardCharts stockData={stockData} />
-      <DashboardDaily dailyData={dailyData} maxDailyValue={maxDailyValue} />
+      <DashboardDaily dailyData={dailyData} groups={dailyGroups} maxDailyValue={maxDailyValue} />
       <DashboardRecentActivity entries={logEntries} />
     </div>
   )

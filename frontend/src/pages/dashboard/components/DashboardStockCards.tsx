@@ -4,28 +4,28 @@
 
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { StockSummary } from '../services/DashboardType'
-import { BLOOD_GROUPS,levelOf, levelColor, levelText } from '../services/DashboardType'
-import { groupSurface, groupColor, } from '../../../helpers/blood'
+import { levelOf, levelColor, levelText } from '../services/DashboardType'
+import { groupSurface, groupInk } from '../../../helpers/blood'
 
 interface Props {
   data: StockSummary
 }
 
 export default function DashboardStockCards({ data }: Props) {
-  const { stocks, minimum, change } = data
+  const { groups, stocks, minimum, change } = data
 
   return (
     <div style={{
       display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
       gap: 12, marginBottom: 16,
     }}>
-      {BLOOD_GROUPS.map((g) => {
-        const count = stocks[g]
+      {groups.map((g) => {
+        const count = stocks[g] || 0
         const min = minimum[g]
         const lv = levelOf(count, min)
         const color = levelColor(lv)
         const pct = change[g] || 0
-        const progress = Math.min(count / min, 1.5)
+        const progress = min ? Math.min(count / min, 1) : 0
 
         return (
           <div key={g} style={{
@@ -40,8 +40,8 @@ export default function DashboardStockCards({ data }: Props) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  width: 32, height: 32, borderRadius: '50%',
-                  background: groupSurface(g), color: groupColor(g),
+                  minWidth: 32, height: 32, padding: '0 6px', borderRadius: 99,
+                  background: groupSurface(g), color: groupInk(g),
                   fontSize: 13, fontWeight: 700,
                 }}>{g}</span>
                 <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary, #18181B)' }}>
@@ -70,14 +70,14 @@ export default function DashboardStockCards({ data }: Props) {
                 {levelText(lv)}
               </span>
               <span style={{ fontSize: 12, color: 'var(--text-secondary, #71717A)' }}>
-                ขั้นต่ำ {min} units
+                {min ? `ขั้นต่ำ ${min} units` : '—'}
               </span>
             </div>
 
             <div style={{ height: 6, borderRadius: 99, background: 'var(--surface-raised, #F4F4F5)' }}>
               <div style={{
                 height: '100%',
-                width: `${Math.min(progress, 1) * 100}%`,
+                width: `${progress * 100}%`,
                 borderRadius: 99, background: color,
                 transformOrigin: 'left',
                 animation: 'plasm-grow 0.9s cubic-bezier(.2,.8,.2,1)',
