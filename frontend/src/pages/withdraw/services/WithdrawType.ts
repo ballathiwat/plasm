@@ -2,15 +2,16 @@
 //  src/pages/withdraw/services/WithdrawType.ts
 // ============================================================
 
-import type { BloodGroup, PlasmaType, StorageLocation, BoxStatus } from '../../../types/models'
+import type { BoxStatus } from '../../../types/models'
 
 // ── Box item (from GET /boxes list) ──
 export interface WithdrawBoxItem {
   id: string
   boxLabel: string
-  type: PlasmaType
-  blood: BloodGroup
-  location: StorageLocation
+  type: string
+  blood: string
+  location: string
+  zoneName?: string
   shelf: string
   collectionDate: string
   units: string[]
@@ -30,9 +31,10 @@ export interface WithdrawUnitInfo {
 export interface WithdrawBoxDetail {
   id: string
   boxLabel: string
-  type: PlasmaType
-  blood: BloodGroup
-  location: StorageLocation
+  type: string
+  blood: string
+  location: string
+  zoneName?: string
   shelf: string
   collectionDate: string
   units: WithdrawUnitInfo[]

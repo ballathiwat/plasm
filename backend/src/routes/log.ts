@@ -44,6 +44,7 @@ router.get("/", async (req, res) => {
       blood: e.box?.blood || "-",
       units: [],
       location: e.box ? locationKey(e.box.zone) : undefined,
+      zoneName: e.box?.zone?.name,
       shelf: e.box?.shelf,
       timestamp: e.timestamp.toISOString(),
       detail: e.detail,

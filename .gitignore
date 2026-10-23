@@ -30,6 +30,8 @@ npm-debug.log*
 # Database
 *.sql
 !schema.sql
+# Prisma migrations ต้องเข้า git — deploy.yml รัน `prisma migrate deploy` บน server
+!backend/prisma/migrations/**/*.sql
 
 # Secrets
 *.key

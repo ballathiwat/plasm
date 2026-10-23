@@ -2,22 +2,46 @@
 //  src/pages/map/services/MapType.ts
 // ============================================================
 
-import type { BloodGroup } from '../../../types/models'
+// ── ข้อมูลดิบจาก backend ──
+export interface MapBoxRaw {
+  id: string
+  blood: string
+  zoneId: string
+  zoneName?: string
+  shelf: string
+  units: string[]
+  status: string
+}
 
+export interface MapZoneRaw {
+  id: string
+  name: string
+  legacyKey: string | null
+  active: boolean
+  shelves: { id: string; code: string; active: boolean }[]
+}
+
+// ── ข้อมูลที่สรุปแล้วสำหรับแสดงผล ──
 export interface ShelfSummary {
   shelf: string
   totalBoxes: number
   totalUnits: number
-  byBlood: Record<BloodGroup, number>
+  byBlood: Record<string, number>
 }
 
-export interface LocationSummary {
-  location: 'room' | 'cabinet'
+export interface ZoneSummary {
+  id: string
+  name: string
+  /** 'ROOM' → ใช้ผังพื้นห้อง (ROOM_LAYOUT), อื่น ๆ → แสดงเป็นรายการชั้น */
+  legacyKey: string | null
+  active: boolean
   shelves: ShelfSummary[]
   totalBoxes: number
   totalUnits: number
 }
 
+// ผังพื้นห้อง -30°C เดิม (3x3) — ใช้เฉพาะสถานที่ legacyKey = 'ROOM'
+// ชั้นที่ไม่อยู่ในผังนี้ (เช่น R4 ที่เพิ่มใหม่) จะถูกแสดงแยกต่อท้ายอัตโนมัติ
 export const ROOM_LAYOUT: { shelf: string; row: number; col: number; label: string }[] = [
   { shelf: 'L3', row: 0, col: 0, label: 'L3' },
   { shelf: 'M1', row: 0, col: 1, label: 'M1' },
@@ -30,4 +54,4 @@ export const ROOM_LAYOUT: { shelf: string; row: number; col: number; label: stri
   { shelf: 'R1', row: 2, col: 2, label: 'R1' },
 ]
 
-export const CABINET_SHELVES = ['C1', 'C2', 'C3']
+export const ROOM_LEGACY_KEY = 'ROOM'

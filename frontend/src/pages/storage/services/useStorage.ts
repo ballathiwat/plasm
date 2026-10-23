@@ -9,6 +9,7 @@ import type {
   StorageFormData,
   ToastState,
   MasterOptions,
+  QuickAddKind,
 } from './StorageType'
 import type { BarcodeLabelData } from '../components/BarcodeLabel'
 
@@ -47,21 +48,28 @@ export default function useStorage() {
 
   useEffect(() => { loadBoxes() }, [loadBoxes])
 
-  // ── Load master (เฉพาะรายการที่ active) + ตั้งค่าเริ่มต้นของฟอร์ม ──
-  useEffect(() => {
-    Promise.all([
+  // ── Load master (เฉพาะรายการที่ active) ──
+  const loadMaster = useCallback(async (): Promise<MasterOptions> => {
+    const [p, b, z] = await Promise.all([
       storageService.listPlasmaTypes(),
       storageService.listBloodTypes(),
       storageService.listZones(),
     ])
-      .then(([p, b, z]) => {
-        const plasmaTypes = p.filter((x) => x.active)
-        const bloodTypes = b.filter((x) => x.active)
-        const zones = z
-          .filter((x) => x.active)
-          .map((x) => ({ ...x, shelves: x.shelves.filter((s) => s.active) }))
-        setMaster({ plasmaTypes, bloodTypes, zones })
+    const options: MasterOptions = {
+      plasmaTypes: p.filter((x) => x.active),
+      bloodTypes: b.filter((x) => x.active),
+      zones: z
+        .filter((x) => x.active)
+        .map((x) => ({ ...x, shelves: x.shelves.filter((s) => s.active) })),
+    }
+    setMaster(options)
+    return options
+  }, [])
 
+  // ── โหลดครั้งแรก + ตั้งค่าเริ่มต้นของฟอร์ม ──
+  useEffect(() => {
+    loadMaster()
+      .then(({ plasmaTypes, bloodTypes, zones }) => {
         setForm((f) => ({
           ...f,
           type: f.type || plasmaTypes[0]?.code || '',
@@ -73,7 +81,7 @@ export default function useStorage() {
       .catch((err: any) => {
         setToast({ type: 'error', msg: err?.message || 'โหลดข้อมูลหลักไม่สำเร็จ' })
       })
-  }, [])
+  }, [loadMaster])
 
   // Auto-hide toast
   useEffect(() => {
@@ -112,6 +120,48 @@ export default function useStorage() {
       }
       return updated
     })
+  }
+
+  // ── เพิ่มชนิด/หมู่เลือด/สถานที่/ชั้นวางใหม่ทันทีหน้างาน แล้วเลือกให้เลย ──
+  const handleQuickAdd = async (kind: QuickAddKind, value: string): Promise<boolean> => {
+    const v = value.trim()
+    if (!v) return false
+
+    try {
+      let patch: Partial<StorageFormData>
+      let msg: string
+
+      if (kind === 'type') {
+        const created = await storageService.createPlasmaType(v)
+        patch = { type: created.code }
+        msg = `เพิ่มชนิด "${created.code}" สำเร็จ`
+      } else if (kind === 'blood') {
+        const created = await storageService.createBloodType(v)
+        patch = { blood: created.code }
+        msg = `เพิ่มหมู่เลือด "${created.code}" สำเร็จ`
+      } else if (kind === 'zone') {
+        const created = await storageService.createZone(v)
+        // สถานที่ใหม่ยังไม่มีชั้นวาง → เคลียร์ชั้นไว้ให้เพิ่มต่อ
+        patch = { zoneId: created.id, shelf: '' }
+        msg = `เพิ่มสถานที่ "${created.name}" สำเร็จ — เพิ่มชั้นวางต่อได้เลย`
+      } else {
+        if (!form.zoneId) {
+          setToast({ type: 'error', msg: 'กรุณาเลือกสถานที่ก่อนเพิ่มชั้นวาง' })
+          return false
+        }
+        const created = await storageService.createShelf(form.zoneId, v)
+        patch = { shelf: created.code }
+        msg = `เพิ่มชั้น "${created.code}" สำเร็จ`
+      }
+
+      await loadMaster()
+      setForm((f) => ({ ...f, ...patch }))
+      setToast({ type: 'success', msg })
+      return true
+    } catch (err: any) {
+      setToast({ type: 'error', msg: err?.message || 'เกิดข้อผิดพลาด' })
+      return false
+    }
   }
 
   // ── Unit scanning ──
@@ -213,7 +263,7 @@ export default function useStorage() {
   return {
     boxes, loading, form, master, scannedUnits, unitInput, submitting, toast,
     availableShelves, nextLabel, printData,
-    handleFormChange, setUnitInput, handleAddUnit, handleUnitKeyDown,
+    handleFormChange, handleQuickAdd, setUnitInput, handleAddUnit, handleUnitKeyDown,
     handleRemoveUnit, handleSubmit, handlePrintBox, closePrint, dismissToast,
   }
 }

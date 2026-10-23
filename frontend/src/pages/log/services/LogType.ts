@@ -2,16 +2,15 @@
 //  src/pages/log/services/LogType.ts
 // ============================================================
 
-import type { BloodGroup, PlasmaType } from '../../../types/models'
-
 export interface LogEntryItem {
   id: string
   action: 'store' | 'withdraw'
   boxLabel: string
-  type: PlasmaType
-  blood: BloodGroup | string
+  type: string
+  blood: string
   units: string[]
   location?: string
+  zoneName?: string
   shelf?: string
   timestamp: string
   detail: string

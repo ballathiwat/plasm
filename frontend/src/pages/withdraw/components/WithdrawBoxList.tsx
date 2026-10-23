@@ -5,6 +5,8 @@
 import { Search, ChevronRight } from 'lucide-react'
 import type { WithdrawBoxItem } from '../services/WithdrawType'
 import {groupSurface, groupInk } from '../../../helpers/blood'
+import useBloodTypes from '../../../helpers/useBloodTypes'
+import { zoneLabel } from '../../../helpers/zone'
 
 
 
@@ -34,6 +36,8 @@ export default function WithdrawBoxList({
   searchQuery, filterBlood,
   onSearchChange, onFilterBloodChange, onSelectBox,
 }: Props) {
+  const bloodTypes = useBloodTypes()
+
   return (
     <div style={{ flex: '1 1 400px', minWidth: 0 }}>
 
@@ -50,7 +54,7 @@ export default function WithdrawBoxList({
         </div>
         <select value={filterBlood} onChange={(e) => onFilterBloodChange(e.target.value)} style={{ ...inputStyle, width: 'auto' }}>
           <option value="">ทุกหมู่เลือด</option>
-          {(['A', 'B', 'O', 'AB'] as const).map((g) => <option key={g} value={g}>{g}</option>)}
+          {bloodTypes.map((g) => <option key={g} value={g}>{g}</option>)}
         </select>
       </div>
 
@@ -90,7 +94,7 @@ export default function WithdrawBoxList({
                     {box.boxLabel}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-                    {box.type} · {box.location === 'room' ? 'ห้อง' : 'ตู้'} -30°C · ชั้น {box.shelf} · {box.units.length} units
+                    {box.type} · {zoneLabel(box.zoneName, box.location)} · ชั้น {box.shelf} · {box.units.length} units
                   </div>
                 </div>
 

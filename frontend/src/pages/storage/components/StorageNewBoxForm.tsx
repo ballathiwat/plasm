@@ -4,8 +4,9 @@
 
 import { X, Printer } from 'lucide-react'
 import type {
-  StorageFormData, MasterOptions, MasterShelf,
+  StorageFormData, MasterOptions, MasterShelf, QuickAddKind,
 } from '../services/StorageType'
+import StorageQuickAdd from './StorageQuickAdd'
 
 
 const inputStyle: React.CSSProperties = {
@@ -32,6 +33,7 @@ interface Props {
   submitting: boolean
   availableShelves: MasterShelf[]
   onFormChange: (field: keyof StorageFormData, value: string) => void
+  onQuickAdd: (kind: QuickAddKind, value: string) => Promise<boolean>
   onUnitInputChange: (value: string) => void
   onAddUnit: () => void
   onUnitKeyDown: (e: React.KeyboardEvent) => void
@@ -41,7 +43,7 @@ interface Props {
 
 export default function StorageNewBoxForm({
   form, master, nextLabel, scannedUnits, unitInput, submitting, availableShelves,
-  onFormChange, onUnitInputChange, onAddUnit, onUnitKeyDown, onRemoveUnit, onSubmit,
+  onFormChange, onQuickAdd, onUnitInputChange, onAddUnit, onUnitKeyDown, onRemoveUnit, onSubmit,
 }: Props) {
   const ready = !!(form.type && form.blood && form.zoneId && form.shelf)
 
@@ -93,6 +95,7 @@ export default function StorageNewBoxForm({
           <select value={form.type} onChange={(e) => onFormChange('type', e.target.value)} style={inputStyle}>
             {master.plasmaTypes.map((p) => <option key={p.id} value={p.code}>{p.code}</option>)}
           </select>
+          <StorageQuickAdd placeholder="ชื่อชนิดใหม่ เช่น IFFP" onAdd={(v) => onQuickAdd('type', v)} />
         </div>
 
         {/* หมู่เลือด */}
@@ -101,6 +104,7 @@ export default function StorageNewBoxForm({
           <select value={form.blood} onChange={(e) => onFormChange('blood', e.target.value)} style={inputStyle}>
             {master.bloodTypes.map((b) => <option key={b.id} value={b.code}>{b.code}</option>)}
           </select>
+          <StorageQuickAdd placeholder="หมู่เลือดใหม่ เช่น A-" uppercase onAdd={(v) => onQuickAdd('blood', v)} />
         </div>
 
         {/* วันที่เก็บ */}
@@ -120,6 +124,7 @@ export default function StorageNewBoxForm({
           <select value={form.zoneId} onChange={(e) => onFormChange('zoneId', e.target.value)} style={inputStyle}>
             {master.zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
           </select>
+          <StorageQuickAdd placeholder="ชื่อห้อง/ตู้ใหม่" maxLength={60} onAdd={(v) => onQuickAdd('zone', v)} />
         </div>
 
         {/* ชั้นวาง */}
@@ -128,6 +133,12 @@ export default function StorageNewBoxForm({
           <select value={form.shelf} onChange={(e) => onFormChange('shelf', e.target.value)} style={inputStyle}>
             {availableShelves.map((s) => <option key={s.id} value={s.code}>{s.code}</option>)}
           </select>
+          <StorageQuickAdd
+            placeholder="ชั้นใหม่ เช่น R4"
+            uppercase
+            disabled={!form.zoneId}
+            onAdd={(v) => onQuickAdd('shelf', v)}
+          />
         </div>
       </div>
 
