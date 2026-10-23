@@ -5,6 +5,7 @@
 import { Package, MapPin, Calendar, Droplets, Search } from 'lucide-react'
 import type { SearchBoxGroup } from '../services/SearchType'
 import {groupSurface, groupInk } from '../../../helpers/blood'
+import { zoneLabel } from '../../../helpers/zone'
 
 
 
@@ -92,7 +93,7 @@ export default function SearchResults({ boxGroups, totalUnits, query, searched, 
                     <Droplets size={11} /> {box.type}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <MapPin size={11} /> {box.location === 'room' ? 'ห้อง' : 'ตู้'} -30°C · ชั้น {box.shelf}
+                    <MapPin size={11} /> {zoneLabel(box.zoneName, box.location)} · ชั้น {box.shelf}
                   </span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                     <Calendar size={11} /> จัดเก็บ {new Date(box.collectionDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}

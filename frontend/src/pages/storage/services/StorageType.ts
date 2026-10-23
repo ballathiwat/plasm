@@ -2,7 +2,10 @@
 //  src/pages/storage/services/StorageType.ts
 // ============================================================
 
-import type { StorageLocation, BoxStatus } from '../../../types/models'
+import type { BoxStatus } from '../../../types/models'
+
+/** ชนิดของค่าที่เพิ่มได้ทันทีจากฟอร์มจัดเก็บ */
+export type QuickAddKind = 'type' | 'blood' | 'zone' | 'shelf'
 
 export interface StorageBoxItem {
   id: string
@@ -11,7 +14,7 @@ export interface StorageBoxItem {
   type: string
   blood: string
   year?: number
-  location: StorageLocation | string
+  location: string
   zoneId?: string
   zoneName?: string
   shelf: string

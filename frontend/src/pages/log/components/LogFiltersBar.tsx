@@ -4,6 +4,7 @@
 
 import { Filter, RotateCcw } from 'lucide-react'
 import type { LogFilters } from '../services/LogType'
+import useBloodTypes from '../../../helpers/useBloodTypes'
 
 const inputStyle: React.CSSProperties = {
   padding: '8px 12px',
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
+  const bloodTypes = useBloodTypes()
   const hasFilter = filters.action || filters.blood || filters.dateFrom || filters.dateTo
 
   return (
@@ -37,7 +39,7 @@ export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
 
       <select value={filters.blood} onChange={(e) => onChange('blood', e.target.value)} style={inputStyle}>
         <option value="">ทุกหมู่เลือด</option>
-        {['A', 'B', 'O', 'AB'].map((g) => <option key={g} value={g}>{g}</option>)}
+        {bloodTypes.map((g) => <option key={g} value={g}>{g}</option>)}
       </select>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
