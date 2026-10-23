@@ -2,7 +2,7 @@
 //  src/pages/search/services/SearchType.ts
 // ============================================================
 
-import type { BloodGroup, PlasmaType, StorageLocation, BoxStatus } from '../../../types/models'
+import type { BoxStatus } from '../../../types/models'
 
 export interface SearchUnitResult {
   id: string
@@ -11,9 +11,10 @@ export interface SearchUnitResult {
   box: {
     id: string
     boxLabel: string
-    blood: BloodGroup
-    type: PlasmaType
-    location: StorageLocation
+    blood: string
+    type: string
+    location: string
+    zoneName?: string
     shelf: string
     status: BoxStatus
     collectionDate: string

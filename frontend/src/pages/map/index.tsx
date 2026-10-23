@@ -3,15 +3,28 @@
 // ============================================================
 
 import useMap from './services/useMap'
-import MapRoomGrid from './components/MapRoomGrid'
-import MapCabinetGrid from './components/MapCabinetGrid'
+import MapZoneCard from './components/MapZoneCard'
+
+// สีการ์ดสรุปของแต่ละสถานที่ (วนซ้ำถ้ามีมากกว่านี้)
+const ZONE_COLORS = ['var(--group-a)', 'var(--group-ab)', 'var(--group-o)', 'var(--group-other)']
 
 const MapPage = () => {
-  const { room, cabinet, totalBoxes, totalUnits, loading } = useMap()
+  const { zones, bloodOrder, totalBoxes, totalUnits, loading } = useMap()
 
   if (loading) {
     return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-secondary)' }}>กำลังโหลด...</div>
   }
+
+  const summaryCards = [
+    { key: 'total-boxes', label: 'กล่องทั้งหมด', value: totalBoxes, color: 'var(--primary)' },
+    { key: 'total-units', label: 'Unit ทั้งหมด', value: totalUnits, color: 'var(--group-b)' },
+    ...zones.map((z, i) => ({
+      key: z.id,
+      label: z.name,
+      value: z.totalBoxes,
+      color: ZONE_COLORS[i % ZONE_COLORS.length],
+    })),
+  ]
 
   return (
     <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
@@ -26,13 +39,8 @@ const MapPage = () => {
 
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
-        {[
-          { label: 'กล่องทั้งหมด', value: totalBoxes, color: 'var(--primary)' },
-          { label: 'Unit ทั้งหมด', value: totalUnits, color: 'var(--group-b)' },
-          { label: 'ห้อง -30°C', value: room.totalBoxes, color: 'var(--group-a)' },
-          { label: 'ตู้ -30°C', value: cabinet.totalBoxes, color: 'var(--group-ab)' },
-        ].map((item) => (
-          <div key={item.label} style={{
+        {summaryCards.map((item) => (
+          <div key={item.key} style={{
             background: 'var(--surface, #fff)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius-md, 8px)',
@@ -45,11 +53,16 @@ const MapPage = () => {
         ))}
       </div>
 
-      {/* Maps */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16 }}>
-        <MapRoomGrid data={room} />
-        <MapCabinetGrid data={cabinet} />
-      </div>
+      {/* Maps — หนึ่งการ์ดต่อสถานที่ตาม master */}
+      {zones.length === 0 ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-secondary)' }}>
+          ยังไม่มีสถานที่จัดเก็บ — เพิ่มได้ที่ ตั้งค่า › สถานที่จัดเก็บ
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16 }}>
+          {zones.map((z) => <MapZoneCard key={z.id} zone={z} bloodOrder={bloodOrder} />)}
+        </div>
+      )}
     </div>
   )
 }

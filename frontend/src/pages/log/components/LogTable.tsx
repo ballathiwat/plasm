@@ -5,6 +5,7 @@
 import { Package, PackageOpen } from 'lucide-react'
 import type { LogEntryItem } from '../services/LogType'
 import {groupSurface, groupInk } from '../../../helpers/blood'
+import { zoneLabel } from '../../../helpers/zone'
 
 
 
@@ -94,7 +95,7 @@ export default function LogTable({ entries, loading, hasMore, onLoadMore }: Prop
 
                 {/* Location */}
                 <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                  {entry.location === 'room' ? 'ห้อง' : entry.location === 'cabinet' ? 'ตู้' : '-'} {entry.shelf || ''}
+                  {zoneLabel(entry.zoneName, entry.location)} {entry.shelf || ''}
                 </span>
 
                 {/* Detail */}
