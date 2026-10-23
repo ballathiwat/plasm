@@ -3,11 +3,10 @@
 // ============================================================
 
 import { AlertTriangle } from 'lucide-react'
-import type { BloodGroup } from '../../../types/models'
 
 interface Props {
-  lowGroups: BloodGroup[]
-  warnGroups: BloodGroup[]
+  lowGroups: string[]
+  warnGroups: string[]
 }
 
 export default function DashboardAlerts({ lowGroups, warnGroups }: Props) {
