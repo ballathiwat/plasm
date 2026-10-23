@@ -12,7 +12,7 @@ const StoragePage = () => {
   const {
     boxes, loading, form, master, scannedUnits, unitInput, submitting, toast,
     availableShelves, nextLabel, printData,
-    handleFormChange, setUnitInput, handleAddUnit, handleUnitKeyDown,
+    handleFormChange, handleQuickAdd, setUnitInput, handleAddUnit, handleUnitKeyDown,
     handleRemoveUnit, handleSubmit, handlePrintBox, closePrint, dismissToast,
   } = useStorage()
 
@@ -35,6 +35,7 @@ const StoragePage = () => {
         submitting={submitting}
         availableShelves={availableShelves}
         onFormChange={handleFormChange}
+        onQuickAdd={handleQuickAdd}
         onUnitInputChange={setUnitInput}
         onAddUnit={handleAddUnit}
         onUnitKeyDown={handleUnitKeyDown}

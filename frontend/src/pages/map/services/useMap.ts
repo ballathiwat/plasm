@@ -4,53 +4,83 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import mapService from './MapService'
-import type { ShelfSummary, LocationSummary } from './MapType'
-import type { BloodGroup } from '../../../types/models'
+import useBloodTypes from '../../../helpers/useBloodTypes'
+import type { MapBoxRaw, MapZoneRaw, ShelfSummary, ZoneSummary } from './MapType'
 
-const EMPTY_BLOOD: Record<BloodGroup, number> = { A: 0, B: 0, O: 0, AB: 0 }
+const unitCount = (b: MapBoxRaw) => (Array.isArray(b.units) ? b.units.length : 0)
 
 export default function useMap() {
-  const [boxes, setBoxes] = useState<any[]>([])
+  const [boxes, setBoxes] = useState<MapBoxRaw[]>([])
+  const [zones, setZones] = useState<MapZoneRaw[]>([])
   const [loading, setLoading] = useState(true)
+  const masterBlood = useBloodTypes()
 
   useEffect(() => {
-    mapService.getStoredBoxes()
-      .then(setBoxes)
-      .catch(() => setBoxes([]))
+    Promise.all([mapService.getStoredBoxes(), mapService.getZones()])
+      .then(([b, z]) => {
+        setBoxes(b)
+        setZones(z)
+      })
+      .catch(() => {
+        setBoxes([])
+        setZones([])
+      })
       .finally(() => setLoading(false))
   }, [])
 
-  const { room, cabinet } = useMemo(() => {
-    const buildSummary = (loc: string, shelfList: string[]): LocationSummary => {
-      const filtered = boxes.filter((b) => b.location === loc)
-      const shelves: ShelfSummary[] = shelfList.map((shelf) => {
-        const shelfBoxes = filtered.filter((b) => b.shelf === shelf)
-        const byBlood = { ...EMPTY_BLOOD }
+  const zoneSummaries = useMemo<ZoneSummary[]>(() => {
+    const summaries: ZoneSummary[] = []
+
+    for (const zone of zones) {
+      const zoneBoxes = boxes.filter((b) => b.zoneId === zone.id)
+      // ซ่อนสถานที่ที่ปิดใช้งานและไม่มีกล่องเหลืออยู่
+      if (!zone.active && zoneBoxes.length === 0) continue
+
+      // ชั้นตาม master (ชั้นที่ปิดใช้งานแสดงเฉพาะเมื่อยังมีกล่อง) ตามด้วยชั้นที่มีกล่องแต่ไม่อยู่ใน master
+      const codes: string[] = []
+      for (const s of zone.shelves) {
+        const hasBoxes = zoneBoxes.some((b) => b.shelf === s.code)
+        if (s.active || hasBoxes) codes.push(s.code)
+      }
+      for (const b of zoneBoxes) {
+        if (!codes.includes(b.shelf)) codes.push(b.shelf)
+      }
+
+      const shelves: ShelfSummary[] = codes.map((shelf) => {
+        const shelfBoxes = zoneBoxes.filter((b) => b.shelf === shelf)
+        const byBlood: Record<string, number> = {}
         let totalUnits = 0
         for (const b of shelfBoxes) {
-          const bg = b.blood as BloodGroup
-          const count = Array.isArray(b.units) ? b.units.length : 0
-          byBlood[bg] = (byBlood[bg] || 0) + count
+          const count = unitCount(b)
+          byBlood[b.blood] = (byBlood[b.blood] || 0) + count
           totalUnits += count
         }
         return { shelf, totalBoxes: shelfBoxes.length, totalUnits, byBlood }
       })
-      return {
-        location: loc as 'room' | 'cabinet',
+
+      summaries.push({
+        id: zone.id,
+        name: zone.name,
+        legacyKey: zone.legacyKey,
+        active: zone.active,
         shelves,
-        totalBoxes: filtered.length,
-        totalUnits: filtered.reduce((s, b) => s + (Array.isArray(b.units) ? b.units.length : 0), 0),
-      }
+        totalBoxes: zoneBoxes.length,
+        totalUnits: zoneBoxes.reduce((s, b) => s + unitCount(b), 0),
+      })
     }
 
-    return {
-      room: buildSummary('room', ['M1', 'R1', 'R2', 'R3', 'L1', 'L2', 'L3']),
-      cabinet: buildSummary('cabinet', ['C1', 'C2', 'C3']),
-    }
-  }, [boxes])
+    return summaries
+  }, [boxes, zones])
 
-  const totalBoxes = room.totalBoxes + cabinet.totalBoxes
-  const totalUnits = room.totalUnits + cabinet.totalUnits
+  // ลำดับหมู่เลือดตาม master + หมู่ที่พบในกล่องแต่ไม่อยู่ใน master
+  const bloodOrder = useMemo(() => {
+    const list = [...masterBlood]
+    for (const b of boxes) if (!list.includes(b.blood)) list.push(b.blood)
+    return list
+  }, [masterBlood, boxes])
 
-  return { room, cabinet, totalBoxes, totalUnits, loading }
+  const totalBoxes = zoneSummaries.reduce((s, z) => s + z.totalBoxes, 0)
+  const totalUnits = zoneSummaries.reduce((s, z) => s + z.totalUnits, 0)
+
+  return { zones: zoneSummaries, bloodOrder, totalBoxes, totalUnits, loading }
 }
