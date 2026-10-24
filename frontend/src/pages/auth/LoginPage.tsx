@@ -267,14 +267,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Hint */}
-          <p style={{
-            textAlign: 'center', fontSize: 13,
-            color: 'var(--text-disabled, #A1A1AA)',
-            marginTop: 20,
-          }}>
-            ใช้บัญชี admin / admin123
-          </p>
+         
         </div>
       </div>
     </div>
