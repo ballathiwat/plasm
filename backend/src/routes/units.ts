@@ -57,6 +57,8 @@ router.get("/search", async (req, res) => {
             shelf: true,
             status: true,
             collectionDate: true,
+            boxLabel: true,
+            boxName: true,
           },
         },
       },
@@ -77,6 +79,8 @@ router.get("/search", async (req, res) => {
         shelf: u.box.shelf,
         status: u.box.status.toLowerCase(),
         collectionDate: u.box.collectionDate.toISOString().split("T")[0],
+        boxLabel: u.box.boxLabel,
+        boxName: u.box.boxName,
       },
     }));
 
@@ -105,12 +109,13 @@ router.patch("/:id/withdraw", async (req, res) => {
       return;
     }
 
-    await prisma.$transaction([
-      prisma.unit.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.unit.update({
         where: { id: unit.id },
         data: { status: "WITHDRAWN" },
-      }),
-      prisma.logEntry.create({
+      });
+
+      await tx.logEntry.create({
         data: {
           action: "WITHDRAW",
           boxId: unit.boxId,
@@ -118,8 +123,19 @@ router.patch("/:id/withdraw", async (req, res) => {
           unitCount: 1,
           userId: req.user?.id,
         },
-      }),
-    ]);
+      });
+
+      // ถ้าไม่เหลือ unit ที่เก็บอยู่ → ปิดกล่อง
+      const remaining = await tx.unit.count({
+        where: { boxId: unit.boxId, status: "STORED" },
+      });
+      if (remaining === 0) {
+        await tx.box.update({
+          where: { id: unit.boxId },
+          data: { status: "WITHDRAWN", withdrawnAt: new Date() },
+        });
+      }
+    });
 
     res.json({ message: `นำออก unit ${unit.unitNumber} สำเร็จ` });
   } catch (error) {
