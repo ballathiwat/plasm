@@ -18,6 +18,7 @@ export interface SearchUnitResult {
     shelf: string
     status: BoxStatus
     collectionDate: string
+    boxName?: string | null
   }
 }
 
