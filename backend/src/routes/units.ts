@@ -57,7 +57,6 @@ router.get("/search", async (req, res) => {
             shelf: true,
             status: true,
             collectionDate: true,
-            boxLabel: true,
             boxName: true,
           },
         },
@@ -71,7 +70,6 @@ router.get("/search", async (req, res) => {
       status: u.status.toLowerCase(),
       box: {
         id: u.box.id,
-        boxLabel: u.box.boxLabel,
         blood: u.box.blood,
         type: u.box.type,
         location: locationKey(u.box.zone),
