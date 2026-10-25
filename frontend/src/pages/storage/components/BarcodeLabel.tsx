@@ -5,8 +5,7 @@
 import { useRef, useEffect } from "react";
 import JsBarcode from "jsbarcode";
 import { Printer, X } from "lucide-react";
-
-
+import "../../../assets/styles/storage.css";
 
 export interface BarcodeLabelData {
   boxLabel: string;
@@ -42,7 +41,6 @@ export default function BarcodeLabel({ data, onClose }: Props) {
       margin: 0,
     });
 
-    // Convert fixed size → viewBox so SVG scales with container
     const svg = barcodeRef.current;
     const w = svg.getAttribute("width");
     const h = svg.getAttribute("height");
@@ -66,32 +64,68 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     printWindow.document.write(`<!DOCTYPE html>
 <html><head><title>${data.boxLabel}</title>
 <style>
-  @page { size: 100mm 55mm; margin: 2mm; }
+  @page { size: 100mm 100mm; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000; }
-  html, body { width: 100%; height: 100%; overflow: hidden; }
+  html, body { width: 100mm; height: 100mm; overflow: hidden; }
   body { font-family: Helvetica, Arial, sans-serif; }
   .print-label {
-    width: 96mm; height: 51mm;
+    width: 100mm; height: 100mm;
     padding: 3mm;
-    border: 1px solid #ccc;
     display: flex; flex-direction: column;
     justify-content: space-between;
     overflow: hidden;
     page-break-inside: avoid;
   }
-  .print-label > div:first-child > div:nth-child(2) {
-    overflow: hidden;
+  .print-label > div {
+    padding: 0 !important;
+    border: none !important;
   }
+  /* top row — fits side by side on 100mm */
+  .print-label > div > div:first-child {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 3mm !important;
+    margin-bottom: 3mm !important;
+  }
+  .print-label > div > div:first-child > span:first-child {
+    font-size: 28px !important;
+    font-weight: 900 !important;
+  }
+  .print-label > div > div:first-child > div {
+    display: flex !important;
+    gap: 3mm !important;
+  }
+  .print-label > div > div:first-child > div > span:first-child {
+    font-size: 18px !important;
+    padding: 2px 10px !important;
+  }
+  .print-label > div > div:first-child > div > span:last-child {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 18px !important;
+    border-width: 3px !important;
+  }
+  /* barcode — large for easy scanning */
   .print-label svg {
     width: 100% !important;
     height: auto !important;
-    max-height: 15mm !important;
+    max-height: 28mm !important;
     display: block !important;
+    margin: 2mm 0 !important;
   }
-  .print-label > div {
-    padding: 8px !important;
-    border-width: 1px !important;
+  /* info row */
+  .print-label > div > div:last-child {
+    display: flex !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 1mm 3mm !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-top: 0.5px solid #999 !important;
+    padding-top: 2mm !important;
+    margin-top: 2mm !important;
   }
 </style>
 </head><body>
@@ -102,168 +136,40 @@ export default function BarcodeLabel({ data, onClose }: Props) {
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1001,
-        background: "rgba(0,0,0,0.4)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: "var(--radius-lg, 10px)",
-          padding: 24,
-          width: 480,
-          maxWidth: "95vw",
-          boxShadow: "var(--shadow-md)",
-          animation: "plasm-fade-in 0.2s ease",
-        }}
-      >
+    <div className="barcode-overlay">
+      <div className="barcode-modal">
         {/* Modal header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
-          }}
-        >
-          <h3
-            style={{
-              fontSize: 16,
-              fontWeight: 700,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
+        <div className="barcode-modal-header">
+          <h3 className="barcode-modal-title">
             <Printer size={18} style={{ color: "var(--primary)" }} />
             พิมพ์บาร์โค้ด
           </h3>
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 4,
-            }}
-          >
+          <button onClick={onClose} className="barcode-modal-close">
             <X size={18} color="var(--text-secondary)" />
           </button>
         </div>
 
         {/* Preview — this is what gets printed */}
         <div id="barcode-print-area">
-          <div
-            style={{
-              border: "2px solid #E4E4E7",
-              borderRadius: 8,
-              padding: 14,
-              background: "#fff",
-            }}
-          >
-            {/* Top row: หมายเลขกล่อง + ชนิด + หมู่เลือด */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 8,
-                gap: 8,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 28,
-                  fontWeight: 900,
-                  fontFamily: "monospace",
-                  letterSpacing: 1,
-                  lineHeight: 1.1,
-                }}
-              >
-                {data.boxLabel}
-              </span>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  flexShrink: 0,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 800,
-                    padding: "3px 10px",
-                    borderRadius: 6,
-                    background: "#fff",
-                    border: "2px solid #000",
-                    color: "#000",
-                  }}
-                >
-                  {data.type}
-                </span>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 44,
-                    height: 44,
-                    borderRadius: "50%",
-                    background: "#fff",
-                    border: "3px solid #000",
-                    color: "#000",
-                    fontSize: 20,
-                    fontWeight: 900,
-                  }}
-                >
-                  {data.blood}
-                </span>
+          <div className="barcode-label-card">
+            {/* Top row */}
+            <div className="barcode-top-row">
+              {" "}
+              <span className="barcode-box-label">{data.boxLabel}</span>
+              <div className="barcode-badges">
+                <span className="barcode-type-badge">{data.type}</span>
+                <span className="barcode-blood-badge">{data.blood}</span>
               </div>
             </div>
 
             {/* Barcode SVG */}
-            <div
-              style={{
-                textAlign: "center",
-                padding: "4px 0",
-                overflow: "hidden",
-              }}
-            >
-              <svg
-                ref={barcodeRef}
-                style={{
-                  width: "100%",
-                  height: "auto",
-                  maxHeight: 90,
-                  display: "block",
-                }}
-              />
+            <div className="barcode-svg-wrap">
+              <svg ref={barcodeRef} />
             </div>
 
             {/* Info row */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: "2px 10px",
-                fontSize: 15,
-                fontWeight: 600,
-                color: "#333",
-                marginTop: 8,
-                borderTop: "1px solid #eee",
-                paddingTop: 6,
-              }}
-            >
+            <div className="barcode-info-row">
+              {" "}
               <span>
                 {locText} · {data.shelf}
               </span>
@@ -274,38 +180,11 @@ export default function BarcodeLabel({ data, onClose }: Props) {
         </div>
 
         {/* Actions */}
-        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-          <button
-            onClick={handlePrint}
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              padding: "10px 0",
-              borderRadius: "var(--radius-sm, 6px)",
-              border: "none",
-              background: "var(--primary, #2563EB)",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: "pointer",
-            }}
-          >
+        <div className="barcode-actions">
+          <button onClick={handlePrint} className="barcode-btn-print">
             <Printer size={16} /> พิมพ์
           </button>
-          <button
-            onClick={onClose}
-            style={{
-              padding: "10px 20px",
-              borderRadius: "var(--radius-sm, 6px)",
-              border: "1px solid var(--border)",
-              background: "transparent",
-              fontSize: 14,
-              cursor: "pointer",
-            }}
-          >
+          <button onClick={onClose} className="barcode-btn-close">
             ปิด
           </button>
         </div>
