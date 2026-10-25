@@ -217,7 +217,6 @@ export default function useStorage() {
         units: scannedUnits,
       })
 
-      const zoneName = master.zones.find((z) => z.id === form.zoneId)?.name ?? created.zoneName ?? ''
 
       setToast({ type: 'success', msg: `บันทึกกล่อง ${created.boxLabel} สำเร็จ (${scannedUnits.length} units)` })
 
