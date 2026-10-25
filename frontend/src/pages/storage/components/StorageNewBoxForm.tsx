@@ -2,7 +2,7 @@
 //  src/pages/storage/components/StorageNewBoxForm.tsx
 // ============================================================
 
-import { X, Printer } from 'lucide-react'
+import { X } from "lucide-react";
 import type {
   StorageFormData, MasterOptions, MasterShelf, QuickAddKind,
 } from '../services/StorageType'
