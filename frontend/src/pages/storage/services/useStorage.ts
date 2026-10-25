@@ -221,16 +221,7 @@ export default function useStorage() {
 
       setToast({ type: 'success', msg: `บันทึกกล่อง ${created.boxLabel} สำเร็จ (${scannedUnits.length} units)` })
 
-      // ใช้เลขที่ backend ออกให้จริง
-      setPrintData({
-        boxLabel: created.boxLabel,
-        type: created.type,
-        blood: created.blood,
-        location: zoneName,
-        shelf: created.shelf,
-        collectionDate: created.collectionDate,
-        unitCount: scannedUnits.length,
-      })
+  
 
       setScannedUnits([])
       setUnitInput('')

@@ -208,8 +208,7 @@ export default function StorageNewBoxForm({
           opacity: submitting || scannedUnits.length === 0 || !ready ? 0.6 : 1,
         }}
       >
-        <Printer size={16} />
-        {submitting ? 'กำลังบันทึก...' : 'บันทึกและพิมพ์บาร์โค้ด'}
+                {submitting ? 'กำลังบันทึก...' : 'บันทึก'}
       </button>
     </div>
   )
