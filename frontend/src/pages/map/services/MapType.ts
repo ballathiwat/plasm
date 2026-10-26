@@ -5,12 +5,15 @@
 // ── ข้อมูลดิบจาก backend ──
 export interface MapBoxRaw {
   id: string
+  boxLabel: string          
   blood: string
   zoneId: string
   zoneName?: string
   shelf: string
   units: string[]
   status: string
+  collectionDate: string    
+  storedAt: string          
 }
 
 export interface MapZoneRaw {
@@ -53,5 +56,11 @@ export const ROOM_LAYOUT: { shelf: string; row: number; col: number; label: stri
   { shelf: '',   row: 2, col: 1, label: 'ประตู' },  // door
   { shelf: 'R1', row: 2, col: 2, label: 'R1' },
 ]
+
+export interface BloodGroupAgeInfo {
+  blood: string
+  oldest: { boxLabel: string; zoneName: string; shelf: string; collectionDate: string } | null
+  newest: { boxLabel: string; zoneName: string; shelf: string; collectionDate: string } | null
+}
 
 export const ROOM_LEGACY_KEY = 'ROOM'
