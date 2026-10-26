@@ -3,7 +3,7 @@
 // ============================================================
 
 import { useState } from "react";
-import { Printer, Search } from "lucide-react";
+import { Pencil, Printer, Search, X, Plus } from "lucide-react";
 import type { StorageBoxItem } from "../services/StorageType";
 import { groupSurface, groupInk } from "../../../helpers/blood";
 
@@ -11,10 +11,14 @@ interface Props {
   boxes: StorageBoxItem[];
   loading: boolean;
   onPrintBox: (box: StorageBoxItem) => void;
+  onEditUnits: (boxId: string, units: string[]) => void;
 }
 
-export default function StorageBoxList({ boxes, loading, onPrintBox }: Props) {
+export default function StorageBoxList({ boxes, loading, onPrintBox, onEditUnits }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingBox, setEditingBox] = useState<StorageBoxItem | null>(null);
+  const [editUnits, setEditUnits] = useState<string[]>([]);
+  const [unitInput, setUnitInput] = useState("");
 
   const filtered = boxes.filter((b) => {
     if (!searchQuery) return true;
@@ -191,6 +195,31 @@ export default function StorageBoxList({ boxes, loading, onPrintBox }: Props) {
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {/* ปุ่มแก้ไข units */}
+                <button
+                  onClick={() => {
+                    setEditingBox(box);
+                    setEditUnits([...box.units]);
+                    setUnitInput("");
+                  }}
+                  title="แก้ไข units"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    borderRadius: "var(--radius-sm, 6px)",
+                    border: "1px solid var(--border, #E4E4E7)",
+                    background: "transparent",
+                    cursor: "pointer",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  <Pencil size={14} />
+                </button>
+
+                {/* ปุ่มพิมพ์บาร์โค้ด */}
                 <button
                   onClick={() => onPrintBox(box)}
                   title="พิมพ์บาร์โค้ด"
@@ -231,6 +260,193 @@ export default function StorageBoxList({ boxes, loading, onPrintBox }: Props) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Edit Units Modal ── */}
+      {editingBox && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1001,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 10,
+              padding: 24,
+              width: 440,
+              maxWidth: "95vw",
+              maxHeight: "80vh",
+              overflow: "auto",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+                แก้ไข Units — {editingBox.boxLabel}
+              </h3>
+              <button
+                onClick={() => setEditingBox(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 4,
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Add unit input */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <input
+                value={unitInput}
+                onChange={(e) => setUnitInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && unitInput.trim()) {
+                    if (!editUnits.includes(unitInput.trim())) {
+                      setEditUnits([...editUnits, unitInput.trim()]);
+                    }
+                    setUnitInput("");
+                  }
+                }}
+                placeholder="สแกนหรือพิมพ์ unit number"
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  border: "1px solid var(--border)",
+                  borderRadius: 6,
+                  fontSize: 13,
+                }}
+              />
+              <button
+                onClick={() => {
+                  if (unitInput.trim() && !editUnits.includes(unitInput.trim())) {
+                    setEditUnits([...editUnits, unitInput.trim()]);
+                  }
+                  setUnitInput("");
+                }}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "var(--primary, #2563EB)",
+                  color: "#fff",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Plus size={14} /> เพิ่ม
+              </button>
+            </div>
+
+            {/* Unit list */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                marginBottom: 16,
+              }}
+            >
+              {editUnits.map((u, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 10px",
+                    background: "var(--surface-raised, #F4F4F5)",
+                    borderRadius: 6,
+                    fontSize: 13,
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  {u}
+                  <button
+                    onClick={() =>
+                      setEditUnits(editUnits.filter((_, j) => j !== i))
+                    }
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 2,
+                    }}
+                  >
+                    <X size={13} color="var(--text-secondary)" />
+                  </button>
+                </div>
+              ))}
+              {editUnits.length === 0 && (
+                <div
+                  style={{
+                    padding: 16,
+                    textAlign: "center",
+                    color: "var(--text-secondary)",
+                    fontSize: 13,
+                  }}
+                >
+                  ไม่มี unit
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => {
+                  onEditUnits(editingBox.id, editUnits);
+                  setEditingBox(null);
+                }}
+                disabled={editUnits.length === 0}
+                style={{
+                  flex: 1,
+                  padding: "10px 0",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "var(--primary, #2563EB)",
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  opacity: editUnits.length === 0 ? 0.5 : 1,
+                }}
+              >
+                บันทึก ({editUnits.length} units)
+              </button>
+              <button
+                onClick={() => setEditingBox(null)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 6,
+                  border: "1px solid var(--border)",
+                  background: "transparent",
+                  fontSize: 14,
+                  cursor: "pointer",
+                }}
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
