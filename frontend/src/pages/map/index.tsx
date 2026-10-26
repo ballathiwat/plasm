@@ -2,69 +2,211 @@
 //  src/pages/map/index.tsx
 // ============================================================
 
-import useMap from './services/useMap'
-import MapZoneCard from './components/MapZoneCard'
+import useMap from "./services/useMap";
+import MapZoneCard from "./components/MapZoneCard";
+import { bloodBase } from "../../helpers/blood";
 
 // สีการ์ดสรุปของแต่ละสถานที่ (วนซ้ำถ้ามีมากกว่านี้)
-const ZONE_COLORS = ['var(--group-a)', 'var(--group-ab)', 'var(--group-o)', 'var(--group-other)']
+const ZONE_COLORS = [
+  "var(--group-a)",
+  "var(--group-ab)",
+  "var(--group-o)",
+  "var(--group-other)",
+];
 
 const MapPage = () => {
-  const { zones, bloodOrder, totalBoxes, totalUnits, loading } = useMap()
-
+  const { zones, bloodOrder, bloodAgeMap, totalBoxes, totalUnits, loading } =
+    useMap();
   if (loading) {
-    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-secondary)' }}>กำลังโหลด...</div>
+    return (
+      <div
+        style={{
+          padding: 40,
+          textAlign: "center",
+          color: "var(--text-secondary)",
+        }}
+      >
+        กำลังโหลด...
+      </div>
+    );
   }
 
   const summaryCards = [
-    { key: 'total-boxes', label: 'กล่องทั้งหมด', value: totalBoxes, color: 'var(--primary)' },
-    { key: 'total-units', label: 'Unit ทั้งหมด', value: totalUnits, color: 'var(--group-b)' },
+    {
+      key: "total-boxes",
+      label: "กล่องทั้งหมด",
+      value: totalBoxes,
+      color: "var(--primary)",
+    },
+    {
+      key: "total-units",
+      label: "Unit ทั้งหมด",
+      value: totalUnits,
+      color: "var(--group-b)",
+    },
     ...zones.map((z, i) => ({
       key: z.id,
       label: z.name,
       value: z.totalBoxes,
       color: ZONE_COLORS[i % ZONE_COLORS.length],
     })),
-  ]
+  ];
 
   return (
-    <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
-
+    <div style={{ animation: "plasm-fade-in 0.2s ease" }}>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>แผนผังจัดเก็บ</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-          ภาพรวมตำแหน่งจัดเก็บพลาสมา · รวม {totalBoxes} กล่อง · {totalUnits} units
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>
+          แผนผังจัดเก็บ
+        </h2>
+        <p
+          style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}
+        >
+          ภาพรวมตำแหน่งจัดเก็บพลาสมา · รวม {totalBoxes} กล่อง · {totalUnits}{" "}
+          units
         </p>
       </div>
 
       {/* Summary cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
         {summaryCards.map((item) => (
-          <div key={item.key} style={{
-            background: 'var(--surface, #fff)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-md, 8px)',
-            padding: '14px 18px',
-            boxShadow: 'var(--shadow-sm)',
-          }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: item.color }}>{item.value}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{item.label}</div>
+          <div
+            key={item.key}
+            style={{
+              background: "var(--surface, #fff)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-md, 8px)",
+              padding: "14px 18px",
+              boxShadow: "var(--shadow-sm)",
+            }}
+          >
+            <div style={{ fontSize: 22, fontWeight: 700, color: item.color }}>
+              {item.value}
+            </div>
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--text-secondary)",
+                marginTop: 2,
+              }}
+            >
+              {item.label}
+            </div>
           </div>
         ))}
       </div>
+      {/* Blood group oldest / newest */}
+      {bloodAgeMap.length > 0 && (
+        <div
+          style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            padding: 20,
+            marginBottom: 20,
+            boxShadow: "var(--shadow-sm)",
+          }}
+        >
+          <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 14px" }}>
+            ตำแหน่งกล่องเก่าสุด / ใหม่สุด แยกตามกรุ๊ป
+          </h3>
+          <div style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 13,
+              }}
+            >
+              <thead>
+                <tr style={{ borderBottom: "2px solid var(--border)" }}>
+                  <th style={{ padding: "8px 12px", textAlign: "left" }}>
+                    กรุ๊ป
+                  </th>
+                  <th style={{ padding: "8px 12px", textAlign: "left" }}>
+                    📦 เก่าสุด
+                  </th>
+                  <th style={{ padding: "8px 12px", textAlign: "left" }}>
+                    📦 ใหม่สุด
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {bloodAgeMap.map((row) => (
+                  <tr
+                    key={row.blood}
+                    style={{ borderBottom: "1px solid var(--border)" }}
+                  >
+                    <td style={{ padding: "8px 12px" }}>
+                      <span
+                        className="blood-badge"
+                        data-blood={bloodBase(row.blood)}
+                        style={{ fontSize: 12, padding: "3px 10px" }}
+                      >
+                        {row.blood}
+                      </span>
+                    </td>
+                    <td
+                      style={{
+                        padding: "8px 12px",
+                        color: "var(--stock-danger)",
+                      }}
+                    >
+                      {row.oldest
+                        ? `${row.oldest.boxLabel} · ${row.oldest.zoneName} ${row.oldest.shelf} · ${row.oldest.collectionDate}`
+                        : "-"}
+                    </td>
+                    <td
+                      style={{
+                        padding: "8px 12px",
+                        color: "var(--stock-normal)",
+                      }}
+                    >
+                      {row.newest
+                        ? `${row.newest.boxLabel} · ${row.newest.zoneName} ${row.newest.shelf} · ${row.newest.collectionDate}`
+                        : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Maps — หนึ่งการ์ดต่อสถานที่ตาม master */}
       {zones.length === 0 ? (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-secondary)' }}>
+        <div
+          style={{
+            padding: 40,
+            textAlign: "center",
+            color: "var(--text-secondary)",
+          }}
+        >
           ยังไม่มีสถานที่จัดเก็บ — เพิ่มได้ที่ ตั้งค่า › สถานที่จัดเก็บ
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16 }}>
-          {zones.map((z) => <MapZoneCard key={z.id} zone={z} bloodOrder={bloodOrder} />)}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+            gap: 16,
+          }}
+        >
+          {zones.map((z) => (
+            <MapZoneCard key={z.id} zone={z} bloodOrder={bloodOrder} />
+          ))}
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default MapPage
+export default MapPage;
