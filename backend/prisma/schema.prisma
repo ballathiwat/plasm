@@ -76,6 +76,7 @@ model LogEntry {
 enum LogAction {
   STORE
   WITHDRAW
+  EDIT
 }
 
 // ===== ตั้งค่าระบบ =====
