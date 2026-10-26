@@ -40,10 +40,8 @@ export default function useMap() {
 
     for (const zone of zones) {
       const zoneBoxes = boxes.filter((b) => b.zoneId === zone.id);
-      // ซ่อนสถานที่ที่ปิดใช้งานและไม่มีกล่องเหลืออยู่
       if (!zone.active && zoneBoxes.length === 0) continue;
 
-      // ชั้นตาม master (ชั้นที่ปิดใช้งานแสดงเฉพาะเมื่อยังมีกล่อง) ตามด้วยชั้นที่มีกล่องแต่ไม่อยู่ใน master
       const codes: string[] = [];
       for (const s of zone.shelves) {
         const hasBoxes = zoneBoxes.some((b) => b.shelf === s.code);
@@ -81,46 +79,46 @@ export default function useMap() {
 
   // ลำดับหมู่เลือดตาม master + หมู่ที่พบในกล่องแต่ไม่อยู่ใน master
   const bloodOrder = useMemo(() => {
-    const bloodAgeMap = useMemo<BloodGroupAgeInfo[]>(() => {
-      const map: Record<
-        string,
-        { oldest: MapBoxRaw | null; newest: MapBoxRaw | null }
-      > = {};
-
-      for (const b of boxes) {
-        if (!map[b.blood]) map[b.blood] = { oldest: null, newest: null };
-        const entry = map[b.blood];
-        if (!entry.oldest || b.collectionDate < entry.oldest.collectionDate)
-          entry.oldest = b;
-        if (!entry.newest || b.collectionDate > entry.newest.collectionDate)
-          entry.newest = b;
-      }
-
-      // zone name lookup
-      const zoneNames: Record<string, string> = {};
-      for (const z of zones) zoneNames[z.id] = z.name;
-
-      return bloodOrder
-        .filter((g) => map[g])
-        .map((g) => {
-          const { oldest, newest } = map[g];
-          const fmt = (b: MapBoxRaw | null) =>
-            b
-              ? {
-                  boxLabel: b.boxLabel,
-                  zoneName: b.zoneName || zoneNames[b.zoneId] || "",
-                  shelf: b.shelf,
-                  collectionDate: b.collectionDate,
-                }
-              : null;
-          return { blood: g, oldest: fmt(oldest), newest: fmt(newest) };
-        });
-    }, [boxes, zones, bloodOrder]);
-
     const list = [...masterBlood];
     for (const b of boxes) if (!list.includes(b.blood)) list.push(b.blood);
     return list;
   }, [masterBlood, boxes]);
+
+  // กล่องเก่าสุด / ใหม่สุดแยกตามกรุ๊ปเลือด
+  const bloodAgeMap = useMemo<BloodGroupAgeInfo[]>(() => {
+    const map: Record<
+      string,
+      { oldest: MapBoxRaw | null; newest: MapBoxRaw | null }
+    > = {};
+
+    for (const b of boxes) {
+      if (!map[b.blood]) map[b.blood] = { oldest: null, newest: null };
+      const entry = map[b.blood];
+      if (!entry.oldest || b.collectionDate < entry.oldest.collectionDate)
+        entry.oldest = b;
+      if (!entry.newest || b.collectionDate > entry.newest.collectionDate)
+        entry.newest = b;
+    }
+
+    const zoneNames: Record<string, string> = {};
+    for (const z of zones) zoneNames[z.id] = z.name;
+
+    return bloodOrder
+      .filter((g) => map[g])
+      .map((g) => {
+        const { oldest, newest } = map[g];
+        const fmt = (b: MapBoxRaw | null) =>
+          b
+            ? {
+                boxLabel: b.boxLabel,
+                zoneName: b.zoneName || zoneNames[b.zoneId] || "",
+                shelf: b.shelf,
+                collectionDate: b.collectionDate,
+              }
+            : null;
+        return { blood: g, oldest: fmt(oldest), newest: fmt(newest) };
+      });
+  }, [boxes, zones, bloodOrder]);
 
   const totalBoxes = zoneSummaries.reduce((s, z) => s + z.totalBoxes, 0);
   const totalUnits = zoneSummaries.reduce((s, z) => s + z.totalUnits, 0);

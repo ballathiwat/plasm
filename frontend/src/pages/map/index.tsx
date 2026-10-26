@@ -5,6 +5,7 @@
 import useMap from "./services/useMap";
 import MapZoneCard from "./components/MapZoneCard";
 import { bloodBase } from "../../helpers/blood";
+import type { BloodGroupAgeInfo } from "./services/MapType";
 
 // สีการ์ดสรุปของแต่ละสถานที่ (วนซ้ำถ้ามีมากกว่านี้)
 const ZONE_COLORS = [
@@ -139,7 +140,7 @@ const MapPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {bloodAgeMap.map((row) => (
+                {bloodAgeMap.map((row: BloodGroupAgeInfo) => (
                   <tr
                     key={row.blood}
                     style={{ borderBottom: "1px solid var(--border)" }}
