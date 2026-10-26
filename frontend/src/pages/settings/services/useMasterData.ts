@@ -5,6 +5,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import masterService, { type CodeKind } from './MasterService'
 import type { CodeItem, ZoneItem, ShelfItem, ToastState } from './SettingsType'
+import { registerMasterColors } from '../../../helpers/blood'
+
 
 export default function useMasterData(notify: (t: ToastState) => void) {
   const [plasmaTypes, setPlasmaTypes] = useState<CodeItem[]>([])
@@ -22,6 +24,7 @@ export default function useMasterData(notify: (t: ToastState) => void) {
       ])
       setPlasmaTypes(p)
       setBloodTypes(b)
+      registerMasterColors(b, p)
       setZones(z)
     } catch (err: any) {
       notify({ type: 'error', msg: err?.message || 'โหลดข้อมูลไม่สำเร็จ' })
@@ -45,8 +48,15 @@ export default function useMasterData(notify: (t: ToastState) => void) {
     }
   }
 
-  const addCode = (kind: CodeKind, code: string, name?: string) =>
-    run(() => masterService.createCode(kind, { code, name }), `เพิ่ม "${code}" สำเร็จ`)
+   const addCode = (kind: CodeKind, code: string, name?: string, color?: string) =>
+    run(() => masterService.createCode(kind, { code, name, color }), `เพิ่ม "${code}" สำเร็จ`)
+
+  // เพิ่ม updateColor
+  const updateColor = (kind: CodeKind, item: CodeItem, color: string) =>
+    run(
+      () => masterService.updateCode(kind, item.id, { color }),
+      `เปลี่ยนสี "${item.code}" สำเร็จ`,
+    )
 
   const toggleCode = (kind: CodeKind, item: CodeItem) =>
     run(
@@ -74,6 +84,6 @@ export default function useMasterData(notify: (t: ToastState) => void) {
 
   return {
     plasmaTypes, bloodTypes, zones, loading,
-    addCode, toggleCode, addZone, toggleZone, addShelf, toggleShelf,
+    addCode, toggleCode,updateColor, addZone, toggleZone, addShelf, toggleShelf,
   }
 }
