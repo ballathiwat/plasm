@@ -5,6 +5,8 @@ import { authProtectedRoutes, publicRoutes } from './allRoutes'
 import { AuthProtected, PublicGuard, useAuth } from './AuthProtected'
 import MainLayout from '../components/layout/MainLayout'
 import authService from '../helpers/services/authService'
+import useBloodColors from '../helpers/useBloodColors'  
+
 
 const PATH_TO_MODULE: Record<string, string> = {
   '/': 'dashboard',
@@ -21,6 +23,7 @@ const MODULE_TO_PATH: Record<string, string> = Object.fromEntries(
 )
 
 function LayoutWrapper({ children }: { children: React.ReactNode }) {
+  useBloodColors() 
   const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()

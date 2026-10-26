@@ -11,7 +11,7 @@ export default function StatusBadge({ blood, label }: StatusBadgeProps) {
   return (
     <span
       className="blood-badge"
-      data-blood={bloodBase(blood)}
+      data-blood={blood}
       style={{ padding: '2px 10px', fontSize: 12 }}
     >
       {label || blood}
