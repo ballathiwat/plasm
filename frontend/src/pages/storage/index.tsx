@@ -30,6 +30,7 @@ const StoragePage = () => {
     handleSubmit,
     handlePrintBox,
     handleEditUnits,
+    handleEditLocation,
     closePrint,
     dismissToast,
   } = useStorage();
