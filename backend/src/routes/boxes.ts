@@ -438,4 +438,69 @@ router.put("/:id/units", async (req, res) => {
   }
 });
 
+// ===== PATCH /api/v1/boxes/:id/location =====
+// แก้ไขตำแหน่งจัดเก็บ (สถานที่ + ชั้นวาง)
+router.patch("/:id/location", async (req, res) => {
+  try {
+    const { zoneId, shelf } = req.body;
+
+    if (!zoneId || !shelf) {
+      res.status(400).json({ message: "กรุณาระบุสถานที่และชั้นวาง" });
+      return;
+    }
+
+    const box = await prisma.box.findUnique({ where: { id: req.params.id } });
+    if (!box) {
+      res.status(404).json({ message: "ไม่พบกล่อง" });
+      return;
+    }
+    if (box.status === "WITHDRAWN") {
+      res.status(400).json({ message: "กล่องนี้ถูกนำออกแล้ว ไม่สามารถแก้ไขตำแหน่งได้" });
+      return;
+    }
+
+    // ตรวจว่า zone + shelf มีอยู่จริง
+    const zone = await prisma.masterZone.findUnique({
+      where: { id: zoneId },
+      include: { shelves: { where: { code: shelf, active: true } } },
+    });
+    if (!zone) {
+      res.status(400).json({ message: "ไม่พบสถานที่ที่ระบุ" });
+      return;
+    }
+    if (zone.shelves.length === 0) {
+      res.status(400).json({ message: `ไม่พบชั้น "${shelf}" ในสถานที่ "${zone.name}"` });
+      return;
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const result = await tx.box.update({
+        where: { id: box.id },
+        data: { zoneId, shelf },
+        include: { zone: zoneSelect, units: { select: { unitNumber: true } } },
+      });
+
+      await tx.logEntry.create({
+        data: {
+          action: "EDIT",
+          boxId: box.id,
+          detail: `แก้ไขตำแหน่งกล่อง ${box.boxLabel} → ${zone.name} ชั้น ${shelf}`,
+          unitCount: 0,
+          userId: req.user?.id,
+        },
+      });
+
+      return result;
+    });
+
+    res.json({
+      ...boxDto(updated),
+      units: updated.units.map((u) => u.unitNumber),
+    });
+  } catch (error) {
+    console.error("PATCH /boxes/:id/location error:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+  }
+});
+
 export default router;

@@ -3,8 +3,8 @@
 // ============================================================
 
 import { useState } from "react";
-import { Pencil, Printer, Search, X, Plus } from "lucide-react";
-import type { StorageBoxItem } from "../services/StorageType";
+import { Pencil, Printer, Search, X, Plus, MapPin } from "lucide-react";
+import type { StorageBoxItem, MasterZone } from "../services/StorageType";
 import { groupSurface, groupInk } from "../../../helpers/blood";
 
 interface Props {
@@ -12,13 +12,25 @@ interface Props {
   loading: boolean;
   onPrintBox: (box: StorageBoxItem) => void;
   onEditUnits: (boxId: string, units: string[]) => void;
+  onEditLocation: (boxId: string, zoneId: string, shelf: string) => void;
+  zones: MasterZone[];
 }
 
-export default function StorageBoxList({ boxes, loading, onPrintBox, onEditUnits }: Props) {
+export default function StorageBoxList({
+  boxes,
+  loading,
+  onPrintBox,
+  onEditUnits,
+  onEditLocation,
+  zones,
+}: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingBox, setEditingBox] = useState<StorageBoxItem | null>(null);
   const [editUnits, setEditUnits] = useState<string[]>([]);
   const [unitInput, setUnitInput] = useState("");
+  const [locBox, setLocBox] = useState<StorageBoxItem | null>(null);
+  const [locZoneId, setLocZoneId] = useState("");
+  const [locShelf, setLocShelf] = useState("");
 
   const filtered = boxes.filter((b) => {
     if (!searchQuery) return true;
@@ -219,6 +231,30 @@ export default function StorageBoxList({ boxes, loading, onPrintBox, onEditUnits
                   <Pencil size={14} />
                 </button>
 
+                                {/* ปุ่มแก้ไขตำแหน่ง */}
+                <button
+                  onClick={() => {
+                    setLocBox(box);
+                    setLocZoneId(box.zoneId || "");
+                    setLocShelf(box.shelf);
+                  }}
+                  title="แก้ไขตำแหน่งจัดเก็บ"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    borderRadius: "var(--radius-sm, 6px)",
+                    border: "1px solid var(--border, #E4E4E7)",
+                    background: "transparent",
+                    cursor: "pointer",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  <MapPin size={14} />
+                </button>
+
                 {/* ปุ่มพิมพ์บาร์โค้ด */}
                 <button
                   onClick={() => onPrintBox(box)}
@@ -335,7 +371,10 @@ export default function StorageBoxList({ boxes, loading, onPrintBox, onEditUnits
               />
               <button
                 onClick={() => {
-                  if (unitInput.trim() && !editUnits.includes(unitInput.trim())) {
+                  if (
+                    unitInput.trim() &&
+                    !editUnits.includes(unitInput.trim())
+                  ) {
                     setEditUnits([...editUnits, unitInput.trim()]);
                   }
                   setUnitInput("");
@@ -449,6 +488,164 @@ export default function StorageBoxList({ boxes, loading, onPrintBox, onEditUnits
           </div>
         </div>
       )}
+            {/* ── Edit Location Modal ── */}
+      {locBox && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1001,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 10,
+              padding: 24,
+              width: 400,
+              maxWidth: "95vw",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+                แก้ไขตำแหน่ง — {locBox.boxLabel}
+              </h3>
+              <button
+                onClick={() => setLocBox(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 4,
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* สถานที่ */}
+            <div style={{ marginBottom: 12 }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  marginBottom: 4,
+                  color: "var(--text-secondary)",
+                }}
+              >
+                สถานที่
+              </label>
+              <select
+                value={locZoneId}
+                onChange={(e) => {
+                  const zId = e.target.value;
+                  setLocZoneId(zId);
+                  const z = zones.find((z) => z.id === zId);
+                  setLocShelf(z?.shelves[0]?.code || "");
+                }}
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  borderRadius: 6,
+                  border: "1px solid var(--border, #E4E4E7)",
+                  fontSize: 14,
+                }}
+              >
+                {zones.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* ชั้นวาง */}
+            <div style={{ marginBottom: 20 }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  marginBottom: 4,
+                  color: "var(--text-secondary)",
+                }}
+              >
+                ชั้นวาง
+              </label>
+              <select
+                value={locShelf}
+                onChange={(e) => setLocShelf(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 10px",
+                  borderRadius: 6,
+                  border: "1px solid var(--border, #E4E4E7)",
+                  fontSize: 14,
+                }}
+              >
+                {(zones.find((z) => z.id === locZoneId)?.shelves || []).map(
+                  (s) => (
+                    <option key={s.id} value={s.code}>
+                      {s.code}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => {
+                  onEditLocation(locBox.id, locZoneId, locShelf);
+                  setLocBox(null);
+                }}
+                disabled={!locZoneId || !locShelf}
+                style={{
+                  flex: 1,
+                  padding: "10px 0",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "var(--primary, #2563EB)",
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  opacity: !locZoneId || !locShelf ? 0.5 : 1,
+                }}
+              >
+                บันทึกตำแหน่ง
+              </button>
+              <button
+                onClick={() => setLocBox(null)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 6,
+                  border: "1px solid var(--border)",
+                  background: "transparent",
+                  fontSize: 14,
+                  cursor: "pointer",
+                }}
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

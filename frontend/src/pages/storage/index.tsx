@@ -72,6 +72,8 @@ const StoragePage = () => {
         loading={loading}
         onPrintBox={handlePrintBox}
         onEditUnits={handleEditUnits}
+        onEditLocation={handleEditLocation}
+       zones={master.zones}
       />
     </div>
   );
