@@ -173,6 +173,21 @@ const SettingsPage = () => {
         />
       )}
 
+      {activeTab === "plasma" && (
+        <SettingsCodeList
+          title="ชนิดพลาสมา"
+          description="เช่น FFP, Cryo, IFFP"
+          placeholder="ชื่อชนิดใหม่"
+          items={master.plasmaTypes}
+          loading={master.loading}
+          onAdd={(code, name, color) =>
+            master.addCode("plasma", code, name, color)
+          }
+          onToggle={(it) => master.toggleCode("plasma", it)}
+          onColorChange={(it, color) => master.updateColor("plasma", it, color)}
+        />
+      )}
+
       {activeTab === "blood" && (
         <SettingsCodeList
           title="หมู่เลือด"
@@ -180,19 +195,11 @@ const SettingsPage = () => {
           placeholder="หมู่เลือดใหม่"
           items={master.bloodTypes}
           loading={master.loading}
-          onAdd={(code) => master.addCode("blood", code)}
+          onAdd={(code, name, color) =>
+            master.addCode("blood", code, name, color)
+          }
           onToggle={(it) => master.toggleCode("blood", it)}
-        />
-      )}
-
-      {activeTab === "zones" && (
-        <SettingsZones
-          zones={master.zones}
-          loading={master.loading}
-          onAddZone={master.addZone}
-          onToggleZone={master.toggleZone}
-          onAddShelf={master.addShelf}
-          onToggleShelf={master.toggleShelf}
+          onColorChange={(it, color) => master.updateColor("blood", it, color)}
         />
       )}
     </div>

@@ -5,6 +5,8 @@
 import type { DailyData } from '../services/DashboardType'
 import { sumBlood } from '../services/DashboardType'
 import { groupColor } from '../../../helpers/blood'
+import { bloodChartColor } from '../../../helpers/blood'
+
 
 const CHART_H = 140
 const STORE_COLOR = '#16A34A'
@@ -32,7 +34,7 @@ function StackedBar({ values, groups, max }: { values: Record<string, number>; g
               style={{
                 height: (v / max) * CHART_H,
                 minHeight: 3,
-                background: groupColor(g),
+                background: bloodChartColor(g),
                 transformOrigin: 'bottom',
                 animation: 'plasm-rise 0.7s cubic-bezier(.2,.8,.2,1) both',
               }}

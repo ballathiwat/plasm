@@ -23,7 +23,8 @@ function codeMaster(path: string, model: 'masterPlasmaType' | 'masterBloodType',
     } catch (e) { fail(res, e, `GET ${path}`) }
   })
 
-  router.post(path, async (req, res) => {
+  // ในฟังก์ชัน codeMaster — แก้ POST
+router.post(path, async (req, res) => {
     try {
       const code = norm(req.body.code)
       if (!code) { res.status(400).json({ message: 'กรุณาระบุรหัส' }); return }
@@ -33,26 +34,34 @@ function codeMaster(path: string, model: 'masterPlasmaType' | 'masterBloodType',
       if (dup) { res.status(409).json({ message: `"${dup.code}" มีอยู่แล้ว` }); return }
 
       const max = await db.aggregate({ _max: { sort: true } })
+      const color = req.body.color?.toString().trim() || null   // ← เพิ่ม
       const created = await db.create({
-        data: { code, name: req.body.name?.toString().trim() || null, sort: (max._max.sort ?? -1) + 1 },
+        data: {
+          code,
+          name: req.body.name?.toString().trim() || null,
+          color,                                                 // ← เพิ่ม
+          sort: (max._max.sort ?? -1) + 1,
+        },
       })
       res.status(201).json(created)
     } catch (e) { fail(res, e, `POST ${path}`) }
   })
 
-  router.patch(`${path}/:id`, adminOnly, async (req, res) => {
+// ในฟังก์ชัน codeMaster — แก้ PATCH
+router.patch(`${path}/:id`, adminOnly, async (req, res) => {
     try {
       const data: Record<string, unknown> = {}
       if (req.body.name !== undefined) data.name = req.body.name?.toString().trim() || null
       if (req.body.active !== undefined) data.active = !!req.body.active
       if (req.body.sort !== undefined) data.sort = Number(req.body.sort)
-      // ไม่ให้แก้ code เพราะเลขกล่องเก่าอ้างอิงอยู่
+      if (req.body.color !== undefined) data.color = req.body.color?.toString().trim() || null  // ← เพิ่ม
       res.json(await db.update({ where: { id: req.params.id as string }, data }))
     } catch (e: any) {
       if (e?.code === 'P2025') { res.status(404).json({ message: 'ไม่พบข้อมูล' }); return }
       fail(res, e, `PATCH ${path}`)
     }
   })
+
 }
 
 codeMaster('/plasma-types', 'masterPlasmaType', false)
@@ -131,5 +140,7 @@ router.patch('/shelves/:shelfId', adminOnly, async (req, res) => {
     fail(res, e, 'PATCH /shelves/:id')
   }
 })
+
+
 
 export default router

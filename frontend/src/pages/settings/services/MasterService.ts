@@ -16,7 +16,7 @@ const URL_OF: Record<CodeKind, string> = {
 
 const masterService = {
   listCodes: (kind: CodeKind) => apiAdapter.get<CodeItem[]>(URL_OF[kind]),
-  createCode: (kind: CodeKind, data: { code: string; name?: string }) =>
+  createCode: (kind: CodeKind, data: { code: string; name?: string; color?: string }) =>
     apiAdapter.post<typeof data, CodeItem>(URL_OF[kind], data),
   updateCode: (kind: CodeKind, id: string, data: Partial<CodeItem>) =>
     apiAdapter.patch<typeof data, CodeItem>(`${URL_OF[kind]}/${id}`, data),

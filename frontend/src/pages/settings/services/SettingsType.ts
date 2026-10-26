@@ -30,6 +30,7 @@ export interface CodeItem {
   id: string
   code: string
   name: string | null
+  color: string | null 
   active: boolean
   sort: number
 }
