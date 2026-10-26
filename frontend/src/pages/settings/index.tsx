@@ -161,17 +161,6 @@ const SettingsPage = () => {
         />
       )}
 
-      {activeTab === "plasma" && (
-        <SettingsCodeList
-          title="ชนิดพลาสมา"
-          description="เช่น FFP, Cryo, IFFP"
-          placeholder="ชื่อชนิดใหม่"
-          items={master.plasmaTypes}
-          loading={master.loading}
-          onAdd={(code) => master.addCode("plasma", code)}
-          onToggle={(it) => master.toggleCode("plasma", it)}
-        />
-      )}
 
       {activeTab === "plasma" && (
         <SettingsCodeList
