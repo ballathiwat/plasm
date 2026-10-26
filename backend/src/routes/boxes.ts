@@ -90,8 +90,20 @@ router.get("/next-label", async (req, res) => {
       },
     });
 
+    // หาเลขสูงสุดจาก box จริง (รวม WITHDRAWN)
+    const maxBox = await prisma.box.findFirst({
+      where: { type: pt.code, blood: bt.code, year },
+      orderBy: { boxLabel: "desc" },
+      select: { boxLabel: true },
+    });
+    const maxExisting = maxBox
+      ? parseInt(maxBox.boxLabel.split("_").pop() || "0", 10)
+      : 0;
+
+    const nextNo = Math.max(counter?.lastNo ?? 0, maxExisting) + 1;
+
     res.json({
-      label: formatLabel(pt.code, bt.code, year, (counter?.lastNo ?? 0) + 1),
+      label: formatLabel(pt.code, bt.code, year, nextNo),
       year,
     });
   } catch (error) {
@@ -192,7 +204,19 @@ router.post("/", async (req, res) => {
 
       // เพิ่มเลขแบบ atomic ภายใน transaction
       const year = bkkYear();
-      const counter = await tx.boxCounter.upsert({
+
+      // หาเลขกล่องสูงสุดที่มีอยู่จริงใน DB (รวม WITHDRAWN)
+      const maxBox = await tx.box.findFirst({
+        where: { type: pt.code, blood: bt.code, year },
+        orderBy: { boxLabel: "desc" },
+        select: { boxLabel: true },
+      });
+      const maxExisting = maxBox
+        ? parseInt(maxBox.boxLabel.split("_").pop() || "0", 10)
+        : 0;
+
+      // อ่าน counter ปัจจุบัน
+      const existing = await tx.boxCounter.findUnique({
         where: {
           plasmaTypeId_bloodTypeId_year: {
             plasmaTypeId: pt.id,
@@ -200,10 +224,30 @@ router.post("/", async (req, res) => {
             year,
           },
         },
-        create: { plasmaTypeId: pt.id, bloodTypeId: bt.id, year, lastNo: 1 },
-        update: { lastNo: { increment: 1 } },
       });
-      const boxLabel = formatLabel(pt.code, bt.code, year, counter.lastNo);
+
+      // ใช้ค่าที่สูงกว่าระหว่าง counter กับเลขจริงใน DB
+      const baseNo = Math.max(existing?.lastNo ?? 0, maxExisting);
+      const newNo = baseNo + 1;
+
+      await tx.boxCounter.upsert({
+        where: {
+          plasmaTypeId_bloodTypeId_year: {
+            plasmaTypeId: pt.id,
+            bloodTypeId: bt.id,
+            year,
+          },
+        },
+        create: {
+          plasmaTypeId: pt.id,
+          bloodTypeId: bt.id,
+          year,
+          lastNo: newNo,
+        },
+        update: { lastNo: newNo },
+      });
+
+      const boxLabel = formatLabel(pt.code, bt.code, year, newNo);
 
       return tx.box.create({
         data: {
@@ -308,7 +352,9 @@ router.put("/:id/units", async (req, res) => {
 
     const box = await prisma.box.findUnique({
       where: { id: req.params.id },
-      include: { units: { select: { id: true, unitNumber: true, status: true } } },
+      include: {
+        units: { select: { id: true, unitNumber: true, status: true } },
+      },
     });
 
     if (!box) {
@@ -316,7 +362,9 @@ router.put("/:id/units", async (req, res) => {
       return;
     }
     if (box.status === "WITHDRAWN") {
-      res.status(400).json({ message: "กล่องนี้ถูกนำออกแล้ว ไม่สามารถแก้ไขได้" });
+      res
+        .status(400)
+        .json({ message: "กล่องนี้ถูกนำออกแล้ว ไม่สามารถแก้ไขได้" });
       return;
     }
 
@@ -332,7 +380,12 @@ router.put("/:id/units", async (req, res) => {
       });
       if (existing.length > 0) {
         const dupes = existing.map((u) => u.unitNumber);
-        res.status(409).json({ message: `Unit ซ้ำ: ${dupes.join(", ")}`, duplicates: dupes });
+        res
+          .status(409)
+          .json({
+            message: `Unit ซ้ำ: ${dupes.join(", ")}`,
+            duplicates: dupes,
+          });
         return;
       }
     }
@@ -375,7 +428,10 @@ router.put("/:id/units", async (req, res) => {
       include: { zone: zoneSelect, units: { select: { unitNumber: true } } },
     });
 
-    res.json({ ...boxDto(updated!), units: updated!.units.map((u) => u.unitNumber) });
+    res.json({
+      ...boxDto(updated!),
+      units: updated!.units.map((u) => u.unitNumber),
+    });
   } catch (error) {
     console.error("PUT /boxes/:id/units error:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาด" });
