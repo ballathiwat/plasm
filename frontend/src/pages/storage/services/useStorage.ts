@@ -283,6 +283,15 @@ export default function useStorage() {
     }
   };
   const dismissToast = () => setToast(null);
+    const handleEditLocation = async (boxId: string, zoneId: string, shelf: string) => {
+    try {
+      await storageService.updateBoxLocation(boxId, zoneId, shelf);
+      setToast({ type: "success", msg: "แก้ไขตำแหน่งจัดเก็บสำเร็จ" });
+      loadBoxes();
+    } catch (err: any) {
+      setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
+    }
+  };
 
   return {
     boxes,
@@ -296,6 +305,7 @@ export default function useStorage() {
     availableShelves,
     nextLabel,
     printData,
+    handleEditLocation,
     handleFormChange,
     handleQuickAdd,
     setUnitInput,

@@ -51,6 +51,14 @@ const storageService = {
   /** POST /master/zones/:id/shelves  (backend แปลงเป็นตัวพิมพ์ใหญ่ให้) */
   createShelf: (zoneId: string, code: string) =>
     apiAdapter.post<{ code: string }, MasterShelf>(`${MASTER_ZONES}/${zoneId}/shelves`, { code }),
+
+    /** PATCH /boxes/:id/location — แก้ไขตำแหน่งจัดเก็บ */
+  updateBoxLocation: async (boxId: string, zoneId: string, shelf: string): Promise<StorageBoxItem> => {
+    return await apiAdapter.patch<{ zoneId: string; shelf: string }, StorageBoxItem>(
+      `${GET_BOXES}/${boxId}/location`,
+      { zoneId, shelf }
+    )
+  },
 }
 
 export default storageService
