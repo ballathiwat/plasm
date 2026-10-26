@@ -202,6 +202,17 @@ const SettingsPage = () => {
           onColorChange={(it, color) => master.updateColor("blood", it, color)}
         />
       )}
+            {activeTab === "zones" && (
+        <SettingsZones
+          zones={master.zones}
+          loading={master.loading}
+          onAddZone={master.addZone}
+          onToggleZone={master.toggleZone}
+          onAddShelf={master.addShelf}
+          onToggleShelf={master.toggleShelf}
+        />
+      )}
+
     </div>
   );
 };
