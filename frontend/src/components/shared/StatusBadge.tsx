@@ -1,7 +1,4 @@
 // frontend/src/components/shared/StatusBadge.tsx
-
-import { bloodBase } from '../../helpers/blood'
-
 interface StatusBadgeProps {
   blood: string
   label?: string
