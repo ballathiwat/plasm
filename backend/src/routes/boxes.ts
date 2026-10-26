@@ -294,4 +294,92 @@ router.patch("/:id/withdraw", async (req, res) => {
   }
 });
 
+// ===== PUT /api/v1/boxes/:id/units =====
+// แก้ไขรายการ units ในกล่อง (เพิ่ม/ลบ)
+router.put("/:id/units", async (req, res) => {
+  try {
+    const { units } = req.body;
+    const unitList: string[] = Array.isArray(units) ? units : [];
+
+    if (unitList.length === 0) {
+      res.status(400).json({ message: "กรุณาเพิ่ม Unit อย่างน้อย 1 รายการ" });
+      return;
+    }
+
+    const box = await prisma.box.findUnique({
+      where: { id: req.params.id },
+      include: { units: { select: { id: true, unitNumber: true, status: true } } },
+    });
+
+    if (!box) {
+      res.status(404).json({ message: "ไม่พบกล่อง" });
+      return;
+    }
+    if (box.status === "WITHDRAWN") {
+      res.status(400).json({ message: "กล่องนี้ถูกนำออกแล้ว ไม่สามารถแก้ไขได้" });
+      return;
+    }
+
+    const currentUnits = box.units.map((u) => u.unitNumber);
+    const toAdd = unitList.filter((u) => !currentUnits.includes(u));
+    const toRemove = box.units.filter((u) => !unitList.includes(u.unitNumber));
+
+    // ตรวจ unit ซ้ำกับกล่องอื่น
+    if (toAdd.length > 0) {
+      const existing = await prisma.unit.findMany({
+        where: { unitNumber: { in: toAdd } },
+        select: { unitNumber: true },
+      });
+      if (existing.length > 0) {
+        const dupes = existing.map((u) => u.unitNumber);
+        res.status(409).json({ message: `Unit ซ้ำ: ${dupes.join(", ")}`, duplicates: dupes });
+        return;
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // ลบ units ที่ไม่อยู่ในรายการใหม่
+      if (toRemove.length > 0) {
+        await tx.unit.deleteMany({
+          where: { id: { in: toRemove.map((u) => u.id) } },
+        });
+      }
+
+      // เพิ่ม units ใหม่
+      if (toAdd.length > 0) {
+        await tx.unit.createMany({
+          data: toAdd.map((u) => ({ unitNumber: u, boxId: box.id })),
+        });
+      }
+
+      // log
+      const details: string[] = [];
+      if (toAdd.length > 0) details.push(`เพิ่ม ${toAdd.length} units`);
+      if (toRemove.length > 0) details.push(`ลบ ${toRemove.length} units`);
+
+      if (details.length > 0) {
+        await tx.logEntry.create({
+          data: {
+            action: "EDIT",
+            boxId: box.id,
+            detail: `แก้ไขกล่อง ${box.boxLabel}: ${details.join(", ")}`,
+            unitCount: unitList.length,
+            userId: req.user?.id,
+          },
+        });
+      }
+    });
+
+    const updated = await prisma.box.findUnique({
+      where: { id: box.id },
+      include: { zone: zoneSelect, units: { select: { unitNumber: true } } },
+    });
+
+    res.json({ ...boxDto(updated!), units: updated!.units.map((u) => u.unitNumber) });
+  } catch (error) {
+    console.error("PUT /boxes/:id/units error:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+  }
+});
+
 export default router;

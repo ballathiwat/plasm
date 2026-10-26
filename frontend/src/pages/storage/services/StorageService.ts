@@ -26,6 +26,10 @@ const storageService = {
   getNextLabel: async (type: string, blood: string): Promise<{ label: string; year: number }> => {
     return await apiAdapter.get<{ label: string; year: number }>(`${GET_BOXES}/next-label`, { type, blood })
   },
+    /** PUT /boxes/:id/units */
+  updateBoxUnits: async (boxId: string, units: string[]): Promise<StorageBoxItem> => {
+    return await apiAdapter.put<{ units: string[] }, StorageBoxItem>(`${GET_BOXES}/${boxId}/units`, { units })
+  },
 
   listPlasmaTypes: () => apiAdapter.get<MasterCode[]>(MASTER_PLASMA_TYPES),
   listBloodTypes: () => apiAdapter.get<MasterCode[]>(MASTER_BLOOD_TYPES),
