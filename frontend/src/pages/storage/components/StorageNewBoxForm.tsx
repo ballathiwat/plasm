@@ -15,6 +15,7 @@ import type {
   QuickAddKind,
 } from "../services/StorageType";
 import StorageQuickAdd from "./StorageQuickAdd";
+import Button from "../../../components/common/Button";
 
 const inputStyle: React.CSSProperties = {
   padding: "10px 14px",
@@ -266,21 +267,9 @@ export default function StorageNewBoxForm({
             onKeyDown={onUnitKeyDown}
             style={{ ...inputStyle, fontFamily: "var(--font-mono)" }}
           />
-          <button
-            onClick={onAddUnit}
-            style={{
-              padding: "10px 18px",
-              borderRadius: "var(--radius-sm, 6px)",
-              border: "1px solid var(--border)",
-              background: "var(--surface-raised)",
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
+          <Button variant="outline" onClick={onAddUnit}>
             เพิ่ม
-          </button>
+          </Button>
         </div>
 
         {scannedUnits.length > 0 && (
@@ -323,26 +312,14 @@ export default function StorageNewBoxForm({
       </div>
 
       {/* Submit */}
-      <button
+            <Button
+        size="lg"
+        loading={submitting}
+        disabled={scannedUnits.length === 0 || !ready}
         onClick={onSubmit}
-        disabled={submitting || scannedUnits.length === 0 || !ready}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "12px 28px",
-          borderRadius: "var(--radius-sm, 6px)",
-          border: "none",
-          background: "var(--primary, #2563EB)",
-          color: "#fff",
-          fontWeight: 600,
-          fontSize: 14,
-          cursor: submitting ? "wait" : "pointer",
-          opacity: submitting || scannedUnits.length === 0 || !ready ? 0.6 : 1,
-        }}
       >
-        {submitting ? "กำลังบันทึก..." : "บันทึก"}
-      </button>
+        {submitting ? 'กำลังบันทึก...' : 'บันทึก'}
+      </Button>
     </div>
   );
 }

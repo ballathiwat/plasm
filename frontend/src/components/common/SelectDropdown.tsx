@@ -92,8 +92,7 @@ const TOKENS = {
   textPlaceholder: '#94a3b8',
   radius: '8px',
   shadow: '0 4px 12px rgba(26,35,50,0.12)',
-  font: "'Segoe UI', system-ui, -apple-system, sans-serif",
-} as const
+  font: "var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif)",} as const
 
 /* ----------------------------------------------------------
    Custom styles for react-select
