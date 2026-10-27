@@ -160,9 +160,31 @@ const MapPage = () => {
                         color: "var(--stock-danger)",
                       }}
                     >
-                      {row.oldest
-                        ? `${row.oldest.boxLabel} · ${row.oldest.zoneName} ${row.oldest.shelf} · ${row.oldest.collectionDate}`
-                        : "-"}
+                      {row.oldest ? (
+                        <div style={{ lineHeight: 1.6 }}>
+                          <div style={{ fontWeight: 600 }}>
+                            {row.oldest.boxLabel}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            {row.oldest.zoneName} · ชั้น {row.oldest.shelf}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "var(--text-disabled)",
+                            }}
+                          >
+                            วันที่เก็บ {row.oldest.collectionDate}
+                          </div>
+                        </div>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                     <td
                       style={{
@@ -170,9 +192,31 @@ const MapPage = () => {
                         color: "var(--stock-normal)",
                       }}
                     >
-                      {row.newest
-                        ? `${row.newest.boxLabel} · ${row.newest.zoneName} ${row.newest.shelf} · ${row.newest.collectionDate}`
-                        : "-"}
+                      {row.newest ? (
+                        <div style={{ lineHeight: 1.6 }}>
+                          <div style={{ fontWeight: 600 }}>
+                            {row.newest.boxLabel}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            {row.newest.zoneName} · ชั้น {row.newest.shelf}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "var(--text-disabled)",
+                            }}
+                          >
+                            วันที่เก็บ {row.newest.collectionDate}
+                          </div>
+                        </div>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                   </tr>
                 ))}
