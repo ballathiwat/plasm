@@ -19,41 +19,46 @@ export default function useReport() {
     type: '',
   })
 
-  // ── ค่าที่กดค้นหาล่าสุด (แสดงผลตามนี้เท่านั้น) ──
   const [activeType, setActiveType] = useState('')
   const [activeLabel, setActiveLabel] = useState('')
-
   const [reportData, setReportData] = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [searched, setSearched] = useState(false)
   const didInitialFetch = useRef(false)
 
-  // ── fetch report ──
   const fetchReport = useCallback(async (f: ReportFilters) => {
     setLoading(true)
     setSearched(true)
     try {
       const data = await reportService.getReport({ from: f.from, to: f.to })
+
+      // ★★★ DEBUG — ดู console แล้วแคปมาให้ดู ★★★
+      console.log('=== Report API Response ===')
+      console.log('filters:', f)
+      console.log('bloods:', data.bloods)
+      console.log('types:', data.types)
+      console.log('data[' + f.type + ']:', data.data?.[f.type])
+      console.log('stock[' + f.type + ']:', data.stock?.[f.type])
+      console.log('full response:', JSON.stringify(data, null, 2))
+
       setReportData(data)
-      // lock ค่าที่แสดงผล ณ ตอนกดค้นหา
       setActiveType(f.type)
       const fmtDate = (d: string) => d.split('-').reverse().join('/')
       setActiveLabel(`${f.type} · ${fmtDate(f.from)} — ${fmtDate(f.to)}`)
-    } catch {
+    } catch (err) {
+      console.error('Report fetch error:', err)
       setReportData(null)
     } finally {
       setLoading(false)
     }
   }, [])
 
-  // ── โหลด master → fetch ชนิดแรกอัตโนมัติครั้งเดียว ──
   useEffect(() => {
     apiAdapter
       .get<{ code: string; active: boolean }[]>(MASTER_PLASMA_TYPES)
       .then((list) => {
         const codes = list.filter((t) => t.active).map((t) => t.code)
         setPlasmaTypes(codes)
-
         if (codes.length && !didInitialFetch.current) {
           didInitialFetch.current = true
           const initFilters: ReportFilters = {
@@ -67,30 +72,20 @@ export default function useReport() {
           setLoading(false)
         }
       })
-      .catch(() => {
-        setLoading(false)
-      })
+      .catch(() => setLoading(false))
   }, [fetchReport])
 
-  // ── เปลี่ยน filter เฉยๆ ไม่โหลดข้อมูล ──
   const handleFilterChange = (key: keyof ReportFilters, value: string) => {
     setFilters((p) => ({ ...p, [key]: value }))
   }
 
-  // ── กดค้นหา → โหลดข้อมูล + อัพเดท activeType ──
   const handleSearch = () => {
     fetchReport(filters)
   }
 
   return {
-    filters,
-    plasmaTypes,
-    reportData,
-    loading,
-    searched,
-    activeType,     // ← ชนิดที่กดค้นหาล่าสุด
-    activeLabel,    // ← label แสดงช่วงเวลา
-    handleFilterChange,
-    handleSearch,
+    filters, plasmaTypes, reportData, loading, searched,
+    activeType, activeLabel,
+    handleFilterChange, handleSearch,
   }
 }
