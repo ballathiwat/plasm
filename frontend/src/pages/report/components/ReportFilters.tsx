@@ -1,27 +1,17 @@
-// src/pages/report/components/ReportFilters.tsx
+// ============================================================
+//  src/pages/report/components/ReportFilters.tsx
+// ============================================================
 
 import { Search } from 'lucide-react'
-import type { ReportFilters as Filters, DateMode } from '../services/ReportType'
+import type { ReportFilters as Filters } from '../services/ReportType'
 
 interface Props {
   filters: Filters
+  plasmaTypes: string[]
   loading: boolean
-  onModeChange: (mode: DateMode) => void
   onChange: (key: keyof Filters, value: string) => void
   onSearch: () => void
 }
-
-const btnStyle = (active: boolean): React.CSSProperties => ({
-  padding: '7px 16px',
-  fontSize: 13,
-  fontWeight: 600,
-  fontFamily: 'inherit',
-  borderRadius: 'var(--radius-md, 8px)',
-  border: active ? '2px solid var(--primary, #2563EB)' : '1px solid var(--border, #E4E4E7)',
-  background: active ? 'var(--primary-light, #EFF6FF)' : 'var(--surface, #fff)',
-  color: active ? 'var(--primary, #2563EB)' : 'var(--text-secondary, #71717A)',
-  cursor: 'pointer',
-})
 
 const inputStyle: React.CSSProperties = {
   padding: '7px 12px',
@@ -34,7 +24,16 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
 }
 
-export default function ReportFilters({ filters, loading, onModeChange, onChange, onSearch }: Props) {
+const labelStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: 'var(--text-secondary, #71717A)',
+  whiteSpace: 'nowrap',
+}
+
+export default function ReportFilters({
+  filters, plasmaTypes, loading, onChange, onSearch,
+}: Props) {
   return (
     <div style={{
       background: 'var(--surface, #fff)',
@@ -48,43 +47,48 @@ export default function ReportFilters({ filters, loading, onModeChange, onChange
       alignItems: 'center',
       gap: 12,
     }}>
-      <div style={{ display: 'flex', gap: 6 }}>
-        <button style={btnStyle(filters.mode === 'single')} onClick={() => onModeChange('single')}>
-          วันเดียว
-        </button>
-        <button style={btnStyle(filters.mode === 'range')} onClick={() => onModeChange('range')}>
-          ช่วงวันที่
-        </button>
+      {/* ชนิดพลาสมา — Dropdown */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={labelStyle}>ชนิด:</span>
+        <select
+          value={filters.type}
+          onChange={(e) => onChange('type', e.target.value)}
+          style={{
+            ...inputStyle,
+            minWidth: 120,
+            cursor: 'pointer',
+            appearance: 'auto',
+          }}
+        >
+          {!filters.type && <option value="">-- เลือก --</option>}
+          {plasmaTypes.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
       </div>
 
-      {filters.mode === 'single' ? (
+      {/* วันที่ — ช่วง (จาก-ถึง) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={labelStyle}>ตั้งแต่:</span>
         <input
           type="date"
-          value={filters.date}
-          onChange={(e) => onChange('date', e.target.value)}
+          value={filters.from}
+          onChange={(e) => onChange('from', e.target.value)}
           style={inputStyle}
         />
-      ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <input
-            type="date"
-            value={filters.from}
-            onChange={(e) => onChange('from', e.target.value)}
-            style={inputStyle}
-          />
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>ถึง</span>
-          <input
-            type="date"
-            value={filters.to}
-            onChange={(e) => onChange('to', e.target.value)}
-            style={inputStyle}
-          />
-        </div>
-      )}
+        <span style={labelStyle}>ถึง:</span>
+        <input
+          type="date"
+          value={filters.to}
+          onChange={(e) => onChange('to', e.target.value)}
+          style={inputStyle}
+        />
+      </div>
 
+      {/* ปุ่มค้นหา */}
       <button
         onClick={onSearch}
-        disabled={loading}
+        disabled={loading || !filters.type}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -97,8 +101,9 @@ export default function ReportFilters({ filters, loading, onModeChange, onChange
           border: 'none',
           background: 'var(--primary, #2563EB)',
           color: '#fff',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          opacity: loading ? 0.6 : 1,
+          cursor: (loading || !filters.type) ? 'not-allowed' : 'pointer',
+          opacity: (loading || !filters.type) ? 0.6 : 1,
+          marginLeft: 'auto',
         }}
       >
         <Search size={14} />
