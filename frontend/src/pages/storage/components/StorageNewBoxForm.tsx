@@ -2,7 +2,9 @@
 //  src/pages/storage/components/StorageNewBoxForm.tsx
 // ============================================================
 
-import { X } from "lucide-react";
+import { useMemo } from 'react'
+import { X } from 'lucide-react'
+import SelectDropdown, { type OptionType } from '../../../components/common/SelectDropdown'
 import type {
   StorageFormData, MasterOptions, MasterShelf, QuickAddKind,
 } from '../services/StorageType'
@@ -41,11 +43,42 @@ interface Props {
   onSubmit: () => void
 }
 
+/* ----------------------------------------------------------
+   Helpers: แปลง master data → OptionType[]
+---------------------------------------------------------- */
+const toOption = (value: string, label: string): OptionType => ({ value, label })
+
+const findOption = (options: OptionType[], value: string): OptionType | null =>
+  options.find((o) => o.value === value) ?? null
+
 export default function StorageNewBoxForm({
   form, master, nextLabel, scannedUnits, unitInput, submitting, availableShelves,
   onFormChange, onQuickAdd, onUnitInputChange, onAddUnit, onUnitKeyDown, onRemoveUnit, onSubmit,
 }: Props) {
   const ready = !!(form.type && form.blood && form.zoneId && form.shelf)
+
+  // Memoize options เพื่อไม่ re-create ทุก render
+  const plasmaOpts = useMemo<OptionType[]>(
+    () => master.plasmaTypes.map((p) => toOption(p.code, p.code)),
+    [master.plasmaTypes],
+  )
+  const bloodOpts = useMemo<OptionType[]>(
+    () => master.bloodTypes.map((b) => toOption(b.code, b.code)),
+    [master.bloodTypes],
+  )
+  const zoneOpts = useMemo<OptionType[]>(
+    () => master.zones.map((z) => toOption(z.id, z.name)),
+    [master.zones],
+  )
+  const shelfOpts = useMemo<OptionType[]>(
+    () => availableShelves.map((s) => toOption(s.code, s.code)),
+    [availableShelves],
+  )
+
+  // Wrapper: SelectDropdown onChange → onFormChange(field, string)
+  const handleSelect = (field: keyof StorageFormData) => (opt: OptionType | null) => {
+    onFormChange(field, opt?.value ?? '')
+  }
 
   return (
     <div style={{
@@ -89,21 +122,29 @@ export default function StorageNewBoxForm({
           />
         </div>
 
-        {/* ชนิด */}
+        {/* ชนิดพลาสมา */}
         <div>
-          <label style={labelStyle}>ชนิดพลาสมา</label>
-          <select value={form.type} onChange={(e) => onFormChange('type', e.target.value)} style={inputStyle}>
-            {master.plasmaTypes.map((p) => <option key={p.id} value={p.code}>{p.code}</option>)}
-          </select>
+          <SelectDropdown
+            label="ชนิดพลาสมา"
+            placeholder="เลือกชนิด..."
+            options={plasmaOpts}
+            value={findOption(plasmaOpts, form.type)}
+            onChange={handleSelect('type')}
+            isClearable={false}
+          />
           <StorageQuickAdd placeholder="ชื่อชนิดใหม่ เช่น IFFP" onAdd={(v) => onQuickAdd('type', v)} />
         </div>
 
         {/* หมู่เลือด */}
         <div>
-          <label style={labelStyle}>หมู่เลือด</label>
-          <select value={form.blood} onChange={(e) => onFormChange('blood', e.target.value)} style={inputStyle}>
-            {master.bloodTypes.map((b) => <option key={b.id} value={b.code}>{b.code}</option>)}
-          </select>
+          <SelectDropdown
+            label="หมู่เลือด"
+            placeholder="เลือกหมู่เลือด..."
+            options={bloodOpts}
+            value={findOption(bloodOpts, form.blood)}
+            onChange={handleSelect('blood')}
+            isClearable={false}
+          />
           <StorageQuickAdd placeholder="หมู่เลือดใหม่ เช่น A-" uppercase onAdd={(v) => onQuickAdd('blood', v)} />
         </div>
 
@@ -118,21 +159,30 @@ export default function StorageNewBoxForm({
           />
         </div>
 
-        {/* สถานที่ */}
+        {/* ตำแหน่งจัดเก็บ */}
         <div>
-          <label style={labelStyle}>ตำแหน่งจัดเก็บ</label>
-          <select value={form.zoneId} onChange={(e) => onFormChange('zoneId', e.target.value)} style={inputStyle}>
-            {master.zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
-          </select>
+          <SelectDropdown
+            label="ตำแหน่งจัดเก็บ"
+            placeholder="เลือกห้อง/ตู้..."
+            options={zoneOpts}
+            value={findOption(zoneOpts, form.zoneId)}
+            onChange={handleSelect('zoneId')}
+            isClearable={false}
+          />
           <StorageQuickAdd placeholder="ชื่อห้อง/ตู้ใหม่" maxLength={60} onAdd={(v) => onQuickAdd('zone', v)} />
         </div>
 
         {/* ชั้นวาง */}
         <div>
-          <label style={labelStyle}>ชั้นวาง</label>
-          <select value={form.shelf} onChange={(e) => onFormChange('shelf', e.target.value)} style={inputStyle}>
-            {availableShelves.map((s) => <option key={s.id} value={s.code}>{s.code}</option>)}
-          </select>
+          <SelectDropdown
+            label="ชั้นวาง"
+            placeholder="เลือกชั้น..."
+            options={shelfOpts}
+            value={findOption(shelfOpts, form.shelf)}
+            onChange={handleSelect('shelf')}
+            isClearable={false}
+            disabled={!form.zoneId}
+          />
           <StorageQuickAdd
             placeholder="ชั้นใหม่ เช่น R4"
             uppercase
@@ -208,7 +258,7 @@ export default function StorageNewBoxForm({
           opacity: submitting || scannedUnits.length === 0 || !ready ? 0.6 : 1,
         }}
       >
-                {submitting ? 'กำลังบันทึก...' : 'บันทึก'}
+        {submitting ? 'กำลังบันทึก...' : 'บันทึก'}
       </button>
     </div>
   )
