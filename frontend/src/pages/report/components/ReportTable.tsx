@@ -2,6 +2,7 @@
 //  src/pages/report/components/ReportTable.tsx
 // ============================================================
 
+import { useMemo } from 'react'
 import type { ReportData } from '../services/ReportType'
 import { groupSurface, groupInk } from '../services/ReportType'
 
@@ -43,13 +44,37 @@ const badgeStyle = (blood: string): React.CSSProperties => ({
 })
 
 export default function ReportTable({ data, selectedType }: Props) {
-  const { bloods, data: movement, stock } = data
-  const typeData = movement[selectedType] || {}
-  const typeStock = stock[selectedType] || {}
+  const { bloods } = data
 
-  let totalStored = 0
-  let totalWithdrawn = 0
-  let totalStock = 0
+  // ── ดึงข้อมูลเฉพาะชนิดที่เลือก ──
+  const typeData = data.data?.[selectedType] ?? {}
+  const typeStock = data.stock?.[selectedType] ?? {}
+
+  // ── สร้าง rows + คำนวณ total แยกจาก render ──
+  const { rows, totalStored, totalWithdrawn, totalStock } = useMemo(() => {
+    let sumStored = 0
+    let sumWithdrawn = 0
+    let sumStock = 0
+
+    const list = bloods.map((blood) => {
+      const stored = typeData[blood]?.stored ?? 0
+      const withdrawn = typeData[blood]?.withdrawn ?? 0
+      const stock = typeStock[blood] ?? 0
+
+      sumStored += stored
+      sumWithdrawn += withdrawn
+      sumStock += stock
+
+      return { blood, stored, withdrawn, stock }
+    })
+
+    return {
+      rows: list,
+      totalStored: sumStored,
+      totalWithdrawn: sumWithdrawn,
+      totalStock: sumStock,
+    }
+  }, [bloods, typeData, typeStock])
 
   return (
     <div style={{
@@ -59,6 +84,7 @@ export default function ReportTable({ data, selectedType }: Props) {
       boxShadow: 'var(--shadow-sm)',
       overflow: 'hidden',
     }}>
+      {/* Type header */}
       <div style={{
         padding: '14px 20px',
         background: 'var(--surface-raised, #F4F4F5)',
@@ -69,6 +95,7 @@ export default function ReportTable({ data, selectedType }: Props) {
         <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>ชนิดพลาสมา</span>
       </div>
 
+      {/* Table */}
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -79,44 +106,44 @@ export default function ReportTable({ data, selectedType }: Props) {
               <th style={th}>คงเหลือในสต็อก</th>
             </tr>
           </thead>
-          <tbody>
-            {bloods.map((blood) => {
-              const d = typeData[blood] || { stored: 0, withdrawn: 0 }
-              const s = typeStock[blood] || 0
-              totalStored += d.stored
-              totalWithdrawn += d.withdrawn
-              totalStock += s
 
-              return (
-                <tr key={blood}>
-                  <td style={{ ...td, textAlign: 'left', paddingLeft: 20 }}>
-                    <span style={badgeStyle(blood)}>{blood}</span>
-                  </td>
-                  <td style={td}>
-                    {d.stored > 0
-                      ? <span style={{ color: '#16A34A', fontWeight: 600 }}>+{d.stored}</span>
-                      : <span style={{ color: 'var(--text-disabled)' }}>0</span>}
-                  </td>
-                  <td style={td}>
-                    {d.withdrawn > 0
-                      ? <span style={{ color: '#DC2626', fontWeight: 600 }}>-{d.withdrawn}</span>
-                      : <span style={{ color: 'var(--text-disabled)' }}>0</span>}
-                  </td>
-                  <td style={td}>
-                    <span style={{ fontWeight: 700, fontSize: 14 }}>{s}</span>
-                  </td>
-                </tr>
-              )
-            })}
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.blood}>
+                <td style={{ ...td, textAlign: 'left', paddingLeft: 20 }}>
+                  <span style={badgeStyle(row.blood)}>{row.blood}</span>
+                </td>
+                <td style={td}>
+                  {row.stored > 0
+                    ? <span style={{ color: '#16A34A', fontWeight: 600 }}>+{row.stored}</span>
+                    : <span style={{ color: 'var(--text-disabled, #A1A1AA)' }}>0</span>}
+                </td>
+                <td style={td}>
+                  {row.withdrawn > 0
+                    ? <span style={{ color: '#DC2626', fontWeight: 600 }}>-{row.withdrawn}</span>
+                    : <span style={{ color: 'var(--text-disabled, #A1A1AA)' }}>0</span>}
+                </td>
+                <td style={td}>
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>{row.stock}</span>
+                </td>
+              </tr>
+            ))}
           </tbody>
+
           <tfoot>
             <tr style={{ background: 'var(--surface-raised, #F4F4F5)' }}>
               <td style={{ ...td, textAlign: 'left', paddingLeft: 20, fontWeight: 700, borderBottom: 'none' }}>
                 รวม {selectedType}
               </td>
-              <td style={{ ...td, fontWeight: 700, borderBottom: 'none', color: '#16A34A' }}>+{totalStored}</td>
-              <td style={{ ...td, fontWeight: 700, borderBottom: 'none', color: '#DC2626' }}>-{totalWithdrawn}</td>
-              <td style={{ ...td, fontWeight: 700, borderBottom: 'none', fontSize: 15 }}>{totalStock}</td>
+              <td style={{ ...td, fontWeight: 700, borderBottom: 'none', color: '#16A34A' }}>
+                +{totalStored}
+              </td>
+              <td style={{ ...td, fontWeight: 700, borderBottom: 'none', color: '#DC2626' }}>
+                -{totalWithdrawn}
+              </td>
+              <td style={{ ...td, fontWeight: 700, borderBottom: 'none', fontSize: 15 }}>
+                {totalStock}
+              </td>
             </tr>
           </tfoot>
         </table>
