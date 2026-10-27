@@ -9,7 +9,7 @@ import DashboardRecentActivity from './components/DashboardRecentActivity'
 
 const DashboardPage = () => {
   const {
-    stockData, logEntries, loading,
+    stockData, dailyData, logEntries, loading,
     total, lowGroups, warnGroups,
   } = useDashboard()
 
@@ -17,7 +17,7 @@ const DashboardPage = () => {
 
   return (
     <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
-      <DashboardHero total={total} />
+      <DashboardHero total={total} dailyData={dailyData} />
       <DashboardAlerts lowGroups={lowGroups} warnGroups={warnGroups} />
       <DashboardStockCards data={stockData} />
       <DashboardCharts stockData={stockData} />

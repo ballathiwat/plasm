@@ -1,0 +1,148 @@
+/* src/assets/styles/components/form-input.css */
+/* ── Plasm FormInput Component ── */
+
+.plasm-input {
+  width: 100%;
+}
+
+/* Label */
+.plasm-input__label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #1a2332);
+  margin-bottom: 6px;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+}
+.plasm-input__label--required::after {
+  content: ' *';
+  color: #ef4444;
+}
+
+/* Input wrapper (for icon positioning) */
+.plasm-input__wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* Shared input/textarea styles */
+.plasm-input__field {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border, #DDE3EA);
+  border-radius: var(--radius-md, 8px);
+  font-size: 14px;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+  color: var(--text-primary, #1a2332);
+  background: var(--surface, #fff);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.plasm-input__field::placeholder {
+  color: var(--text-muted, #94a3b8);
+}
+.plasm-input__field:focus {
+  border-color: var(--primary, #2563EB);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.plasm-input__field:disabled,
+.plasm-input__field:read-only {
+  background: var(--surface-raised, #f1f5f9);
+  cursor: not-allowed;
+}
+.plasm-input__field:read-only:focus {
+  border-color: var(--border, #DDE3EA);
+  box-shadow: none;
+}
+
+/* With left icon */
+.plasm-input__field--icon-left {
+  padding-left: 38px;
+}
+
+/* With right icon */
+.plasm-input__field--icon-right {
+  padding-right: 38px;
+}
+
+/* Icons */
+.plasm-input__icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary, #5A6A7E);
+  pointer-events: none;
+}
+.plasm-input__icon--left {
+  left: 12px;
+}
+.plasm-input__icon--right {
+  right: 12px;
+}
+
+/* Clickable right icon (e.g. password toggle) */
+.plasm-input__icon-btn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary, #5A6A7E);
+  border-radius: var(--radius-sm, 6px);
+  transition: color 0.15s;
+}
+.plasm-input__icon-btn:hover {
+  color: var(--text-primary, #1a2332);
+}
+
+/* Textarea */
+.plasm-input__field--textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+/* Sizes */
+.plasm-input__field--sm {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.plasm-input__field--lg {
+  padding: 12px 16px;
+  font-size: 15px;
+}
+
+/* Monospace */
+.plasm-input__field--mono {
+  font-family: var(--font-mono, 'SF Mono', 'Fira Code', monospace);
+}
+
+/* Error state */
+.plasm-input--error .plasm-input__field {
+  border-color: #ef4444;
+}
+.plasm-input--error .plasm-input__field:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Error/Helper text */
+.plasm-input__error {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+}
+.plasm-input__helper {
+  font-size: 12px;
+  color: var(--text-secondary, #5A6A7E);
+  margin-top: 4px;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+}

@@ -32,14 +32,6 @@ export default function useReport() {
     try {
       const data = await reportService.getReport({ from: f.from, to: f.to })
 
-      // ★★★ DEBUG — ดู console แล้วแคปมาให้ดู ★★★
-      console.log('=== Report API Response ===')
-      console.log('filters:', f)
-      console.log('bloods:', data.bloods)
-      console.log('types:', data.types)
-      console.log('data[' + f.type + ']:', data.data?.[f.type])
-      console.log('stock[' + f.type + ']:', data.stock?.[f.type])
-      console.log('full response:', JSON.stringify(data, null, 2))
 
       setReportData(data)
       setActiveType(f.type)

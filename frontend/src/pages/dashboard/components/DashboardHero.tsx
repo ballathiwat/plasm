@@ -1,51 +1,59 @@
-// ============================================================
-//  src/pages/dashboard/components/DashboardHero.tsx
-// ============================================================
+// frontend/src/pages/dashboard/components/DashboardHero.tsx
 
+import { useNavigate } from 'react-router-dom'
 import { Package, PackageOpen } from 'lucide-react'
+import { useAuth } from '../../../Routes/AuthProtected'
+import { sumBlood } from '../services/DashboardType'
+import type { DailyData } from '../services/DashboardType'
+import '../../../assets/styles/dashboard.css'
 
 interface Props {
   total: number
+  dailyData: DailyData[]
 }
 
-export default function DashboardHero({ total }: Props) {
-  return (
-    <section style={{
-      position: 'relative', overflow: 'hidden',
-      borderRadius: 'var(--radius-lg, 10px)',
-      background: 'var(--primary, #2563EB)', color: '#fff',
-      padding: '28px 28px', marginBottom: 16,
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      gap: 16, flexWrap: 'wrap',
-    }}>
-      <div style={{ position: 'absolute', right: -40, top: -60, width: 220, height: 220, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-      <div style={{ position: 'absolute', right: 120, bottom: -80, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+export default function DashboardHero({ total, dailyData }: Props) {
+  const navigate = useNavigate()
+  const { user } = useAuth()
 
-      <div style={{ position: 'relative', flex: '1 1 320px' }}>
-        <p style={{ fontSize: 14, opacity: 0.85 }}>สวัสดี, ผู้ดูแลระบบ</p>
-        <p style={{ fontWeight: 700, fontSize: 28, lineHeight: 1.3, marginTop: 6 }}>
+  // หาข้อมูลวันนี้จาก dailyData (entry สุดท้าย = วันนี้)
+  const today = dailyData.length > 0 ? dailyData[dailyData.length - 1] : null
+  const todayStored = today ? sumBlood(today.store) : 0
+  const todayWithdrawn = today ? sumBlood(today.withdraw) : 0
+
+  return (
+    <section className="hero">
+      <div className="hero__circle-1" />
+      <div className="hero__circle-2" />
+
+      <div className="hero__content">
+        <p className="hero__greeting">สวัสดี, {user.name || 'ผู้ดูแลระบบ'}</p>
+        <p className="hero__title">
           สต็อกพลาสมารวม {total.toLocaleString()} units
         </p>
-        <p style={{ fontSize: 13, marginTop: 8, opacity: 0.8 }}>
-          อัปเดตล่าสุด {new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น. · ห้อง -30°C และตู้ -30°C
+        <p className="hero__updated">
+          อัปเดตล่าสุด{' '}
+          {new Date().toLocaleTimeString('th-TH', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}{' '}
+          น. · วันนี้: นำเข้า{' '}
+          <span style={{ fontWeight: 600 }}>+{todayStored}</span> · นำออก{' '}
+          <span style={{ fontWeight: 600 }}>-{todayWithdrawn}</span>
         </p>
       </div>
 
-      <div style={{ position: 'relative', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <button style={{
-          display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px',
-          borderRadius: 'var(--radius-sm, 6px)', border: 'none',
-          background: '#fff', color: 'var(--primary, #2563EB)',
-          fontWeight: 600, fontSize: 13, cursor: 'pointer',
-        }}>
+      <div className="hero__actions">
+        <button
+          className="hero__btn-primary"
+          onClick={() => navigate('/storage')}
+        >
           <Package size={14} /> จัดเก็บกล่องใหม่
         </button>
-        <button style={{
-          display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px',
-          borderRadius: 'var(--radius-sm, 6px)',
-          border: '1px solid rgba(255,255,255,0.6)', background: 'transparent', color: '#fff',
-          fontWeight: 600, fontSize: 13, cursor: 'pointer',
-        }}>
+        <button
+          className="hero__btn-outline"
+          onClick={() => navigate('/withdraw')}
+        >
           <PackageOpen size={14} /> นำออก
         </button>
       </div>
