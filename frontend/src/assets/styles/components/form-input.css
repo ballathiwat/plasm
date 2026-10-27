@@ -28,6 +28,7 @@
 /* Shared input/textarea styles */
 .plasm-input__field {
   width: 100%;
+  min-height: 40px;
   padding: 10px 14px;
   border: 1px solid var(--border, #DDE3EA);
   border-radius: var(--radius-md, 8px);
@@ -58,7 +59,7 @@
 
 /* With left icon */
 .plasm-input__field--icon-left {
-  padding-left: 38px;
+  padding-left: 40px;
 }
 
 /* With right icon */
@@ -77,7 +78,7 @@
   pointer-events: none;
 }
 .plasm-input__icon--left {
-  left: 12px;
+  left: 14px;
 }
 .plasm-input__icon--right {
   right: 12px;
@@ -112,11 +113,14 @@
 
 /* Sizes */
 .plasm-input__field--sm {
-  padding: 6px 10px;
+  padding-block: 6px;
+  padding-right: 10px;
   font-size: 13px;
 }
+
 .plasm-input__field--lg {
-  padding: 12px 16px;
+  padding-block: 12px;
+  padding-right: 16px;
   font-size: 15px;
 }
 

@@ -2,21 +2,16 @@
 //  src/pages/withdraw/components/WithdrawBoxList.tsx
 // ============================================================
 
+import { useMemo } from "react";
 import { Search, ChevronRight } from "lucide-react";
 import type { WithdrawBoxItem } from "../services/WithdrawType";
 import { groupSurface, groupInk } from "../../../helpers/blood";
 import useBloodTypes from "../../../helpers/useBloodTypes";
 import { zoneLabel } from "../../../helpers/zone";
-
-const inputStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  border: "1px solid var(--border, #E4E4E7)",
-  borderRadius: "var(--radius-sm, 6px)",
-  fontSize: 14,
-  background: "var(--surface, #fff)",
-  color: "var(--text-primary, #18181B)",
-  width: "100%",
-};
+import FormInput from "../../../components/common/FormInput";
+import SelectDropdown, {
+  type OptionType,
+} from "../../../components/common/SelectDropdown";
 
 interface Props {
   boxes: WithdrawBoxItem[];
@@ -28,6 +23,14 @@ interface Props {
   onFilterBloodChange: (b: string) => void;
   onSelectBox: (boxId: string) => void;
 }
+
+/* ── Helpers ── */
+const toOption = (value: string, label: string): OptionType => ({
+  value,
+  label,
+});
+const findOption = (options: OptionType[], value: string): OptionType | null =>
+  options.find((o) => o.value === value) ?? null;
 
 export default function WithdrawBoxList({
   boxes,
@@ -41,40 +44,41 @@ export default function WithdrawBoxList({
 }: Props) {
   const bloodTypes = useBloodTypes();
 
+  const bloodOptions = useMemo<OptionType[]>(
+    () => [
+      { value: "", label: "ทุกหมู่เลือด" },
+      ...bloodTypes.map((g) => toOption(g, g)),
+    ],
+    [bloodTypes]
+  );
+
+  const handleBloodChange = (opt: OptionType | null) => {
+    onFilterBloodChange(opt?.value ?? "");
+  };
+
   return (
     <div style={{ flex: "1 1 400px", minWidth: 0 }}>
       {/* Search + Filter */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        <div style={{ flex: 1, position: "relative" }}>
-          <Search
-            size={14}
-            style={{
-              position: "absolute",
-              left: 10,
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "var(--text-secondary)",
-            }}
-          />
-          <input
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "flex-start" }}>
+        <div style={{ flex: 1 }}>
+          <FormInput
             placeholder="ค้นหากล่อง หรือ unit..."
             value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            style={{ ...inputStyle, paddingLeft: 32 }}
+            onChange={onSearchChange}
+            icon={<Search size={14} />}
+            size="sm"
           />
         </div>
-        <select
-          value={filterBlood}
-          onChange={(e) => onFilterBloodChange(e.target.value)}
-          style={{ ...inputStyle, width: "auto" }}
-        >
-          <option value="">ทุกหมู่เลือด</option>
-          {bloodTypes.map((g) => (
-            <option key={g} value={g}>
-              {g}
-            </option>
-          ))}
-        </select>
+        <div style={{ minWidth: 150 }}>
+          <SelectDropdown
+            placeholder="หมู่เลือด"
+            options={bloodOptions}
+            value={findOption(bloodOptions, filterBlood)}
+            onChange={handleBloodChange}
+            isClearable={false}
+            isSearchable={false}
+          />
+        </div>
       </div>
 
       {/* Box cards */}
@@ -97,11 +101,13 @@ export default function WithdrawBoxList({
               color: "var(--text-secondary)",
             }}
           >
-            {searchQuery ? "ไม่พบกล่องที่ค้นหา" : "ไม่มีกล่องที่เก็บอยู่"}
+            {searchQuery
+              ? "ไม่พบกล่องที่ตรงกับคำค้นหา"
+              : "ไม่มีกล่องที่พร้อมนำออก"}
           </div>
         ) : (
           boxes.map((box) => {
-            const isSelected = selectedBoxId === box.id;
+            const isSelected = box.id === selectedBoxId;
             return (
               <button
                 key={box.id}
@@ -110,9 +116,7 @@ export default function WithdrawBoxList({
                   display: "flex",
                   alignItems: "center",
                   gap: 12,
-                  padding: "14px 16px",
-                  textAlign: "left",
-                  width: "100%",
+                  padding: "12px 14px",
                   background: isSelected
                     ? "var(--group-a-surface, #DBEAFE)"
                     : "var(--surface, #fff)",
@@ -122,6 +126,9 @@ export default function WithdrawBoxList({
                   borderRadius: "var(--radius-md, 8px)",
                   cursor: "pointer",
                   transition: "border 0.15s",
+                  textAlign: "left",
+                  fontFamily: "inherit",
+                  width: "100%",
                 }}
               >
                 <span
