@@ -1,0 +1,149 @@
+/* src/assets/styles/components/modal.css */
+/* ── Plasm Modal Component ── */
+
+/* Overlay */
+.plasm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: plasm-modal-fade 0.15s ease;
+}
+
+/* Panel */
+.plasm-modal {
+  background: var(--surface, #fff);
+  border-radius: var(--radius-lg, 10px);
+  box-shadow: var(--shadow-md, 0 12px 28px rgba(26, 35, 50, 0.14));
+  width: 100%;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  animation: plasm-modal-rise 0.2s ease;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+}
+
+/* Sizes */
+.plasm-modal--sm { max-width: 400px; }
+.plasm-modal--md { max-width: 520px; }
+.plasm-modal--lg { max-width: 680px; }
+.plasm-modal--xl { max-width: 860px; }
+.plasm-modal--full { max-width: calc(100vw - 32px); }
+
+/* Header */
+.plasm-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+  gap: 12px;
+}
+.plasm-modal__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary, #18181B);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.plasm-modal__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-secondary, #71717A);
+  display: flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.plasm-modal__close:hover {
+  background: var(--surface-raised, #F4F4F5);
+  color: var(--text-primary, #18181B);
+}
+
+/* Body */
+.plasm-modal__body {
+  padding: 16px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+.plasm-modal__body--no-header {
+  padding-top: 24px;
+}
+
+/* Footer */
+.plasm-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 24px 20px;
+}
+.plasm-modal__footer--left {
+  justify-content: flex-start;
+}
+.plasm-modal__footer--between {
+  justify-content: space-between;
+}
+
+/* ── Confirm variant ── */
+.plasm-modal__confirm-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full, 99px);
+  flex-shrink: 0;
+}
+.plasm-modal__confirm-icon--warning {
+  background: #FFFBEB;
+  color: #D97706;
+}
+.plasm-modal__confirm-icon--danger {
+  background: #FEF2F2;
+  color: #DC2626;
+}
+.plasm-modal__confirm-icon--info {
+  background: #EFF6FF;
+  color: var(--primary, #2563EB);
+}
+.plasm-modal__confirm-icon--success {
+  background: #F0FDF4;
+  color: #16A34A;
+}
+.plasm-modal__confirm-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 24px;
+}
+.plasm-modal__confirm-text h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #18181B);
+  margin: 0 0 4px;
+}
+.plasm-modal__confirm-text p {
+  font-size: 14px;
+  color: var(--text-secondary, #71717A);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Animations ── */
+@keyframes plasm-modal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes plasm-modal-rise {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
