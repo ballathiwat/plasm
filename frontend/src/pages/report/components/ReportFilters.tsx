@@ -2,7 +2,13 @@
 //  src/pages/report/components/ReportFilters.tsx
 // ============================================================
 
+import { useMemo } from 'react'
 import { Search } from 'lucide-react'
+import SelectDropdown, {
+  type OptionType,
+} from '../../../components/common/SelectDropdown'
+import DateInput from '../../../components/common/DateInput'
+import Button from '../../../components/common/Button'
 import type { ReportFilters as Filters } from '../services/ReportType'
 
 interface Props {
@@ -13,27 +19,23 @@ interface Props {
   onSearch: () => void
 }
 
-const inputStyle: React.CSSProperties = {
-  padding: '7px 12px',
-  fontSize: 13,
-  border: '1px solid var(--border, #E4E4E7)',
-  borderRadius: 'var(--radius-md, 8px)',
-  background: 'var(--surface, #fff)',
-  color: 'var(--text-primary, #18181B)',
-  fontFamily: 'inherit',
-  outline: 'none',
-}
-
-const labelStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 600,
-  color: 'var(--text-secondary, #71717A)',
-  whiteSpace: 'nowrap',
-}
+/* ── Helpers ── */
+const toOption = (value: string): OptionType => ({ value, label: value })
+const findOption = (options: OptionType[], value: string): OptionType | null =>
+  options.find((o) => o.value === value) ?? null
 
 export default function ReportFilters({
   filters, plasmaTypes, loading, onChange, onSearch,
 }: Props) {
+  const typeOptions = useMemo<OptionType[]>(
+    () => plasmaTypes.map(toOption),
+    [plasmaTypes],
+  )
+
+  const handleTypeChange = (opt: OptionType | null) => {
+    onChange('type', opt?.value ?? '')
+  }
+
   return (
     <div style={{
       background: 'var(--surface, #fff)',
@@ -44,71 +46,54 @@ export default function ReportFilters({
       boxShadow: 'var(--shadow-sm)',
       display: 'flex',
       flexWrap: 'wrap',
-      alignItems: 'center',
+      alignItems: 'flex-end',
       gap: 12,
     }}>
-      {/* ชนิดพลาสมา — Dropdown */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={labelStyle}>ชนิด:</span>
-        <select
-          value={filters.type}
-          onChange={(e) => onChange('type', e.target.value)}
-          style={{
-            ...inputStyle,
-            minWidth: 120,
-            cursor: 'pointer',
-            appearance: 'auto',
-          }}
-        >
-          {!filters.type && <option value="">-- เลือก --</option>}
-          {plasmaTypes.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
+      {/* ชนิดพลาสมา */}
+      <div style={{ minWidth: 160 }}>
+        <SelectDropdown
+          label="ชนิด"
+          placeholder="เลือกชนิด..."
+          options={typeOptions}
+          value={findOption(typeOptions, filters.type)}
+          onChange={handleTypeChange}
+          isClearable={false}
+          isSearchable={false}
+        />
       </div>
 
-      {/* วันที่ — ช่วง (จาก-ถึง) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={labelStyle}>ตั้งแต่:</span>
-        <input
-          type="date"
+      {/* วันที่เริ่มต้น */}
+      <div style={{ minWidth: 160 }}>
+        <DateInput
+          label="ตั้งแต่"
           value={filters.from}
-          onChange={(e) => onChange('from', e.target.value)}
-          style={inputStyle}
+          onChange={(iso) => onChange('from', iso)}
+          max={filters.to}
         />
-        <span style={labelStyle}>ถึง:</span>
-        <input
-          type="date"
+      </div>
+
+      {/* วันที่สิ้นสุด */}
+      <div style={{ minWidth: 160 }}>
+        <DateInput
+          label="ถึง"
           value={filters.to}
-          onChange={(e) => onChange('to', e.target.value)}
-          style={inputStyle}
+          onChange={(iso) => onChange('to', iso)}
+          min={filters.from}
         />
       </div>
 
       {/* ปุ่มค้นหา */}
-      <button
-        onClick={onSearch}
-        disabled={loading || !filters.type}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '8px 20px',
-          fontSize: 13,
-          fontWeight: 600,
-          fontFamily: 'inherit',
-          borderRadius: 'var(--radius-md, 8px)',
-          border: 'none',
-          background: 'var(--primary, #2563EB)',
-          color: '#fff',
-          cursor: (loading || !filters.type) ? 'not-allowed' : 'pointer',
-          opacity: (loading || !filters.type) ? 0.6 : 1,
-          marginLeft: 'auto',
-        }}
-      >
-        <Search size={14} />
-        {loading ? 'กำลังโหลด...' : 'ค้นหา'}
-      </button>
+      <div style={{ marginLeft: 'auto' }}>
+        <Button
+          variant="primary"
+          icon={<Search size={14} />}
+          onClick={onSearch}
+          disabled={loading || !filters.type}
+          loading={loading}
+        >
+          ค้นหา
+        </Button>
+      </div>
     </div>
   )
 }

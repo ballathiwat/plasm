@@ -2,6 +2,7 @@
 //  src/pages/map/index.tsx
 // ============================================================
 
+import { useState } from "react";
 import useMap from "./services/useMap";
 import MapZoneCard from "./components/MapZoneCard";
 import { bloodBase } from "../../helpers/blood";
@@ -18,6 +19,8 @@ const ZONE_COLORS = [
 const MapPage = () => {
   const { zones, bloodOrder, bloodAgeMap, totalBoxes, totalUnits, loading } =
     useMap();
+  const [tab, setTab] = useState<"map" | "age">("map");
+
   if (loading) {
     return (
       <div
@@ -103,21 +106,80 @@ const MapPage = () => {
           </div>
         ))}
       </div>
-      {/* Blood group oldest / newest */}
-      {bloodAgeMap.length > 0 && (
+      {/* Tabs */}
+      <div
+        style={{
+          display: "flex",
+          gap: 0,
+          marginBottom: 16,
+          borderBottom: "2px solid var(--border)",
+        }}
+      >
+        {[
+          { key: "map" as const, label: "🗺️ แผนผัง" },
+          { key: "age" as const, label: "📦 เก่าสุด / ใหม่สุด" },
+        ].map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            style={{
+              padding: "10px 20px",
+              fontSize: 14,
+              fontWeight: tab === t.key ? 700 : 500,
+              color: tab === t.key ? "var(--primary)" : "var(--text-secondary)",
+              background: "none",
+              border: "none",
+              borderBottom:
+                tab === t.key
+                  ? "2px solid var(--primary)"
+                  : "2px solid transparent",
+              marginBottom: -2,
+              cursor: "pointer",
+              transition: "all 0.15s",
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content: แผนผัง */}
+      {tab === "map" &&
+        (zones.length === 0 ? (
+          <div
+            style={{
+              padding: 40,
+              textAlign: "center",
+              color: "var(--text-secondary)",
+            }}
+          >
+            ยังไม่มีสถานที่จัดเก็บ — เพิ่มได้ที่ ตั้งค่า › สถานที่จัดเก็บ
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+              gap: 16,
+            }}
+          >
+            {zones.map((z) => (
+              <MapZoneCard key={z.id} zone={z} bloodOrder={bloodOrder} />
+            ))}
+          </div>
+        ))}
+
+      {/* Tab content: เก่าสุด / ใหม่สุด */}
+      {tab === "age" && bloodAgeMap.length > 0 && (
         <div
           style={{
             background: "var(--surface)",
             border: "1px solid var(--border)",
             borderRadius: "var(--radius-lg)",
             padding: 20,
-            marginBottom: 20,
             boxShadow: "var(--shadow-sm)",
           }}
         >
-          <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 14px" }}>
-            ตำแหน่งกล่องเก่าสุด / ใหม่สุด แยกตามกรุ๊ป
-          </h3>
           <div style={{ overflowX: "auto" }}>
             <table
               style={{
@@ -223,31 +285,6 @@ const MapPage = () => {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {/* Maps — หนึ่งการ์ดต่อสถานที่ตาม master */}
-      {zones.length === 0 ? (
-        <div
-          style={{
-            padding: 40,
-            textAlign: "center",
-            color: "var(--text-secondary)",
-          }}
-        >
-          ยังไม่มีสถานที่จัดเก็บ — เพิ่มได้ที่ ตั้งค่า › สถานที่จัดเก็บ
-        </div>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-            gap: 16,
-          }}
-        >
-          {zones.map((z) => (
-            <MapZoneCard key={z.id} zone={z} bloodOrder={bloodOrder} />
-          ))}
         </div>
       )}
     </div>
