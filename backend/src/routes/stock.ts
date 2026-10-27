@@ -123,4 +123,110 @@ router.get('/daily', async (req, res) => {
   }
 })
 
+// ===== GET /api/v1/stock/report =====
+// ?date=2026-10-22              → วันเดียว
+// ?from=2026-10-15&to=2026-10-20  → ช่วงวัน
+router.get('/report', async (req, res) => {
+  try {
+    const { date, from, to } = req.query as Record<string, string | undefined>
+
+    let startDate: Date
+    let endDate: Date
+
+    if (date) {
+      startDate = new Date(`${date}T00:00:00+07:00`)
+      endDate = new Date(`${date}T23:59:59.999+07:00`)
+    } else if (from && to) {
+      startDate = new Date(`${from}T00:00:00+07:00`)
+      endDate = new Date(`${to}T23:59:59.999+07:00`)
+    } else {
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
+      startDate = new Date(`${today}T00:00:00+07:00`)
+      endDate = new Date(`${today}T23:59:59.999+07:00`)
+    }
+
+    const [plasmaTypes, bloodTypes] = await Promise.all([
+      prisma.masterPlasmaType.findMany({
+        where: { active: true },
+        orderBy: [{ sort: 'asc' }, { code: 'asc' }],
+      }),
+      prisma.masterBloodType.findMany({
+        where: { active: true },
+        orderBy: [{ sort: 'asc' }, { code: 'asc' }],
+      }),
+    ])
+
+    const types = plasmaTypes.map((t) => t.code)
+    const bloods = bloodTypes.map((b) => b.code)
+
+    const storeRows = await prisma.$queryRaw<
+      { type: string; blood: string; count: bigint }[]
+    >`
+      SELECT b.type::text AS type, b.blood::text AS blood, COALESCE(SUM(le.unit_count), 0) AS count
+      FROM log_entries le
+      JOIN boxes b ON b.id = le.box_id
+      WHERE le.action = 'STORE'
+        AND le.timestamp >= ${startDate}
+        AND le.timestamp <= ${endDate}
+      GROUP BY b.type, b.blood
+    `
+
+    const withdrawRows = await prisma.$queryRaw<
+      { type: string; blood: string; count: bigint }[]
+    >`
+      SELECT b.type::text AS type, b.blood::text AS blood, COALESCE(SUM(le.unit_count), 0) AS count
+      FROM log_entries le
+      JOIN boxes b ON b.id = le.box_id
+      WHERE le.action = 'WITHDRAW'
+        AND le.timestamp >= ${startDate}
+        AND le.timestamp <= ${endDate}
+      GROUP BY b.type, b.blood
+    `
+
+    const stockRows = await prisma.$queryRaw<
+      { type: string; blood: string; count: bigint }[]
+    >`
+      SELECT b.type::text AS type, b.blood::text AS blood, COUNT(u.id) AS count
+      FROM units u
+      JOIN boxes b ON u.box_id = b.id
+      WHERE u.status = 'STORED' AND b.status = 'STORED'
+      GROUP BY b.type, b.blood
+    `
+
+    const allTypes = [...types]
+    const allBloods = [...bloods]
+    for (const row of [...storeRows, ...withdrawRows, ...stockRows]) {
+      if (!allTypes.includes(row.type)) allTypes.push(row.type)
+      if (!allBloods.includes(row.blood)) allBloods.push(row.blood)
+    }
+
+    const data: Record<string, Record<string, { stored: number; withdrawn: number }>> = {}
+    const stock: Record<string, Record<string, number>> = {}
+
+    for (const t of allTypes) {
+      data[t] = {}
+      stock[t] = {}
+      for (const b of allBloods) {
+        data[t][b] = { stored: 0, withdrawn: 0 }
+        stock[t][b] = 0
+      }
+    }
+
+    for (const r of storeRows) {
+      if (data[r.type]?.[r.blood]) data[r.type][r.blood].stored = Number(r.count)
+    }
+    for (const r of withdrawRows) {
+      if (data[r.type]?.[r.blood]) data[r.type][r.blood].withdrawn = Number(r.count)
+    }
+    for (const r of stockRows) {
+      if (stock[r.type]?.[r.blood] !== undefined) stock[r.type][r.blood] = Number(r.count)
+    }
+
+    res.json({ types: allTypes, bloods: allBloods, data, stock })
+  } catch (error) {
+    console.error('GET /stock/report error:', error)
+    res.status(500).json({ message: 'เกิดข้อผิดพลาด' })
+  }
+})
+
 export default router
