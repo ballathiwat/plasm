@@ -1,3 +1,5 @@
+// frontend/src/Routes/allRoutes.tsx
+
 import { Navigate } from 'react-router-dom'
 
 import DashboardPage from '../pages/dashboard'
@@ -9,8 +11,7 @@ import LogPage from '../pages/log'
 import SettingsPage from '../pages/settings'
 import LoginPage from '../pages/auth/LoginPage'
 import ReportPage from '../pages/report'
-
-
+import DailyReportPage from '../pages/report-daily'
 
 export interface RouteConfig {
   path: string
@@ -27,6 +28,7 @@ const authProtectedRoutes: RouteConfig[] = [
   { path: '/map', component: <MapPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/log', component: <LogPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/report', component: <ReportPage />, roles: ['ADMIN', 'STAFF'] },
+  { path: '/report/daily', component: <DailyReportPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/settings', component: <SettingsPage />, roles: ['ADMIN'] },
   { path: '*', component: <Navigate to="/" replace /> },
 ]
