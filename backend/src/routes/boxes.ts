@@ -97,7 +97,7 @@ router.get("/next-label", async (req, res) => {
       select: { boxLabel: true },
     });
     const maxExisting = maxBox
-      ? parseInt(maxBox.boxLabel.split("_").pop() || "0", 10)
+      ? parseInt(maxBox.boxLabel.replace(/.*[_\-]/, ""), 10) || 0
       : 0;
 
     const nextNo = Math.max(counter?.lastNo ?? 0, maxExisting) + 1;
@@ -380,12 +380,10 @@ router.put("/:id/units", async (req, res) => {
       });
       if (existing.length > 0) {
         const dupes = existing.map((u) => u.unitNumber);
-        res
-          .status(409)
-          .json({
-            message: `Unit ซ้ำ: ${dupes.join(", ")}`,
-            duplicates: dupes,
-          });
+        res.status(409).json({
+          message: `Unit ซ้ำ: ${dupes.join(", ")}`,
+          duplicates: dupes,
+        });
         return;
       }
     }
@@ -455,7 +453,9 @@ router.patch("/:id/location", async (req, res) => {
       return;
     }
     if (box.status === "WITHDRAWN") {
-      res.status(400).json({ message: "กล่องนี้ถูกนำออกแล้ว ไม่สามารถแก้ไขตำแหน่งได้" });
+      res
+        .status(400)
+        .json({ message: "กล่องนี้ถูกนำออกแล้ว ไม่สามารถแก้ไขตำแหน่งได้" });
       return;
     }
 
@@ -469,7 +469,9 @@ router.patch("/:id/location", async (req, res) => {
       return;
     }
     if (zone.shelves.length === 0) {
-      res.status(400).json({ message: `ไม่พบชั้น "${shelf}" ในสถานที่ "${zone.name}"` });
+      res
+        .status(400)
+        .json({ message: `ไม่พบชั้น "${shelf}" ในสถานที่ "${zone.name}"` });
       return;
     }
 
