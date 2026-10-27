@@ -1,19 +1,16 @@
-// ============================================================
-//  src/pages/dashboard/index.tsx
-// ============================================================
+// frontend/src/pages/dashboard/index.tsx
 
 import useDashboard from './services/useDashboard'
 import DashboardHero from './components/DashboardHero'
 import DashboardAlerts from './components/DashboardAlerts'
 import DashboardStockCards from './components/DashboardStockCards'
 import DashboardCharts from './components/DashboardCharts'
-import DashboardDaily from './components/DashboardDaily'
 import DashboardRecentActivity from './components/DashboardRecentActivity'
 
 const DashboardPage = () => {
   const {
-    stockData, dailyData, logEntries, loading,
-    dailyGroups, total, lowGroups, warnGroups, maxDailyValue,
+    stockData, logEntries, loading,
+    total, lowGroups, warnGroups,
   } = useDashboard()
 
   if (loading || !stockData) return null
@@ -24,7 +21,6 @@ const DashboardPage = () => {
       <DashboardAlerts lowGroups={lowGroups} warnGroups={warnGroups} />
       <DashboardStockCards data={stockData} />
       <DashboardCharts stockData={stockData} />
-      <DashboardDaily dailyData={dailyData} groups={dailyGroups} maxDailyValue={maxDailyValue} />
       <DashboardRecentActivity entries={logEntries} />
     </div>
   )

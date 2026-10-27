@@ -10,6 +10,8 @@ import {
   Settings,
   MoreHorizontal,
   BarChart3,
+  FileText,
+  CalendarDays,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -20,6 +22,7 @@ export interface MenuItem {
   label: string
   icon: LucideIcon
   roles: UserRole[]
+  children?: MenuItem[]
 }
 
 export interface MobileNavItem {
@@ -35,7 +38,16 @@ export const MENU_ITEMS: MenuItem[] = [
   { key: 'search', label: 'ค้นหา', icon: Search, roles: ['ADMIN', 'STAFF'] },
   { key: 'map', label: 'แผนผัง', icon: Map, roles: ['ADMIN', 'STAFF'] },
   { key: 'log', label: 'ประวัติ', icon: ClipboardList, roles: ['ADMIN', 'STAFF'] },
-  { key: 'report', label: 'รายงาน', icon: BarChart3, roles: ['ADMIN', 'STAFF'] },
+  {
+    key: 'report',
+    label: 'รายงาน',
+    icon: BarChart3,
+    roles: ['ADMIN', 'STAFF'],
+    children: [
+      { key: 'report-summary', label: 'รายงานสรุป', icon: FileText, roles: ['ADMIN', 'STAFF'] },
+      { key: 'report-daily', label: 'นำเข้า/นำออก รายวัน', icon: CalendarDays, roles: ['ADMIN', 'STAFF'] },
+    ],
+  },
   { key: 'settings', label: 'ตั้งค่า', icon: Settings, roles: ['ADMIN'] },
 ]
 
@@ -54,6 +66,7 @@ export const PAGE_TITLES: Record<string, string> = {
   search: 'ค้นหา Unit',
   map: 'แผนผังจัดเก็บ',
   log: 'ประวัติการจัดเก็บ/นำออก',
-  report: 'รายงานสรุป',
+  'report-summary': 'รายงานสรุป',
+  'report-daily': 'รายงาน นำเข้า/นำออก รายวัน',
   settings: 'ตั้งค่า',
 }
