@@ -1,0 +1,151 @@
+/* src/assets/styles/common/select-dropdown.css */
+/* ── Plasm SelectDropdown (react-select overrides) ── */
+
+/* Container */
+.plasm-select__control {
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif) !important;
+  font-size: 14px !important;
+  min-height: 40px !important;
+  border-radius: var(--radius-md, 8px) !important;
+  border: 1px solid var(--border, #DDE3EA) !important;
+  background: var(--surface, #fff) !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+.plasm-select__control:hover {
+  border-color: var(--primary, #2563EB) !important;
+}
+.plasm-select__control--is-focused {
+  border-color: var(--primary, #2563EB) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+.plasm-select__control--is-disabled {
+  background: #f1f5f9 !important;
+  cursor: not-allowed !important;
+}
+
+/* Error state (add .has-error on wrapper) */
+.plasm-select-wrap.has-error .plasm-select__control {
+  border-color: #ef4444 !important;
+}
+.plasm-select-wrap.has-error .plasm-select__control--is-focused {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* Menu */
+.plasm-select__menu {
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif) !important;
+  border-radius: var(--radius-md, 8px) !important;
+  border: 1px solid var(--border, #DDE3EA) !important;
+  box-shadow: 0 4px 12px rgba(26, 35, 50, 0.12) !important;
+  overflow: hidden !important;
+  z-index: 50 !important;
+}
+.plasm-select__menu-list {
+  padding: 4px !important;
+}
+
+/* Options */
+.plasm-select__option {
+  font-size: 14px !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  color: var(--text-primary, #1a2332) !important;
+  transition: background 0.1s !important;
+}
+.plasm-select__option--is-focused {
+  background: var(--surface-raised, #f8fafc) !important;
+}
+.plasm-select__option--is-selected {
+  background: #eff6ff !important;
+  color: var(--text-primary, #1a2332) !important;
+  font-weight: 500 !important;
+}
+.plasm-select__option:active {
+  background: #dbeafe !important;
+}
+
+/* Placeholder & Value */
+.plasm-select__placeholder {
+  color: #94a3b8 !important;
+  font-size: 14px !important;
+}
+.plasm-select__single-value {
+  color: var(--text-primary, #1a2332) !important;
+  font-size: 14px !important;
+}
+.plasm-select__input-container {
+  color: var(--text-primary, #1a2332) !important;
+  font-size: 14px !important;
+}
+
+/* Multi-value chips */
+.plasm-select__multi-value {
+  background: #dbeafe !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(37, 99, 235, 0.12) !important;
+}
+.plasm-select__multi-value__label {
+  color: #1d4ed8 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  padding: 2px 6px !important;
+}
+.plasm-select__multi-value__remove {
+  color: var(--primary, #2563EB) !important;
+  border-radius: 0 6px 6px 0 !important;
+}
+.plasm-select__multi-value__remove:hover {
+  background: var(--primary, #2563EB) !important;
+  color: #fff !important;
+}
+
+/* Indicators */
+.plasm-select__indicator-separator {
+  display: none !important;
+}
+.plasm-select__dropdown-indicator {
+  color: var(--text-secondary, #5A6A7E) !important;
+  padding: 0 8px !important;
+  transition: transform 0.2s !important;
+}
+.plasm-select__control--menu-is-open .plasm-select__dropdown-indicator {
+  transform: rotate(180deg) !important;
+}
+.plasm-select__dropdown-indicator:hover {
+  color: var(--primary, #2563EB) !important;
+}
+.plasm-select__clear-indicator {
+  color: var(--text-secondary, #5A6A7E) !important;
+  padding: 0 4px !important;
+}
+.plasm-select__clear-indicator:hover {
+  color: #ef4444 !important;
+}
+
+/* Messages */
+.plasm-select__menu-notice--no-options,
+.plasm-select__menu-notice--loading {
+  font-size: 13px !important;
+  color: var(--text-secondary, #5A6A7E) !important;
+}
+
+/* Label */
+.plasm-select-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #1a2332);
+  margin-bottom: 6px;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+}
+
+/* Error message */
+.plasm-select-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+}

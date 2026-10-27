@@ -1,0 +1,146 @@
+/* src/assets/styles/common/date-input.css */
+/* ── Plasm DateInput (react-datepicker overrides) ── */
+
+/* Wrapper */
+.plasm-dp-wrap { width: 100%; }
+.plasm-dp-wrap .react-datepicker-wrapper,
+.plasm-dp-wrap .react-datepicker__input-container { width: 100%; }
+
+/* Input field */
+.plasm-dp-wrap .react-datepicker__input-container input {
+  width: 100%;
+  padding: 10px 40px 10px 14px;
+  border: 1px solid var(--border, #DDE3EA);
+  border-radius: var(--radius-md, 8px);
+  font-size: 14px;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+  color: var(--text-primary, #1a2332);
+  background: var(--surface, #fff);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+.plasm-dp-wrap .react-datepicker__input-container input:focus {
+  border-color: var(--primary, #2563EB);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.plasm-dp-wrap .react-datepicker__input-container input:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+}
+
+/* Error state */
+.plasm-dp-wrap.has-error .react-datepicker__input-container input {
+  border-color: #ef4444;
+}
+.plasm-dp-wrap.has-error .react-datepicker__input-container input:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* Calendar popup */
+.plasm-dp-popper .react-datepicker {
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+  border: 1px solid var(--border, #DDE3EA);
+  border-radius: var(--radius-lg, 10px);
+  box-shadow: 0 4px 16px rgba(26, 35, 50, 0.12);
+  overflow: hidden;
+}
+
+/* Header */
+.plasm-dp-popper .react-datepicker__header {
+  background: var(--surface-raised, #f8fafc);
+  border-bottom: 1px solid var(--border, #DDE3EA);
+  padding-top: 12px;
+}
+.plasm-dp-popper .react-datepicker__current-month {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #1a2332);
+  margin-bottom: 8px;
+}
+
+/* Day names (อา จ อ ...) */
+.plasm-dp-popper .react-datepicker__day-name {
+  font-size: 12px;
+  color: var(--text-secondary, #5A6A7E);
+  font-weight: 500;
+  width: 36px;
+  line-height: 36px;
+}
+
+/* Day cells */
+.plasm-dp-popper .react-datepicker__day {
+  width: 36px;
+  line-height: 36px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 13px;
+  color: var(--text-primary, #1a2332);
+  transition: background 0.1s;
+}
+.plasm-dp-popper .react-datepicker__day:hover {
+  background: #dbeafe;
+}
+.plasm-dp-popper .react-datepicker__day--selected,
+.plasm-dp-popper .react-datepicker__day--keyboard-selected {
+  background: var(--primary, #2563EB) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+.plasm-dp-popper .react-datepicker__day--today {
+  font-weight: 700;
+}
+.plasm-dp-popper .react-datepicker__day--outside-month {
+  color: #cbd5e1;
+}
+
+/* Navigation arrows */
+.plasm-dp-popper .react-datepicker__navigation {
+  top: 12px;
+}
+
+/* Month/Year dropdown selects */
+.plasm-dp-popper .react-datepicker__month-select,
+.plasm-dp-popper .react-datepicker__year-select {
+  padding: 2px 4px;
+  border: 1px solid var(--border, #DDE3EA);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+  color: var(--text-primary, #1a2332);
+  cursor: pointer;
+}
+
+/* Calendar icon button */
+.plasm-dp-icon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary, #5A6A7E);
+  z-index: 1;
+}
+.plasm-dp-icon:disabled {
+  cursor: not-allowed;
+}
+
+/* Label & Error */
+.plasm-dp-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #1a2332);
+  margin-bottom: 6px;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+}
+.plasm-dp-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+}
