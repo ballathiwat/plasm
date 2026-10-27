@@ -23,6 +23,7 @@ export const PATCH_UNIT_WITHDRAW = `${API}/units`    // + /:id/withdraw
 // ===== Stock =====
 export const GET_STOCK_SUMMARY = `${API}/stock/summary`
 export const GET_STOCK_DAILY = `${API}/stock/daily`
+export const GET_STOCK_REPORT = `${API}/stock/report`
 
 // ===== Log =====
 export const GET_LOG = `${API}/log`

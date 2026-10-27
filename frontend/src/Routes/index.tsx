@@ -15,6 +15,7 @@ const PATH_TO_MODULE: Record<string, string> = {
   '/search': 'search',
   '/map': 'map',
   '/log': 'log',
+  '/report': 'report',
   '/settings': 'settings',
 }
 

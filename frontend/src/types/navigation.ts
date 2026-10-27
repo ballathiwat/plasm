@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Settings,
   MoreHorizontal,
+  BarChart3,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -34,6 +35,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { key: 'search', label: 'ค้นหา', icon: Search, roles: ['ADMIN', 'STAFF'] },
   { key: 'map', label: 'แผนผัง', icon: Map, roles: ['ADMIN', 'STAFF'] },
   { key: 'log', label: 'ประวัติ', icon: ClipboardList, roles: ['ADMIN', 'STAFF'] },
+  { key: 'report', label: 'รายงาน', icon: BarChart3, roles: ['ADMIN', 'STAFF'] },
   { key: 'settings', label: 'ตั้งค่า', icon: Settings, roles: ['ADMIN'] },
 ]
 
@@ -52,5 +54,6 @@ export const PAGE_TITLES: Record<string, string> = {
   search: 'ค้นหา Unit',
   map: 'แผนผังจัดเก็บ',
   log: 'ประวัติการจัดเก็บ/นำออก',
+  report: 'รายงานสรุป',
   settings: 'ตั้งค่า',
 }
