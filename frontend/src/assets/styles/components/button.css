@@ -1,0 +1,125 @@
+/* src/assets/styles/common/button.css */
+/* ── Plasm Button Component ── */
+
+.plasm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+  line-height: 1.2;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  outline: none;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+.plasm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.plasm-btn:disabled.plasm-btn--loading {
+  cursor: wait;
+}
+.plasm-btn--block {
+  display: flex;
+  width: 100%;
+}
+.plasm-btn--pill {
+  border-radius: var(--radius-full, 99px);
+}
+
+/* ── Sizes ── */
+.plasm-btn--sm { padding: 6px 12px; font-size: 12px; font-weight: 500; gap: 4px; }
+.plasm-btn--md { padding: 10px 20px; font-size: 14px; font-weight: 600; gap: 6px; }
+.plasm-btn--lg { padding: 12px 28px; font-size: 15px; font-weight: 600; gap: 8px; }
+
+/* ── Variant: Primary ── */
+.plasm-btn--primary {
+  background: var(--primary, #2563EB);
+  color: #fff;
+}
+.plasm-btn--primary:hover:not(:disabled) {
+  background: var(--primary-hover, #1d4ed8);
+}
+
+/* ── Variant: Secondary ── */
+.plasm-btn--secondary {
+  background: var(--surface, #fff);
+  color: var(--text-primary, #18181B);
+  border-color: var(--border, #E4E4E7);
+}
+.plasm-btn--secondary:hover:not(:disabled) {
+  background: var(--surface-raised, #F4F4F5);
+  border-color: var(--text-secondary, #71717A);
+}
+
+/* ── Variant: Ghost ── */
+.plasm-btn--ghost {
+  background: transparent;
+  color: var(--text-secondary, #71717A);
+}
+.plasm-btn--ghost:hover:not(:disabled) {
+  background: var(--surface-raised, #F4F4F5);
+}
+
+/* ── Variant: Danger ── */
+.plasm-btn--danger {
+  background: #DC2626;
+  color: #fff;
+}
+.plasm-btn--danger:hover:not(:disabled) {
+  background: #B91C1C;
+}
+
+/* ── Variant: Success ── */
+.plasm-btn--success {
+  background: #16A34A;
+  color: #fff;
+}
+.plasm-btn--success:hover:not(:disabled) {
+  background: #15803D;
+}
+
+/* ── Variant: Outline ── */
+.plasm-btn--outline {
+  background: transparent;
+  color: var(--primary, #2563EB);
+  border-color: var(--primary, #2563EB);
+}
+.plasm-btn--outline:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.06);
+  border-color: var(--primary-hover, #1d4ed8);
+}
+
+/* ── Variant: Outline Danger ── */
+.plasm-btn--outline-danger {
+  background: transparent;
+  color: #DC2626;
+  border-color: #DC2626;
+}
+.plasm-btn--outline-danger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.06);
+  border-color: #B91C1C;
+}
+
+/* ── Variant: Outline Success ── */
+.plasm-btn--outline-success {
+  background: transparent;
+  color: #16A34A;
+  border-color: #16A34A;
+}
+.plasm-btn--outline-success:hover:not(:disabled) {
+  background: rgba(22, 163, 74, 0.06);
+  border-color: #15803D;
+}
+
+/* ── Loading Spinner ── */
+@keyframes plasm-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.plasm-btn__spinner {
+  animation: plasm-spin 0.8s linear infinite;
+}
