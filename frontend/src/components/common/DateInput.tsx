@@ -74,8 +74,7 @@ const TOKENS = {
   text: '#1a2332',
   textMuted: '#5A6A7E',
   radius: '8px',
-  font: "'Segoe UI', system-ui, -apple-system, sans-serif",
-} as const
+  font: "var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif)",} as const
 
 /* ----------------------------------------------------------
    Inject custom CSS once
