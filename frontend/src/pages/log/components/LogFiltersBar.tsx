@@ -40,52 +40,45 @@ export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
   );
 
   return (
-        <div style={{
-      background: 'var(--surface, #fff)',
-      border: '1px solid var(--border, #E4E4E7)',
-      borderRadius: 'var(--radius-lg, 10px)',
-      padding: '16px 20px',
-      marginBottom: 16,
-      boxShadow: 'var(--shadow-sm)',
-      display: 'flex',
-      flexWrap: 'wrap',
-      alignItems: 'flex-end',
-      gap: 12,
-    }}>
-      <Filter size={14} style={{ color: "var(--text-secondary)" }} />
-
-      <SelectDropdown
-        placeholder="การดำเนินการ"
-        options={actionOpts}
-        value={findOpt(actionOpts, filters.action)}
-        onChange={(opt) => onChange("action", opt?.value ?? "")}
-        isClearable={false}
-        isSearchable={false}
-      />
-
-      <SelectDropdown
-        placeholder="หมู่เลือด"
-        options={bloodOpts}
-        value={findOpt(bloodOpts, filters.blood)}
-        onChange={(opt) => onChange("blood", opt?.value ?? "")}
-        isClearable={false}
-        isSearchable={false}
-      />
-
-      <DateInput
-        label="จาก"
-        value={filters.dateFrom}
-        onChange={(iso) => onChange("dateFrom", iso)}
-        max={filters.dateTo}
-      />
-
-      <DateInput
-        label="ถึง"
-        value={filters.dateTo}
-        onChange={(iso) => onChange("dateTo", iso)}
-        min={filters.dateFrom}
-      />
-
+    <div className="plasm-filter">
+      <div className="plasm-filter__item">
+        <SelectDropdown
+          label="การดำเนินการ"
+          placeholder="การดำเนินการ"
+          options={actionOpts}
+          value={findOpt(actionOpts, filters.action)}
+          onChange={(opt) => onChange("action", opt?.value ?? "")}
+          isClearable={false}
+          isSearchable={false}
+        />
+      </div>
+      <div className="plasm-filter__item">
+        <SelectDropdown
+          label="หมู่เลือด"
+          placeholder="หมู่เลือด"
+          options={bloodOpts}
+          value={findOpt(bloodOpts, filters.blood)}
+          onChange={(opt) => onChange("blood", opt?.value ?? "")}
+          isClearable={false}
+          isSearchable={false}
+        />
+      </div>
+      <div className="plasm-filter__item">
+        <DateInput
+          label="จาก"
+          value={filters.dateFrom}
+          onChange={(iso) => onChange("dateFrom", iso)}
+          max={filters.dateTo}
+        />
+      </div>
+      <div className="plasm-filter__item">
+        <DateInput
+          label="ถึง"
+          value={filters.dateTo}
+          onChange={(iso) => onChange("dateTo", iso)}
+          min={filters.dateFrom}
+        />
+      </div>
       {hasFilter && (
         <button
           onClick={onReset}
