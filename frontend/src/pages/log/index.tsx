@@ -2,9 +2,10 @@
 //  src/pages/log/index.tsx
 // ============================================================
 
-import useLog from './services/useLog'
-import LogFiltersBar from './components/LogFiltersBar'
-import LogTable from './components/LogTable'
+import { useEffect, useRef } from "react";
+import useLog from "./services/useLog";
+import LogFiltersBar from "./components/LogFiltersBar";
+import LogTable from "./components/LogTable";
 
 const LogPage = () => {
   const {
@@ -12,19 +13,38 @@ const LogPage = () => {
     loading,
     filters,
     hasMore,
+    searched,
     handleFilterChange,
     resetFilters,
+    search,
     loadMore,
-  } = useLog()
+  } = useLog();
+
+  /* เข้าหน้าครั้งแรก → auto search ด้วยค่าเริ่มต้น */
+  const didInit = useRef(false);
+  useEffect(() => {
+    if (!didInit.current) {
+      didInit.current = true;
+      search();
+    }
+  }, [search]);
 
   return (
-    <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
-
+    <div style={{ animation: "plasm-fade-in 0.2s ease" }}>
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>ประวัติการจัดเก็บ/นำออก</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-          บันทึกทุกรายการจัดเก็บและนำออกพลาสมา · แสดง {entries.length} รายการ
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>
+          ประวัติการจัดเก็บ/นำออก
+        </h2>
+        <p
+          style={{
+            fontSize: 13,
+            color: "var(--text-secondary)",
+            marginTop: 4,
+          }}
+        >
+          บันทึกทุกรายการจัดเก็บและนำออกพลาสมา
+          {searched && <> · แสดง {entries.length} รายการ</>}
         </p>
       </div>
 
@@ -32,6 +52,8 @@ const LogPage = () => {
         filters={filters}
         onChange={handleFilterChange}
         onReset={resetFilters}
+        onSearch={search}
+        loading={loading}
       />
 
       <LogTable
@@ -41,7 +63,7 @@ const LogPage = () => {
         onLoadMore={loadMore}
       />
     </div>
-  )
-}
+  );
+};
 
-export default LogPage
+export default LogPage;

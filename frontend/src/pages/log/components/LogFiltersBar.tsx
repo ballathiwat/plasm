@@ -2,7 +2,7 @@
 //  src/pages/log/components/LogFiltersBar.tsx
 // ============================================================
 
-import { Filter, RotateCcw } from "lucide-react";
+import { Filter, RotateCcw, Search } from "lucide-react";
 import Button from "../../../components/common/Button";
 import type { LogFilters } from "../services/LogType";
 import useBloodTypes from "../../../helpers/useBloodTypes";
@@ -25,12 +25,18 @@ interface Props {
   filters: LogFilters;
   onChange: (field: keyof LogFilters, value: string) => void;
   onReset: () => void;
+  onSearch: () => void;
+  loading?: boolean;
 }
 
-export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
+export default function LogFiltersBar({
+  filters,
+  onChange,
+  onReset,
+  onSearch,
+  loading,
+}: Props) {
   const bloodTypes = useBloodTypes();
-  const hasFilter =
-    filters.action || filters.blood || filters.dateFrom || filters.dateTo;
 
   const bloodOpts = useMemo<OptionType[]>(
     () => [
@@ -51,7 +57,8 @@ export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
         }}
       >
         <Filter size={16} color="var(--text-secondary)" />
-      </div>{" "}
+      </div>
+
       <div className="plasm-filter__item">
         <SelectDropdown
           label="การดำเนินการ"
@@ -63,6 +70,7 @@ export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
           isSearchable={false}
         />
       </div>
+
       <div className="plasm-filter__item">
         <SelectDropdown
           label="หมู่เลือด"
@@ -74,6 +82,7 @@ export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
           isSearchable={false}
         />
       </div>
+
       <div className="plasm-filter__item">
         <DateInput
           label="จาก"
@@ -82,6 +91,7 @@ export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
           max={filters.dateTo}
         />
       </div>
+
       <div className="plasm-filter__item">
         <DateInput
           label="ถึง"
@@ -90,16 +100,27 @@ export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
           min={filters.dateFrom}
         />
       </div>
-      {hasFilter && (
-        <Button
-          variant="ghost"
-          size="md"
-          icon={<RotateCcw size={14} />}
-          onClick={onReset}
-        >
-          ล้าง
-        </Button>
-      )}
+
+      {/* ปุ่มค้นหา */}
+      <Button
+        variant="primary"
+        size="md"
+        icon={<Search size={16} />}
+        onClick={onSearch}
+        loading={loading}
+      >
+        ค้นหา
+      </Button>
+
+      {/* ปุ่มล้าง */}
+      <Button
+        variant="outline"
+        size="md"
+        icon={<RotateCcw size={16} />}
+        onClick={onReset}
+      >
+        ล้าง
+      </Button>
     </div>
   );
 }
