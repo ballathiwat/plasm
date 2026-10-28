@@ -50,7 +50,7 @@ type SharedProps = {
 
 // ── Input (text, password, number, email, search, tel, url) ──
 type InputFieldProps = SharedProps &
-  Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type' | 'style' | 'className'> & {
+  Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type' | 'style' | 'className' | 'onChange' | 'value'>& {
     type?: 'text' | 'password' | 'number' | 'email' | 'search' | 'tel' | 'url'
     value: string | number
     onChange: (value: string) => void
@@ -58,7 +58,7 @@ type InputFieldProps = SharedProps &
 
 // ── Textarea ──
 type TextareaFieldProps = SharedProps &
-  Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'style' | 'className'> & {
+  Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'style' | 'className' | 'onChange' | 'value'>& {
     type: 'textarea'
     value: string
     onChange: (value: string) => void
