@@ -31,9 +31,9 @@
 }
 
 /* ── Sizes ── */
-.plasm-btn--sm { padding: 6px 12px; font-size: 12px; font-weight: 500; gap: 4px; }
-.plasm-btn--md { padding: 10px 20px; font-size: 14px; font-weight: 600; gap: 6px; }
-.plasm-btn--lg { padding: 12px 28px; font-size: 15px; font-weight: 600; gap: 8px; }
+.plasm-btn--sm { padding: 6px 12px; font-size: 12px; font-weight: 500; gap: 4px; min-height: 34px; }
+.plasm-btn--md { padding: 10px 20px; font-size: 14px; font-weight: 600; gap: 6px; min-height: 42px; }
+.plasm-btn--lg { padding: 12px 28px; font-size: 15px; font-weight: 600; gap: 8px; min-height: 48px; }
 
 /* ── Variant: Primary ── */
 .plasm-btn--primary {

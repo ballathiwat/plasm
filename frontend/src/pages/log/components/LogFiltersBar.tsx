@@ -92,9 +92,9 @@ export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
       </div>
       {hasFilter && (
         <Button
-          variant="outline"
-          size="sm"
-          icon={<RotateCcw size={20} />}
+          variant="ghost"
+          size="md"
+          icon={<RotateCcw size={14} />}
           onClick={onReset}
         >
           ล้าง
