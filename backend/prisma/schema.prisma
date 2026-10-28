@@ -96,7 +96,8 @@ model MasterPlasmaType {
   color  String? 
   active Boolean @default(true)
   sort   Int     @default(0)
-  
+  boxes  Box[]
+
 
   @@map("master_plasma_types")
 }
