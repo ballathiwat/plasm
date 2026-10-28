@@ -5,7 +5,6 @@ import { Package, PackageOpen } from 'lucide-react'
 import { useAuth } from '../../../Routes/AuthProtected'
 import { sumBlood } from '../services/DashboardType'
 import type { DailyData } from '../services/DashboardType'
-import '../../../assets/styles/dashboard.css'
 
 interface Props {
   total: number

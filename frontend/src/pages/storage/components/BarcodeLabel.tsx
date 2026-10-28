@@ -5,7 +5,6 @@
 import { useRef, useEffect } from "react";
 import JsBarcode from "jsbarcode";
 import { Printer, X } from "lucide-react";
-import "../../../assets/styles/storage.css";
 
 export interface BarcodeLabelData {
   boxLabel: string;
