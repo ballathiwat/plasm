@@ -110,7 +110,7 @@ router.get("/daily", async (req, res) => {
     const result = Array.from({ length: days }, (_, i) => {
       const d = new Date(startDate.getTime() + i * DAY_MS);
       const date = bkk(d);
-      const [, m, dd] = date.split("-");
+      const [y, m, dd] = date.split("-");
       const store: Record<string, number> = {}; // เปลี่ยน: ไม่ fix 4 หมู่แล้ว
       const withdraw: Record<string, number> = {};
 
@@ -121,7 +121,7 @@ router.get("/daily", async (req, res) => {
         target[r.blood] = Number(r.count);
       }
 
-      return { date, label: `${Number(dd)}/${Number(m)}`, store, withdraw };
+      return { date, label: `${dd}-${m}-${y}`, store, withdraw };
     });
 
     res.json(result);
