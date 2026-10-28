@@ -255,6 +255,8 @@ router.post("/", async (req, res) => {
           boxName: boxName?.toString().trim() || null,
           type: pt.code,
           blood: bt.code,
+          plasmaTypeId: pt.id,   
+          bloodTypeId: bt.id,     
           year,
           zoneId: zone.id,
           shelf: shelfCode,
