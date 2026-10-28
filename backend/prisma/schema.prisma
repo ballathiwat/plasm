@@ -96,7 +96,7 @@ model MasterPlasmaType {
   color  String? 
   active Boolean @default(true)
   sort   Int     @default(0)
-  boxes  Box[]
+  
 
   @@map("master_plasma_types")
 }
@@ -108,6 +108,7 @@ model MasterBloodType {
   color  String?   
   active Boolean @default(true)
   sort   Int     @default(0)
+  boxes  Box[]
 
   @@map("master_blood_types")
 }
