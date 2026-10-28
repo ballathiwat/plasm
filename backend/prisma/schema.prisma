@@ -96,6 +96,7 @@ model MasterPlasmaType {
   color  String? 
   active Boolean @default(true)
   sort   Int     @default(0)
+  boxes  Box[]
 
   @@map("master_plasma_types")
 }
@@ -153,6 +154,8 @@ model Box {
   boxName        String?   @map("box_name")
   type           String
   blood          String
+  plasmaTypeId   String    @map("plasma_type_id")
+  bloodTypeId    String    @map("blood_type_id")
   year           Int
   zoneId         String    @map("zone_id")
   shelf          String
@@ -163,12 +166,17 @@ model Box {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
+  plasmaType MasterPlasmaType @relation(fields: [plasmaTypeId], references: [id])
+  bloodType  MasterBloodType  @relation(fields: [bloodTypeId], references: [id])
   zone  MasterZone @relation(fields: [zoneId], references: [id])
   units Unit[]
   logs  LogEntry[]
 
   @@index([blood, status])
+  @@index([bloodTypeId, status])
   @@index([zoneId, shelf])
   @@map("boxes")
+
+
 }
 
