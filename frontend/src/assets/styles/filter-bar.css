@@ -1,0 +1,37 @@
+/* src/assets/styles/components/filter-bar.css */
+/* ── Plasm FilterBar — ครอบ filter ด้านบนของทุกหน้า ── */
+
+.plasm-filter {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #E4E4E7);
+  border-radius: var(--radius-lg, 10px);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+/* ให้ child items ขยายเท่ากัน (optional — ใส่ class เพิ่ม) */
+.plasm-filter__item {
+  flex: 1;
+  min-width: 160px;
+}
+
+/* item ที่ต้องการความกว้างคงที่ */
+.plasm-filter__item--fixed {
+  flex: none;
+}
+
+/* Responsive: จอเล็กให้ stack */
+@media (max-width: 640px) {
+  .plasm-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .plasm-filter__item {
+    min-width: 0;
+  }
+}
