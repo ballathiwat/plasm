@@ -168,9 +168,9 @@ model Box {
 
   plasmaType MasterPlasmaType @relation(fields: [plasmaTypeId], references: [id])
   bloodType  MasterBloodType  @relation(fields: [bloodTypeId], references: [id])
-  zone  MasterZone @relation(fields: [zoneId], references: [id])
-  units Unit[]
-  logs  LogEntry[]
+  zone       MasterZone       @relation(fields: [zoneId], references: [id])
+  units      Unit[]
+  logs       LogEntry[]
 
   @@index([blood, status])
   @@index([bloodTypeId, status])
