@@ -3,6 +3,7 @@
 // ============================================================
 
 import { Filter, RotateCcw } from "lucide-react";
+import Button from "../../../components/common/Button";
 import type { LogFilters } from "../services/LogType";
 import useBloodTypes from "../../../helpers/useBloodTypes";
 import { useMemo } from "react";
@@ -41,6 +42,16 @@ export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
 
   return (
     <div className="plasm-filter">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          height: 40,
+          flexShrink: 0,
+        }}
+      >
+        <Filter size={16} color="var(--text-secondary)" />
+      </div>{" "}
       <div className="plasm-filter__item">
         <SelectDropdown
           label="การดำเนินการ"
@@ -80,23 +91,14 @@ export default function LogFiltersBar({ filters, onChange, onReset }: Props) {
         />
       </div>
       {hasFilter && (
-        <button
+        <Button
+          variant="outline"
+          size="sm"
+          icon={<RotateCcw size={20} />}
           onClick={onReset}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            padding: "7px 12px",
-            borderRadius: "var(--radius-sm, 6px)",
-            border: "1px solid var(--border)",
-            background: "transparent",
-            fontSize: 12,
-            color: "var(--text-secondary)",
-            cursor: "pointer",
-          }}
         >
-          <RotateCcw size={12} /> ล้าง
-        </button>
+          ล้าง
+        </Button>
       )}
     </div>
   );
