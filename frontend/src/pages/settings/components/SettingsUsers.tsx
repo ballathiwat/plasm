@@ -126,16 +126,20 @@ export default function SettingsUsers({
               value={form.name}
               onChange={(v) => onFormChange('name', v)}
             />
-            <FormInput
-              label="รหัสผ่าน"
-              required
-              type="password"
-              placeholder={`อย่างน้อย ${PASSWORD_MIN_LENGTH} ตัวอักษร`}
-              value={form.password}
-              onChange={(v) => onFormChange('password', v)}
-              autoComplete="new-password"
-              helperText={`ขั้นต่ำ ${PASSWORD_MIN_LENGTH} ตัวอักษร`}
-            />
+            <div>
+              <FormInput
+                label="รหัสผ่าน"
+                required
+                type="password"
+                placeholder={`อย่างน้อย ${PASSWORD_MIN_LENGTH} ตัวอักษร`}
+                value={form.password}
+                onChange={(v) => onFormChange('password', v)}
+                autoComplete="new-password"
+              />
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
+                ขั้นต่ำ {PASSWORD_MIN_LENGTH} ตัวอักษร
+              </p>
+            </div>
             <SelectDropdown
               label="บทบาท"
               options={ROLE_OPTIONS}
@@ -206,33 +210,32 @@ export default function SettingsUsers({
       )}
 
       {/* Reset Password Modal */}
-      {resetTarget && (
-        <Modal
-          title={`ตั้งรหัสผ่านใหม่ — ${resetTarget.name}`}
-          onClose={closeResetModal}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
-              ตั้งรหัสผ่านใหม่ให้ @{resetTarget.username}
-            </p>
-            <FormInput
-              label="รหัสผ่านใหม่"
-              type="password"
-              placeholder={`อย่างน้อย ${PASSWORD_MIN_LENGTH} ตัวอักษร`}
-              value={resetPassword}
-              onChange={(v) => { setResetPassword(v); setResetError('') }}
-              autoComplete="new-password"
-              error={resetError || undefined}
-            />
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <Button variant="secondary" onClick={closeResetModal}>ยกเลิก</Button>
-              <Button onClick={handleResetSubmit} loading={resetting} disabled={resetting}>
-                {resetting ? 'กำลังบันทึก...' : 'บันทึก'}
-              </Button>
-            </div>
+      <Modal
+        open={!!resetTarget}
+        onClose={closeResetModal}
+        title={resetTarget ? `ตั้งรหัสผ่านใหม่ — ${resetTarget.name}` : ''}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
+            ตั้งรหัสผ่านใหม่ให้ @{resetTarget?.username}
+          </p>
+          <FormInput
+            label="รหัสผ่านใหม่"
+            type="password"
+            placeholder={`อย่างน้อย ${PASSWORD_MIN_LENGTH} ตัวอักษร`}
+            value={resetPassword}
+            onChange={(v) => { setResetPassword(v); setResetError('') }}
+            autoComplete="new-password"
+            error={resetError || undefined}
+          />
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <Button variant="secondary" onClick={closeResetModal}>ยกเลิก</Button>
+            <Button onClick={handleResetSubmit} loading={resetting} disabled={resetting}>
+              {resetting ? 'กำลังบันทึก...' : 'บันทึก'}
+            </Button>
           </div>
-        </Modal>
-      )}
+        </div>
+      </Modal>
     </div>
   )
 }
