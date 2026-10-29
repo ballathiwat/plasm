@@ -15,8 +15,9 @@ const dashboardService = {
     return await apiAdapter.get<DailyData[]>(GET_STOCK_DAILY, { days: String(days) })
   },
 
-  getRecentLog: async (): Promise<LogEntryItem[]> => {
-    return await apiAdapter.get<LogEntryItem[]>(GET_LOG)
+ getRecentLog: async (): Promise<LogEntryItem[]> => {
+    const res = await apiAdapter.get<{ data: LogEntryItem[] }>(GET_LOG, { pageSize: '10' })
+    return res.data
   },
 }
 
