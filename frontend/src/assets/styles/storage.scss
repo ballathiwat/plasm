@@ -44,86 +44,139 @@
   padding: 4px;
 }
 
-/* ── Label Preview (= print area) ── */
+/* ── Label Preview (= print area) — Professional Grid Layout ── */
+/* Design: Senior Designer level — optimised for -30°C blood-bank use     */
+/* Hierarchy: Blood Group (life-critical) → Type → Box ID → Barcode → Ops */
 
-.barcode-label-card {
-  border: 2px solid #E4E4E7;
-  border-radius: 8px;
-  padding: 14px;
+.lbl-grid {
+  border: 2px solid #222;
+  border-radius: 4px;
+  overflow: hidden;
   background: #fff;
-}
-
-.barcode-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  gap: 8px;
-}
-
-.barcode-box-label {
-  font-size: 28px;
-  font-weight: 900;
-  font-family: monospace;
-  letter-spacing: 1px;
-  line-height: 1.1;
-}
-
-.barcode-badges {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.barcode-type-badge {
-  font-size: 18px;
-  font-weight: 800;
-  padding: 3px 10px;
-  border-radius: 6px;
-  background: #fff;
-  border: 2px solid #000;
   color: #000;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-.barcode-blood-badge {
-  display: inline-flex;
+/* ── Row 1: Blood group (colored badge) + Plasma type ── */
+.lbl-row-top {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  border-bottom: 2px solid #222;
+}
+
+.lbl-blood-cell {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #fff;
-  border: 3px solid #000;
-  color: #000;
-  font-size: 20px;
-  font-weight: 900;
+  border-right: 2px solid #222;
+  padding: 8px;
+  gap: 0;
 }
 
-.barcode-svg-wrap {
-  text-align: center;
-  padding: 4px 0;
-  overflow: hidden;
-}
-
-.barcode-svg-wrap svg {
-  width: 100%;
-  height: auto;
-  max-height: 90px;
-  display: block;
-}
-
-.barcode-info-row {
+.lbl-type-cell {
   display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 2px 10px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 16px;
+  gap: 2px;
+}
+
+.lbl-sub {
+  font-size: 11px;
+  font-weight: 700;
+  color: #444;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+  text-transform: none;
+}
+
+.lbl-big {
+  font-size: 56px;
+  font-weight: 900;
+  line-height: 1;
+  color: #000;
+}
+
+.lbl-type-cell .lbl-big {
+  font-size: 38px;
+  letter-spacing: 0.5px;
+}
+
+.lbl-small {
+  font-size: 12px;
+  font-weight: 400;
+  color: #555;
+  margin-top: 2px;
+}
+
+/* ── Row 2: Box number (wider) + Collection date ── */
+.lbl-row-mid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  border-bottom: 2px solid #222;
+}
+
+.lbl-cell {
+  padding: 6px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.lbl-cell-border {
+  border-right: 2px solid #222;
+}
+
+.lbl-mid {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #000;
+  letter-spacing: 0.3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Row 3: Barcode ── */
+.lbl-row-barcode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 24px;
+  border-bottom: 2px solid #222;
+}
+
+.lbl-row-barcode svg {
+  width: 82%;
+  height: auto;
+  max-height: 72px;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ── Row 4: Position + Units + Storage temp (3-col) ── */
+.lbl-row-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.lbl-row-bottom .lbl-cell {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+}
+
+.lbl-row-bottom .lbl-cell + .lbl-cell {
+  border-left: 2px solid #222;
+}
+
+.lbl-val {
   font-size: 15px;
-  font-weight: 600;
-  color: #333;
-  margin-top: 8px;
-  border-top: 1px solid #eee;
-  padding-top: 6px;
+  font-weight: 800;
+  color: #000;
 }
 
 /* ── Action Buttons ── */
@@ -159,40 +212,4 @@
   cursor: pointer;
 }
 
-/* ── Portrait label layout (50x100mm sticker) ── */
-
-.barcode-top-row--portrait {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 6px;
-}
-
-.barcode-top-row--portrait .barcode-box-label {
-  font-size: 22px;
-  text-align: center;
-  width: 100%;
-}
-
-.barcode-top-row--portrait .barcode-badges {
-  justify-content: center;
-}
-
-.barcode-top-row--portrait .barcode-type-badge {
-  font-size: 14px;
-  padding: 2px 8px;
-}
-
-.barcode-top-row--portrait .barcode-blood-badge {
-  width: 32px;
-  height: 32px;
-  font-size: 16px;
-  border-width: 2px;
-}
-
-.barcode-info-row--portrait {
-  flex-direction: column;
-  gap: 1px;
-  font-size: 13px;
-  text-align: center;
-}
+/* ── (Legacy portrait classes removed — replaced by lbl-grid) ── */
