@@ -34,7 +34,6 @@ const BLOOD_TINTS: Record<string, string> = {
   AB: "#FFFFFF",
 };
 
-
 /** Format ISO date "2026-10-28" → "28 ต.ค. 2569" (Thai Buddhist era) */
 function formatThaiDate(isoDate: string): string {
   const thaiMonths = [
@@ -49,17 +48,9 @@ function formatThaiDate(isoDate: string): string {
   return `${day} ${thaiMonths[month] || parts[1]} ${year}`;
 }
 
-/** Plasma type full names */
-const PLASMA_NAMES: Record<string, string> = {
-  FFP: "Fresh Frozen Plasma",
-  FP: "Frozen Plasma",
-  CP: "Cryoprecipitate",
-};
-
 export default function BarcodeLabel({ data, onClose }: Props) {
   const barcodeRef = useRef<SVGSVGElement>(null);
   const bloodTint = BLOOD_TINTS[data.blood] || "#F3F4F6";
-  const plasmaFullName = PLASMA_NAMES[data.type] || "";
   const thaiDate = formatThaiDate(data.collectionDate);
   // Barcode text below bars uses the full box label
   const barcodeText = data.boxLabel;
@@ -170,17 +161,10 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     line-height: 1.05 !important;
     letter-spacing: 0.2mm !important;
   }
-  .print-label .lbl-type-cell .lbl-small {
-    font-size: 2.8mm !important;
-    font-weight: 400 !important;
-    margin-top: 1mm !important;
-    color: #555 !important;
-  }
-
-  /* ── Row 2: box number (60%) + date (40%) ── */
+  /* ── Row 2: box number (55%) + date (45%) ── */
   .print-label .lbl-row-mid {
     display: grid !important;
-    grid-template-columns: 3fr 2fr !important;
+    grid-template-columns: 55fr 45fr !important;
     border-bottom: 0.6mm solid #000 !important;
     min-height: 18mm !important;
   }
@@ -200,10 +184,11 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     color: #444 !important;
   }
   .print-label .lbl-cell .lbl-mid {
-    font-size: 5.5mm !important;
+    font-size: 5mm !important;
     font-weight: 800 !important;
     line-height: 1.15 !important;
     letter-spacing: 0.1mm !important;
+    white-space: nowrap !important;
   }
 
   /* ── Row 3: barcode ── */
@@ -286,9 +271,6 @@ export default function BarcodeLabel({ data, onClose }: Props) {
               <div className="lbl-type-cell">
                 <span className="lbl-sub">ชนิดพลาสมา</span>
                 <span className="lbl-big">{data.type}</span>
-                {plasmaFullName && (
-                  <span className="lbl-small">{plasmaFullName}</span>
-                )}
               </div>
             </div>
 

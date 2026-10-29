@@ -103,17 +103,10 @@
   letter-spacing: 0.5px;
 }
 
-.lbl-small {
-  font-size: 12px;
-  font-weight: 400;
-  color: #555;
-  margin-top: 2px;
-}
-
-/* ── Row 2: Box number (wider) + Collection date ── */
+/* ── Row 2: Box number (55%) + Collection date (45%) ── */
 .lbl-row-mid {
   display: grid;
-  grid-template-columns: 3fr 2fr;
+  grid-template-columns: 55fr 45fr;
   border-bottom: 2px solid #222;
 }
 
@@ -136,6 +129,7 @@
   color: #000;
   letter-spacing: 0.3px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* ── Row 3: Barcode ── */
