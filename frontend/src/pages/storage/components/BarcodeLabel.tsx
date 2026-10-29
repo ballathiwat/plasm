@@ -66,7 +66,6 @@ const PLASMA_NAMES: Record<string, string> = {
 
 export default function BarcodeLabel({ data, onClose }: Props) {
   const barcodeRef = useRef<SVGSVGElement>(null);
-  const parsed = parseBoxLabel(data.boxLabel);
   const bloodTint = BLOOD_TINTS[data.blood] || "#F3F4F6";
   const plasmaFullName = PLASMA_NAMES[data.type] || "";
   const thaiDate = formatThaiDate(data.collectionDate);
