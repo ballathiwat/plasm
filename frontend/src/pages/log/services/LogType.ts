@@ -24,3 +24,11 @@ export interface LogFilters {
   dateFrom: string
   dateTo: string
 }
+
+export interface PaginatedLogResponse {
+  data: LogEntryItem[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}

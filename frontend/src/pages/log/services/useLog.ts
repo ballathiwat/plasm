@@ -5,6 +5,7 @@
 import { useState, useCallback, useRef } from "react";
 import logService from "./LogService";
 import type { LogEntryItem, LogFilters } from "./LogType";
+import type { PaginationInfo } from "../../../components/shared/Pagination";
 
 /* ---------- helpers: วันแรก/วันสุดท้ายของเดือน ---------- */
 function monthStart(): string {
@@ -26,40 +27,53 @@ const INITIAL_FILTERS: LogFilters = {
   dateTo: monthEnd(),
 };
 
-const PAGE_SIZE = 30;
+const DEFAULT_PAGE_SIZE = 20;
 
 export default function useLog() {
   const [entries, setEntries] = useState<LogEntryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<LogFilters>(INITIAL_FILTERS);
-  const [hasMore, setHasMore] = useState(true);
-  const [searched, setSearched] = useState(false); // เคยกดค้นหาหรือยัง
+  const [searched, setSearched] = useState(false);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    pageSize: DEFAULT_PAGE_SIZE,
+    total: 0,
+    totalPages: 0,
+  });
   const reqId = useRef(0);
 
-  /* snapshot ของ filters ที่ใช้ค้นหาล่าสุด (สำหรับ loadMore) */
+  /* snapshot ของ filters ที่ใช้ค้นหาล่าสุด */
   const activeFilters = useRef<LogFilters>(INITIAL_FILTERS);
 
   const loadLog = useCallback(
-    async (offset: number, filtersToUse: LogFilters) => {
+    async (page: number, pageSize: number, filtersToUse: LogFilters) => {
       const id = ++reqId.current;
       setLoading(true);
       try {
         const params: Record<string, string> = {
-          limit: String(PAGE_SIZE),
-          offset: String(offset),
+          page: String(page),
+          pageSize: String(pageSize),
         };
         if (filtersToUse.action) params.action = filtersToUse.action;
         if (filtersToUse.blood) params.blood = filtersToUse.blood;
         if (filtersToUse.dateFrom) params.dateFrom = filtersToUse.dateFrom;
         if (filtersToUse.dateTo) params.dateTo = filtersToUse.dateTo;
 
-        const data = await logService.getLog(params);
+        const res = await logService.getLog(params);
         if (id !== reqId.current) return;
 
-        setEntries((prev) => (offset === 0 ? data : [...prev, ...data]));
-        setHasMore(data.length >= PAGE_SIZE);
+        setEntries(res.data);
+        setPagination({
+          page: res.page,
+          pageSize: res.pageSize,
+          total: res.total,
+          totalPages: res.totalPages,
+        });
       } catch {
-        if (id === reqId.current && offset === 0) setEntries([]);
+        if (id === reqId.current) {
+          setEntries([]);
+          setPagination((p) => ({ ...p, total: 0, totalPages: 0 }));
+        }
       } finally {
         if (id === reqId.current) setLoading(false);
       }
@@ -71,10 +85,10 @@ export default function useLog() {
   const search = useCallback(() => {
     activeFilters.current = { ...filters };
     setSearched(true);
-    loadLog(0, filters);
-  }, [filters, loadLog]);
+    loadLog(1, pagination.pageSize, filters);
+  }, [filters, pagination.pageSize, loadLog]);
 
-  /* ── กดปุ่มล้าง → รีเซ็ตเป็นค่าเริ่มต้น แล้วค้นหาใหม่ ── */
+  /* ── กดปุ่มล้าง ── */
   const resetFilters = useCallback(() => {
     const fresh = {
       ...INITIAL_FILTERS,
@@ -84,34 +98,40 @@ export default function useLog() {
     setFilters(fresh);
     activeFilters.current = fresh;
     setSearched(true);
-    loadLog(0, fresh);
+    loadLog(1, DEFAULT_PAGE_SIZE, fresh);
   }, [loadLog]);
 
   const handleFilterChange = (field: keyof LogFilters, value: string) => {
     setFilters((f) => ({ ...f, [field]: value }));
   };
 
-  const loadMore = () => {
-    if (!loading) loadLog(entries.length, activeFilters.current);
-  };
+  /* ── เปลี่ยนหน้า ── */
+  const goToPage = useCallback(
+    (page: number) => {
+      loadLog(page, pagination.pageSize, activeFilters.current);
+    },
+    [pagination.pageSize, loadLog],
+  );
 
-  /* ── client-side date filter (ถ้า backend ยังไม่รองรับ) ── */
-  const filteredEntries = entries.filter((e) => {
-    const d = e.timestamp.split("T")[0];
-    if (activeFilters.current.dateFrom && d < activeFilters.current.dateFrom) return false;
-    if (activeFilters.current.dateTo && d > activeFilters.current.dateTo) return false;
-    return true;
-  });
+  /* ── เปลี่ยนจำนวนต่อหน้า ── */
+  const changePageSize = useCallback(
+    (size: number) => {
+      setPagination((p) => ({ ...p, pageSize: size }));
+      loadLog(1, size, activeFilters.current);
+    },
+    [loadLog],
+  );
 
   return {
-    entries: filteredEntries,
+    entries,
     loading,
     filters,
-    hasMore,
     searched,
+    pagination,
     handleFilterChange,
     resetFilters,
     search,
-    loadMore,
+    goToPage,
+    changePageSize,
   };
 }
