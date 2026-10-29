@@ -9,12 +9,20 @@ import {
 } from '../../../helpers/url_helper'
 import type {
   StorageBoxItem, CreateBoxPayload, MasterCode, MasterShelf, MasterZone,
+  PaginatedBoxResponse,
 } from './StorageType'
 
 const storageService = {
-  /** GET /boxes?status=stored */
+  /** GET /boxes?status=stored (ไม่มี pagination — ใช้กับ Map/Withdraw) */
   getStoredBoxes: async (): Promise<StorageBoxItem[]> => {
     return await apiAdapter.get<StorageBoxItem[]>(GET_BOXES, { status: 'stored' })
+  },
+
+  /** GET /boxes?status=stored&page=&pageSize= (paginated) */
+  getStoredBoxesPaged: async (page: number, pageSize: number): Promise<PaginatedBoxResponse> => {
+    return await apiAdapter.get<PaginatedBoxResponse>(GET_BOXES, {
+      status: 'stored', page: String(page), pageSize: String(pageSize),
+    })
   },
 
   /** POST /boxes  (backend ออก boxLabel ให้เอง) */

@@ -30,7 +30,7 @@ const formatLabel = (type: string, blood: string, year: number, no: number) =>
 // ===== GET /api/v1/boxes =====
 router.get("/", async (req, res) => {
   try {
-    const { blood, location, status } = req.query;
+    const { blood, location, status, page, pageSize } = req.query;
 
     const where: Record<string, unknown> = {};
     if (blood) where.blood = (blood as string).toUpperCase();
@@ -38,25 +38,51 @@ router.get("/", async (req, res) => {
       where.zone = { legacyKey: (location as string).toUpperCase() };
     if (status) where.status = (status as string).toUpperCase();
 
-    const boxes = await prisma.box.findMany({
-      where,
-      include: {
-        zone: zoneSelect,
-        units: { select: { unitNumber: true, status: true } },
-      },
-      orderBy: { storedAt: "desc" },
-    });
-
     const onlyStored = String(status ?? "").toUpperCase() === "STORED";
 
-    res.json(
-      boxes.map((b) => ({
-        ...boxDto(b),
-        units: b.units
-          .filter((u) => !onlyStored || u.status === "STORED")
-          .map((u) => u.unitNumber),
-      })),
-    );
+    const mapBox = (b: any) => ({
+      ...boxDto(b),
+      units: b.units
+        .filter((u: any) => !onlyStored || u.status === "STORED")
+        .map((u: any) => u.unitNumber),
+    });
+
+    const include = {
+      zone: zoneSelect,
+      units: { select: { unitNumber: true, status: true } },
+    };
+
+    // ถ้าส่ง page → paginated response, ถ้าไม่ส่ง → array เดิม (backward compat)
+    if (page) {
+      const pageNum = Math.max(1, Number(page));
+      const size = Math.min(100, Math.max(1, Number(pageSize || 20)));
+
+      const [boxes, total] = await Promise.all([
+        prisma.box.findMany({
+          where,
+          include,
+          orderBy: { storedAt: "desc" },
+          take: size,
+          skip: (pageNum - 1) * size,
+        }),
+        prisma.box.count({ where }),
+      ]);
+
+      res.json({
+        data: boxes.map(mapBox),
+        total,
+        page: pageNum,
+        pageSize: size,
+        totalPages: Math.ceil(total / size),
+      });
+    } else {
+      const boxes = await prisma.box.findMany({
+        where,
+        include,
+        orderBy: { storedAt: "desc" },
+      });
+      res.json(boxes.map(mapBox));
+    }
   } catch (error) {
     console.error("GET /boxes error:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาด" });
