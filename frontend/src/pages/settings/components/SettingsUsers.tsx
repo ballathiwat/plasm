@@ -2,18 +2,17 @@
 //  src/pages/settings/components/SettingsUsers.tsx
 // ============================================================
 
+import { useMemo } from 'react'
 import { Plus, X, UserCheck, UserX } from 'lucide-react'
 import type { UserItem, UserFormData } from '../services/SettingsType'
+import Button from '../../../components/common/Button'
+import FormInput from '../../../components/common/FormInput'
+import SelectDropdown, { type OptionType } from '../../../components/common/SelectDropdown'
 
-const inputStyle: React.CSSProperties = {
-  padding: '8px 12px',
-  border: '1px solid var(--border, #E4E4E7)',
-  borderRadius: 'var(--radius-sm, 6px)',
-  fontSize: 14,
-  background: 'var(--surface, #fff)',
-  color: 'var(--text-primary)',
-  width: '100%',
-}
+const ROLE_OPTIONS: OptionType[] = [
+  { value: 'staff', label: 'เจ้าหน้าที่' },
+  { value: 'admin', label: 'ผู้ดูแลระบบ' },
+]
 
 interface Props {
   users: UserItem[]
@@ -31,6 +30,11 @@ export default function SettingsUsers({
   users, loading, showForm, form, saving,
   onToggleForm, onFormChange, onCreate, onToggleActive,
 }: Props) {
+  const roleValue = useMemo(
+    () => ROLE_OPTIONS.find((o) => o.value === form.role) ?? null,
+    [form.role],
+  )
+
   return (
     <div style={{
       background: 'var(--surface, #fff)',
@@ -45,18 +49,14 @@ export default function SettingsUsers({
             เพิ่ม/ปิดใช้งานบัญชีผู้ใช้ · {users.length} คน
           </p>
         </div>
-        <button
+        <Button
+          variant={showForm ? 'secondary' : 'primary'}
+          size="sm"
+          icon={showForm ? <X size={14} /> : <Plus size={14} />}
           onClick={() => onToggleForm(!showForm)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '8px 16px', borderRadius: 'var(--radius-sm, 6px)',
-            border: 'none', background: 'var(--primary, #2563EB)', color: '#fff',
-            fontWeight: 600, fontSize: 13, cursor: 'pointer',
-          }}
         >
-          {showForm ? <X size={14} /> : <Plus size={14} />}
           {showForm ? 'ปิด' : 'เพิ่มผู้ใช้'}
-        </button>
+        </Button>
       </div>
 
       {/* Add user form */}
@@ -68,57 +68,48 @@ export default function SettingsUsers({
           background: 'var(--surface-raised, #F4F4F5)',
           animation: 'plasm-fade-in 0.2s ease',
         }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, display: 'block' }}>ชื่อผู้ใช้ *</label>
-              <input
-                type="text"
-                placeholder="username"
-                value={form.username}
-                onChange={(e) => onFormChange('username', e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, display: 'block' }}>ชื่อ-สกุล *</label>
-              <input
-                type="text"
-                placeholder="ชื่อที่แสดง"
-                value={form.name}
-                onChange={(e) => onFormChange('name', e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, display: 'block' }}>รหัสผ่าน *</label>
-              <input
-                type="password"
-                placeholder="••••••"
-                value={form.password}
-                onChange={(e) => onFormChange('password', e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, display: 'block' }}>บทบาท</label>
-              <select value={form.role} onChange={(e) => onFormChange('role', e.target.value)} style={inputStyle}>
-                <option value="staff">เจ้าหน้าที่</option>
-                <option value="admin">ผู้ดูแลระบบ</option>
-              </select>
-            </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 12, marginBottom: 16,
+          }}>
+            <FormInput
+              label="ชื่อผู้ใช้"
+              required
+              placeholder="username"
+              value={form.username}
+              onChange={(v) => onFormChange('username', v)}
+              autoComplete="off"
+            />
+            <FormInput
+              label="ชื่อ-สกุล"
+              required
+              placeholder="ชื่อที่แสดง"
+              value={form.name}
+              onChange={(v) => onFormChange('name', v)}
+            />
+            <FormInput
+              label="รหัสผ่าน"
+              required
+              type="password"
+              placeholder="••••••"
+              value={form.password}
+              onChange={(v) => onFormChange('password', v)}
+              autoComplete="new-password"
+            />
+            <SelectDropdown
+              label="บทบาท"
+              options={ROLE_OPTIONS}
+              value={roleValue}
+              onChange={(opt) => onFormChange('role', opt?.value ?? 'staff')}
+              isClearable={false}
+              isSearchable={false}
+            />
           </div>
-          <button
-            onClick={onCreate}
-            disabled={saving}
-            style={{
-              padding: '8px 20px', borderRadius: 'var(--radius-sm, 6px)',
-              border: 'none', background: 'var(--primary)', color: '#fff',
-              fontWeight: 600, fontSize: 13, cursor: saving ? 'wait' : 'pointer',
-              opacity: saving ? 0.7 : 1,
-            }}
-          >
+
+          <Button onClick={onCreate} loading={saving} disabled={saving}>
             {saving ? 'กำลังบันทึก...' : 'เพิ่มผู้ใช้'}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -152,20 +143,14 @@ export default function SettingsUsers({
                 </div>
               </div>
 
-              <button
+              <Button
+                variant={user.active ? 'outline-danger' : 'outline-success'}
+                size="sm"
+                icon={user.active ? <UserX size={13} /> : <UserCheck size={13} />}
                 onClick={() => onToggleActive(user)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 4,
-                  padding: '6px 12px', borderRadius: 'var(--radius-sm, 6px)',
-                  border: `1px solid ${user.active ? '#FECACA' : '#BBF7D0'}`,
-                  background: user.active ? '#FEF2F2' : '#F0FDF4',
-                  color: user.active ? '#DC2626' : '#16A34A',
-                  fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                }}
               >
-                {user.active ? <UserX size={13} /> : <UserCheck size={13} />}
                 {user.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
-              </button>
+              </Button>
             </div>
           ))}
         </div>

@@ -5,18 +5,8 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import type { ZoneItem, ShelfItem } from '../services/SettingsType'
-
-const inputStyle: React.CSSProperties = {
-  padding: '7px 12px', fontSize: 13, width: 160,
-  border: '1px solid var(--border)', borderRadius: 'var(--radius-sm, 6px)',
-  background: 'var(--surface, #fff)', color: 'var(--text-primary)',
-}
-const addBtn: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: 4, padding: '7px 14px',
-  borderRadius: 'var(--radius-sm, 6px)', border: 'none',
-  background: 'var(--primary, #2563EB)', color: '#fff',
-  fontWeight: 600, fontSize: 12, cursor: 'pointer',
-}
+import Button from '../../../components/common/Button'
+import FormInput from '../../../components/common/FormInput'
 
 interface Props {
   zones: ZoneItem[]
@@ -54,21 +44,21 @@ export default function SettingsZones({
         กำหนดห้อง/ตู้ และชั้นวางในแต่ละที่
       </p>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        <input
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        <FormInput
+          style={{ flex: '1 1 240px', maxWidth: 320 }}
           value={zoneName}
           placeholder="ชื่อห้อง/ตู้ใหม่"
-          onChange={(e) => setZoneName(e.target.value)}
+          onChange={setZoneName}
           onKeyDown={(e) => { if (e.key === 'Enter') submitZone() }}
-          style={{ ...inputStyle, width: 240 }}
         />
-        <button
+        <Button
+          icon={<Plus size={14} />}
           onClick={submitZone}
           disabled={!zoneName.trim()}
-          style={{ ...addBtn, opacity: zoneName.trim() ? 1 : 0.6 }}
         >
-          <Plus size={13} /> เพิ่มสถานที่
-        </button>
+          เพิ่มสถานที่
+        </Button>
       </div>
 
       {loading ? (
@@ -82,17 +72,14 @@ export default function SettingsZones({
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <strong style={{ fontSize: 15 }}>{z.name}</strong>
-                <button
+                <Button
+                  pill
+                  size="sm"
+                  variant={z.active ? 'outline-success' : 'outline-danger'}
                   onClick={() => onToggleZone(z)}
-                  style={{
-                    padding: '4px 12px', borderRadius: 99, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                    border: `1px solid ${z.active ? '#BBF7D0' : '#FECACA'}`,
-                    background: z.active ? '#F0FDF4' : '#FEF2F2',
-                    color: z.active ? '#16A34A' : '#DC2626',
-                  }}
                 >
                   {z.active ? 'ใช้งาน' : 'ปิดอยู่'}
-                </button>
+                </Button>
               </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
@@ -100,36 +87,41 @@ export default function SettingsZones({
                   <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>ยังไม่มีชั้นวาง</span>
                 )}
                 {z.shelves.map((s) => (
-                  <button
+                  <Button
                     key={s.id}
-                    onClick={() => onToggleShelf(s)}
+                    size="sm"
+                    variant={s.active ? 'secondary' : 'ghost'}
                     title={s.active ? 'คลิกเพื่อปิดใช้งาน' : 'คลิกเพื่อเปิดใช้งาน'}
+                    onClick={() => onToggleShelf(s)}
                     style={{
-                      padding: '4px 12px', borderRadius: 'var(--radius-sm, 6px)', cursor: 'pointer',
-                      fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600,
-                      border: '1px solid var(--border)',
-                      background: s.active ? 'var(--surface-raised, #F4F4F5)' : 'transparent',
-                      color: s.active ? 'var(--text-primary)' : 'var(--text-disabled)',
+                      fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: 13,
                       textDecoration: s.active ? 'none' : 'line-through',
+                      color: s.active ? undefined : 'var(--text-disabled)',
                     }}
                   >
                     {s.code}
-                  </button>
+                  </Button>
                 ))}
               </div>
 
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <FormInput
+                  style={{ flex: '0 1 200px' }}
+                  mono
                   value={shelfInputs[z.id] || ''}
                   placeholder="ชั้นใหม่ เช่น R4"
                   maxLength={20}
-                  onChange={(e) => setShelfInputs((s) => ({ ...s, [z.id]: e.target.value.toUpperCase() }))}
+                  onChange={(v) => setShelfInputs((s) => ({ ...s, [z.id]: v.toUpperCase() }))}
                   onKeyDown={(e) => { if (e.key === 'Enter') submitShelf(z.id) }}
-                  style={inputStyle}
                 />
-                <button onClick={() => submitShelf(z.id)} style={addBtn}>
-                  <Plus size={13} /> เพิ่มชั้น
-                </button>
+                <Button
+                  variant="outline"
+                  icon={<Plus size={14} />}
+                  onClick={() => submitShelf(z.id)}
+                  disabled={!(shelfInputs[z.id] || '').trim()}
+                >
+                  เพิ่มชั้น
+                </Button>
               </div>
             </div>
           ))}

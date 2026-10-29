@@ -5,9 +5,11 @@
 import { Save } from 'lucide-react'
 import type { MinimumStock } from '../services/SettingsType'
 import { groupSurface, groupInk } from '../../../helpers/blood'
+import Button from '../../../components/common/Button'
+import FormInput from '../../../components/common/FormInput'
 
 interface Props {
-  groups: string[]                         // หมู่เลือดที่ active จาก master
+  groups: string[]
   minimumStock: MinimumStock
   saving: boolean
   loading: boolean
@@ -31,7 +33,11 @@ export default function SettingsMinStock({ groups, minimumStock, saving, loading
       {loading ? (
         <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>กำลังโหลด...</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 12, marginBottom: 20,
+        }}>
           {groups.map((g) => (
             <div key={g} style={{
               display: 'flex', alignItems: 'center', gap: 12,
@@ -44,42 +50,30 @@ export default function SettingsMinStock({ groups, minimumStock, saving, loading
                 background: groupSurface(g), color: groupInk(g),
                 fontSize: 14, fontWeight: 700, flexShrink: 0,
               }}>{g}</span>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>หมู่เลือด {g}</label>
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="ไม่กำหนด"
-                  value={minimumStock[g] ?? ''}
-                  onChange={(e) => onChange(g, e.target.value)}
-                  style={{
-                    width: '100%', padding: '6px 10px', marginTop: 4,
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm, 6px)',
-                    fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
-                    textAlign: 'center',
-                  }}
-                />
-              </div>
+
+              <FormInput
+                style={{ flex: 1 }}
+                label={`หมู่เลือด ${g}`}
+                type="number"
+                min={0}
+                size="sm"
+                placeholder="ไม่กำหนด"
+                value={minimumStock[g] ?? ''}
+                onChange={(v) => onChange(g, v)}
+              />
             </div>
           ))}
         </div>
       )}
 
-      <button
+      <Button
+        icon={<Save size={14} />}
         onClick={onSave}
+        loading={saving}
         disabled={saving || loading}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '10px 24px', borderRadius: 'var(--radius-sm, 6px)',
-          border: 'none', background: 'var(--primary, #2563EB)', color: '#fff',
-          fontWeight: 600, fontSize: 14, cursor: saving ? 'wait' : 'pointer',
-          opacity: saving || loading ? 0.7 : 1,
-        }}
       >
-        <Save size={14} />
         {saving ? 'กำลังบันทึก...' : 'บันทึก'}
-      </button>
+      </Button>
     </div>
   )
 }
