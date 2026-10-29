@@ -64,10 +64,10 @@ export default function BarcodeLabel({ data, onClose }: Props) {
       height: 58,
       displayValue: true,
       text: barcodeText,
-      fontSize: 16,
+      fontSize: 14,
       font: "'Helvetica Neue', Helvetica, Arial, sans-serif",
       fontOptions: "bold",
-      textMargin: 5,
+      textMargin: 4,
       margin: 0,
     });
 
@@ -202,11 +202,12 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     border-bottom: 0.6mm solid #000 !important;
   }
   .print-label .lbl-row-barcode svg {
-    width: 84% !important;
+    width: 94% !important;
     height: auto !important;
     max-height: 20mm !important;
     display: block !important;
     margin: 0 auto !important;
+    overflow: visible !important;
   }
 
   /* ── Row 4: position + units + temp (3-col) ── */

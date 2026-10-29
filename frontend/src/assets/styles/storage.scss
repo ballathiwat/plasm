@@ -143,11 +143,12 @@
 }
 
 .lbl-row-barcode svg {
-  width: 82%;
+  width: 92%;
   height: auto;
   max-height: 72px;
   display: block;
   margin: 0 auto;
+  overflow: visible;
 }
 
 /* ── Row 4: Position + Units + Storage temp (3-col) ── */
