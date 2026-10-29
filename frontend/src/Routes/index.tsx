@@ -1,4 +1,6 @@
-// frontend/src/Routes/index.tsx
+// ============================================================
+//  frontend/src/Routes/index.tsx
+// ============================================================
 
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { authProtectedRoutes, publicRoutes } from './allRoutes'
@@ -16,6 +18,7 @@ const PATH_TO_MODULE: Record<string, string> = {
   '/log': 'log',
   '/report': 'report-summary',
   '/report/daily': 'report-daily',
+  '/profile': 'profile',
   '/settings': 'settings',
 }
 
@@ -28,6 +31,7 @@ const MODULE_TO_PATH: Record<string, string> = {
   log: '/log',
   'report-summary': '/report',
   'report-daily': '/report/daily',
+  profile: '/profile',
   settings: '/settings',
 }
 

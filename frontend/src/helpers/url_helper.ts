@@ -1,13 +1,16 @@
-// frontend/src/helpers/url_helper.ts
+// ============================================================
+//  frontend/src/helpers/url_helper.ts
 //
-// รวม API URL ทั้งหมดไว้ที่เดียว
-// Pattern: url_helper → apiAdapter → services / backend_helper
+//  รวม API URL ทั้งหมดไว้ที่เดียว
+//  Pattern: url_helper → apiAdapter → services / backend_helper
+// ============================================================
 
 const API = '/api/v1'
 
 // ===== Auth =====
 export const POST_LOGIN = `${API}/auth/login`
 export const POST_LOGOUT = `${API}/auth/logout`
+export const PATCH_CHANGE_PASSWORD = `${API}/auth/change-password`
 
 // ===== Boxes =====
 export const GET_BOXES = `${API}/boxes`

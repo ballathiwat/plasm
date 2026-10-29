@@ -1,4 +1,6 @@
-// frontend/src/types/navigation.ts
+// ============================================================
+//  frontend/src/types/navigation.ts
+// ============================================================
 
 import {
   LayoutDashboard,
@@ -33,7 +35,7 @@ export interface MobileNavItem {
 
 export const MENU_ITEMS: MenuItem[] = [
   { key: 'dashboard', label: 'แดชบอร์ด', icon: LayoutDashboard, roles: ['ADMIN', 'STAFF'] },
-    {
+  {
     key: 'report',
     label: 'รายงาน',
     icon: BarChart3,
@@ -48,7 +50,6 @@ export const MENU_ITEMS: MenuItem[] = [
   { key: 'search', label: 'ค้นหา', icon: Search, roles: ['ADMIN', 'STAFF'] },
   { key: 'map', label: 'แผนผัง', icon: Map, roles: ['ADMIN', 'STAFF'] },
   { key: 'log', label: 'ประวัติ', icon: ClipboardList, roles: ['ADMIN', 'STAFF'] },
-
   { key: 'settings', label: 'ตั้งค่า', icon: Settings, roles: ['ADMIN'] },
 ]
 
@@ -69,5 +70,6 @@ export const PAGE_TITLES: Record<string, string> = {
   log: 'ประวัติการจัดเก็บ/นำออก',
   'report-summary': 'รายงานสรุป',
   'report-daily': 'รายงาน นำเข้า/นำออก รายวัน',
+  profile: 'โปรไฟล์',
   settings: 'ตั้งค่า',
 }
