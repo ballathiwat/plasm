@@ -34,14 +34,6 @@ const BLOOD_TINTS: Record<string, string> = {
   AB: "#FFFFFF",
 };
 
-/** Parse "FFP_B_2026_00003" → { blood: "B", seq: "00003" } for short display */
-function parseBoxLabel(label: string) {
-  const parts = label.split("_");
-  return {
-    blood: parts[1] || "",
-    seq: parts.slice(3).join("_") || "",
-  };
-}
 
 /** Format ISO date "2026-10-28" → "28 ต.ค. 2569" (Thai Buddhist era) */
 function formatThaiDate(isoDate: string): string {
