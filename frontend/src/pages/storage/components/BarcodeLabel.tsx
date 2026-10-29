@@ -68,7 +68,10 @@ export default function BarcodeLabel({ data, onClose }: Props) {
       font: "'Helvetica Neue', Helvetica, Arial, sans-serif",
       fontOptions: "bold",
       textMargin: 4,
-      margin: 0,
+      marginTop: 0,
+      marginBottom: 0,
+      marginLeft: 10,
+      marginRight: 10,
     });
 
     const svg = barcodeRef.current;
@@ -198,13 +201,13 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 1.5mm 6mm !important;
+    padding: 1mm 2mm !important;
     border-bottom: 0.6mm solid #000 !important;
   }
   .print-label .lbl-row-barcode svg {
-    width: 94% !important;
+    width: 100% !important;
     height: auto !important;
-    max-height: 20mm !important;
+    max-height: 22mm !important;
     display: block !important;
     margin: 0 auto !important;
     overflow: visible !important;
