@@ -1,5 +1,6 @@
 // ============================================================
 //  src/pages/storage/components/BarcodeLabel.tsx
+//  Grid layout matching blood-bank label standard (100×100mm)
 // ============================================================
 
 import { useRef, useEffect } from "react";
@@ -21,22 +22,70 @@ interface Props {
   onClose: () => void;
 }
 
+/**
+ * Blood-group background — white for all groups because the Zebra
+ * thermal printer is monochrome. The large letter alone identifies
+ * the group; colour would not survive printing.
+ */
+const BLOOD_TINTS: Record<string, string> = {
+  A: "#FFFFFF",
+  B: "#FFFFFF",
+  O: "#FFFFFF",
+  AB: "#FFFFFF",
+};
+
+/** Parse "FFP_B_2026_00003" → { blood: "B", seq: "00003" } for short display */
+function parseBoxLabel(label: string) {
+  const parts = label.split("_");
+  return {
+    blood: parts[1] || "",
+    seq: parts.slice(3).join("_") || "",
+  };
+}
+
+/** Format ISO date "2026-10-28" → "28 ต.ค. 2569" (Thai Buddhist era) */
+function formatThaiDate(isoDate: string): string {
+  const thaiMonths = [
+    "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+    "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
+  ];
+  const parts = isoDate.split("-");
+  if (parts.length < 3) return isoDate;
+  const year = parseInt(parts[0], 10) + 543; // Buddhist era
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  return `${day} ${thaiMonths[month] || parts[1]} ${year}`;
+}
+
+/** Plasma type full names */
+const PLASMA_NAMES: Record<string, string> = {
+  FFP: "Fresh Frozen Plasma",
+  FP: "Frozen Plasma",
+  CP: "Cryoprecipitate",
+};
+
 export default function BarcodeLabel({ data, onClose }: Props) {
   const barcodeRef = useRef<SVGSVGElement>(null);
+  const parsed = parseBoxLabel(data.boxLabel);
+  const bloodTint = BLOOD_TINTS[data.blood] || "#F3F4F6";
+  const plasmaFullName = PLASMA_NAMES[data.type] || "";
+  const thaiDate = formatThaiDate(data.collectionDate);
+  // Barcode text below bars uses the full box label
+  const barcodeText = data.boxLabel;
 
   useEffect(() => {
     if (!barcodeRef.current) return;
 
     JsBarcode(barcodeRef.current, data.boxLabel, {
       format: "CODE128",
-      width: 1.5,
-      height: 40,
+      width: 2,
+      height: 58,
       displayValue: true,
-      text: data.boxLabel,
-      fontSize: 14,
-      font: "monospace",
+      text: barcodeText,
+      fontSize: 16,
+      font: "'Helvetica Neue', Helvetica, Arial, sans-serif",
       fontOptions: "bold",
-      textMargin: 4,
+      textMargin: 5,
       margin: 0,
     });
 
@@ -49,15 +98,13 @@ export default function BarcodeLabel({ data, onClose }: Props) {
       svg.removeAttribute("width");
       svg.removeAttribute("height");
     }
-  }, [data.boxLabel]);
-
-  const locText = data.location;
+  }, [data.boxLabel, barcodeText]);
 
   const handlePrint = () => {
     const area = document.getElementById("barcode-print-area");
     if (!area) return;
 
-    const printWindow = window.open("", "_blank", "width=600,height=500");
+    const printWindow = window.open("", "_blank", "width=600,height=600");
     if (!printWindow) return;
 
     printWindow.document.write(`<!DOCTYPE html>
@@ -67,64 +114,149 @@ export default function BarcodeLabel({ data, onClose }: Props) {
   * { margin: 0; padding: 0; box-sizing: border-box; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000; }
   html, body { width: 100mm; height: 100mm; overflow: hidden; }
-  body { font-family: Helvetica, Arial, sans-serif; }
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
   .print-label {
     width: 100mm; height: 100mm;
-    padding: 3mm;
     display: flex; flex-direction: column;
-    justify-content: space-between;
     overflow: hidden;
     page-break-inside: avoid;
-  }
-  .print-label > div {
-    padding: 0 !important;
     border: none !important;
+    border-radius: 0 !important;
   }
-  /* top row — fits side by side on 100mm */
-  .print-label > div > div:first-child {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 3mm !important;
-    margin-bottom: 3mm !important;
-  }
-  .print-label > div > div:first-child > span:first-child {
-    font-size: 28px !important;
-    font-weight: 900 !important;
-  }
-  .print-label > div > div:first-child > div {
-    display: flex !important;
-    gap: 3mm !important;
-  }
-  .print-label > div > div:first-child > div > span:first-child {
-    font-size: 18px !important;
-    padding: 2px 10px !important;
-  }
-  .print-label > div > div:first-child > div > span:last-child {
-    width: 38px !important;
-    height: 38px !important;
-    font-size: 18px !important;
-    border-width: 3px !important;
-  }
-  /* barcode — large for easy scanning */
-  .print-label svg {
+
+  .print-label .lbl-grid {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
     width: 100% !important;
-    height: auto !important;
-    max-height: 28mm !important;
-    display: block !important;
-    margin: 2mm 0 !important;
-  }
-  /* info row */
-  .print-label > div > div:last-child {
+    height: 100% !important;
     display: flex !important;
-    justify-content: space-between !important;
-    flex-wrap: wrap !important;
-    gap: 1mm 3mm !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    border-top: 0.5px solid #999 !important;
-    padding-top: 2mm !important;
-    margin-top: 2mm !important;
+    flex-direction: column !important;
+  }
+
+  /* ── Row 1: blood group + plasma type ── */
+  .print-label .lbl-row-top {
+    display: grid !important;
+    grid-template-columns: 34mm 1fr !important;
+    border-bottom: 0.6mm solid #000 !important;
+    min-height: 27mm !important;
+  }
+  .print-label .lbl-blood-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-right: 0.6mm solid #000 !important;
+    padding: 2mm !important;
+  }
+  .print-label .lbl-blood-cell .lbl-sub {
+    font-size: 2.8mm !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.5mm !important;
+    color: #444 !important;
+  }
+  .print-label .lbl-blood-cell .lbl-big {
+    font-size: 16mm !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+  }
+  .print-label .lbl-type-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding: 2mm 4mm !important;
+  }
+  .print-label .lbl-type-cell .lbl-sub {
+    font-size: 2.8mm !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.5mm !important;
+    color: #444 !important;
+  }
+  .print-label .lbl-type-cell .lbl-big {
+    font-size: 11mm !important;
+    font-weight: 900 !important;
+    line-height: 1.05 !important;
+    letter-spacing: 0.2mm !important;
+  }
+  .print-label .lbl-type-cell .lbl-small {
+    font-size: 2.8mm !important;
+    font-weight: 400 !important;
+    margin-top: 1mm !important;
+    color: #555 !important;
+  }
+
+  /* ── Row 2: box number (60%) + date (40%) ── */
+  .print-label .lbl-row-mid {
+    display: grid !important;
+    grid-template-columns: 3fr 2fr !important;
+    border-bottom: 0.6mm solid #000 !important;
+    min-height: 18mm !important;
+  }
+  .print-label .lbl-cell {
+    padding: 1.5mm 4mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 0.5mm !important;
+  }
+  .print-label .lbl-cell-border {
+    border-right: 0.6mm solid #000 !important;
+  }
+  .print-label .lbl-cell .lbl-sub {
+    font-size: 2.8mm !important;
+    font-weight: 700 !important;
+    color: #444 !important;
+  }
+  .print-label .lbl-cell .lbl-mid {
+    font-size: 5.5mm !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+    letter-spacing: 0.1mm !important;
+  }
+
+  /* ── Row 3: barcode ── */
+  .print-label .lbl-row-barcode {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 1.5mm 6mm !important;
+    border-bottom: 0.6mm solid #000 !important;
+  }
+  .print-label .lbl-row-barcode svg {
+    width: 84% !important;
+    height: auto !important;
+    max-height: 20mm !important;
+    display: block !important;
+    margin: 0 auto !important;
+  }
+
+  /* ── Row 4: position + units + temp (3-col) ── */
+  .print-label .lbl-row-bottom {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    min-height: 10mm !important;
+  }
+  .print-label .lbl-row-bottom .lbl-cell {
+    padding: 1.5mm 3mm !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 1.5mm !important;
+  }
+  .print-label .lbl-row-bottom .lbl-cell + .lbl-cell {
+    border-left: 0.6mm solid #000 !important;
+  }
+  .print-label .lbl-row-bottom .lbl-sub {
+    font-size: 2.5mm !important;
+    font-weight: 700 !important;
+    color: #444 !important;
+  }
+  .print-label .lbl-row-bottom .lbl-val {
+    font-size: 4mm !important;
+    font-weight: 800 !important;
   }
 </style>
 </head><body>
@@ -150,30 +282,56 @@ export default function BarcodeLabel({ data, onClose }: Props) {
 
         {/* Preview — this is what gets printed */}
         <div id="barcode-print-area">
-          <div className="barcode-label-card">
-            {/* Top row */}
-            <div className="barcode-top-row">
-              {" "}
-              <span className="barcode-box-label">{data.boxLabel}</span>
-              <div className="barcode-badges">
-                <span className="barcode-type-badge">{data.type}</span>
-                <span className="barcode-blood-badge">{data.blood}</span>
+          <div className="lbl-grid">
+            {/* Row 1: Blood group (colored) + Plasma type */}
+            <div className="lbl-row-top">
+              <div
+                className="lbl-blood-cell"
+                style={{ backgroundColor: bloodTint }}
+              >
+                <span className="lbl-sub">หมู่เลือด</span>
+                <span className="lbl-big">{data.blood}</span>
+              </div>
+              <div className="lbl-type-cell">
+                <span className="lbl-sub">ชนิดพลาสมา</span>
+                <span className="lbl-big">{data.type}</span>
+                {plasmaFullName && (
+                  <span className="lbl-small">{plasmaFullName}</span>
+                )}
               </div>
             </div>
 
-            {/* Barcode SVG */}
-            <div className="barcode-svg-wrap">
+            {/* Row 2: Box number (60%) + Collection date (40%) */}
+            <div className="lbl-row-mid">
+              <div className="lbl-cell lbl-cell-border">
+                <span className="lbl-sub">หมายเลขกล่อง</span>
+                <span className="lbl-mid">{data.boxLabel}</span>
+              </div>
+              <div className="lbl-cell">
+                <span className="lbl-sub">วันที่เก็บ</span>
+                <span className="lbl-mid">{thaiDate}</span>
+              </div>
+            </div>
+
+            {/* Row 3: Barcode */}
+            <div className="lbl-row-barcode">
               <svg ref={barcodeRef} />
             </div>
 
-            {/* Info row */}
-            <div className="barcode-info-row">
-              {" "}
-              <span>
-                {locText} · {data.shelf}
-              </span>
-              <span>{data.unitCount} units</span>
-              <span>วันที่เก็บ {data.collectionDate}</span>
+            {/* Row 4: Position + Units + Storage temp (3-col) */}
+            <div className="lbl-row-bottom">
+              <div className="lbl-cell">
+                <span className="lbl-sub">ตำแหน่ง</span>
+                <span className="lbl-val">{data.shelf}</span>
+              </div>
+              <div className="lbl-cell">
+                <span className="lbl-sub">จำนวน</span>
+                <span className="lbl-val">{data.unitCount} units</span>
+              </div>
+              <div className="lbl-cell">
+                <span className="lbl-sub">อุณหภูมิ</span>
+                <span className="lbl-val">-30°C</span>
+              </div>
             </div>
           </div>
         </div>
