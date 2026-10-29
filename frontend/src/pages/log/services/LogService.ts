@@ -4,12 +4,12 @@
 
 import apiAdapter from '../../../helpers/http/apiAdapter'
 import { GET_LOG } from '../../../helpers/url_helper'
-import type { LogEntryItem } from './LogType'
+import type { PaginatedLogResponse } from './LogType'
 
 const logService = {
-  /** GET /log?action=&blood=&limit=&offset= */
-  getLog: async (params?: Record<string, string>): Promise<LogEntryItem[]> => {
-    return await apiAdapter.get<LogEntryItem[]>(GET_LOG, params)
+  /** GET /log?action=&blood=&page=&pageSize= */
+  getLog: async (params?: Record<string, string>): Promise<PaginatedLogResponse> => {
+    return await apiAdapter.get<PaginatedLogResponse>(GET_LOG, params)
   },
 }
 

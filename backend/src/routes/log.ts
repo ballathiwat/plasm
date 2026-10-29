@@ -14,9 +14,12 @@ router.get("/", async (req, res) => {
       blood,
       dateFrom,
       dateTo,
-      limit = "50",
-      offset = "0",
+      page = "1",
+      pageSize = "20",
     } = req.query;
+
+    const pageNum = Math.max(1, Number(page));
+    const size = Math.min(100, Math.max(1, Number(pageSize)));
 
     const where: Record<string, unknown> = {};
     if (action) where.action = (action as string).toUpperCase();
@@ -30,24 +33,27 @@ router.get("/", async (req, res) => {
     if (dateTo) ts.lte = new Date(`${dateTo}T23:59:59.999+07:00`);
     if (Object.keys(ts).length) where.timestamp = ts;
 
-    const entries = await prisma.logEntry.findMany({
-      where,
-      include: {
-        box: {
-          select: {
-            boxLabel: true,
-            type: true,
-            blood: true,
-            shelf: true,
-            zone: { select: { legacyKey: true, name: true } },
+    const [entries, total] = await Promise.all([
+      prisma.logEntry.findMany({
+        where,
+        include: {
+          box: {
+            select: {
+              boxLabel: true,
+              type: true,
+              blood: true,
+              shelf: true,
+              zone: { select: { legacyKey: true, name: true } },
+            },
           },
+          user: { select: { name: true } },
         },
-        user: { select: { name: true } },
-      },
-      orderBy: { timestamp: "desc" },
-      take: Number(limit),
-      skip: Number(offset),
-    });
+        orderBy: { timestamp: "desc" },
+        take: size,
+        skip: (pageNum - 1) * size,
+      }),
+      prisma.logEntry.count({ where }),
+    ]);
 
     const result = entries.map((e) => ({
       id: e.id,
@@ -65,7 +71,13 @@ router.get("/", async (req, res) => {
       performedBy: e.user?.name,
     }));
 
-    res.json(result);
+    res.json({
+      data: result,
+      total,
+      page: pageNum,
+      pageSize: size,
+      totalPages: Math.ceil(total / size),
+    });
   } catch (error) {
     console.error("GET /log error:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาด" });

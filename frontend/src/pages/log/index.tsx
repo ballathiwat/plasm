@@ -12,12 +12,13 @@ const LogPage = () => {
     entries,
     loading,
     filters,
-    hasMore,
     searched,
+    pagination,
     handleFilterChange,
     resetFilters,
     search,
-    loadMore,
+    goToPage,
+    changePageSize,
   } = useLog();
 
   /* เข้าหน้าครั้งแรก → auto search ด้วยค่าเริ่มต้น */
@@ -44,7 +45,7 @@ const LogPage = () => {
           }}
         >
           บันทึกทุกรายการจัดเก็บและนำออกพลาสมา
-          {searched && <> · แสดง {entries.length} รายการ</>}
+          {searched && <> · ทั้งหมด {pagination.total} รายการ</>}
         </p>
       </div>
 
@@ -59,8 +60,9 @@ const LogPage = () => {
       <LogTable
         entries={entries}
         loading={loading}
-        hasMore={hasMore}
-        onLoadMore={loadMore}
+        pagination={pagination}
+        onPageChange={goToPage}
+        onPageSizeChange={changePageSize}
       />
     </div>
   );
