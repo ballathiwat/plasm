@@ -33,6 +33,9 @@ const StoragePage = () => {
     handleEditLocation,
     closePrint,
     dismissToast,
+    pagination,
+    goToPage,
+    changePageSize,
   } = useStorage();
 
   return (
@@ -74,7 +77,10 @@ const StoragePage = () => {
         onPrintBox={handlePrintBox}
         onEditUnits={handleEditUnits}
         onEditLocation={handleEditLocation}
-       zones={master.zones}
+        zones={master.zones}
+        pagination={pagination}
+        onPageChange={goToPage}
+        onPageSizeChange={changePageSize}
       />
     </div>
   );

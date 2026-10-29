@@ -73,3 +73,11 @@ export interface CreateBoxPayload {
   collectionDate: string
   units: string[]
 }
+
+export interface PaginatedBoxResponse {
+  data: StorageBoxItem[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}

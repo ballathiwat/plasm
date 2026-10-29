@@ -12,6 +12,7 @@ import type {
   QuickAddKind,
 } from "./StorageType";
 import type { BarcodeLabelData } from "../components/BarcodeLabel";
+import type { PaginationInfo } from "../../../components/shared/Pagination";
 
 const EMPTY_FORM: StorageFormData = {
   boxName: "",
@@ -37,12 +38,17 @@ export default function useStorage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [printData, setPrintData] = useState<BarcodeLabelData | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1, pageSize: 20, total: 0, totalPages: 0,
+  });
 
-  // ── Load boxes ──
-  const loadBoxes = useCallback(async () => {
+  // ── Load boxes (paginated) ──
+  const loadBoxes = useCallback(async (page = 1, pageSize = 20) => {
     setLoading(true);
     try {
-      setBoxes(await storageService.getStoredBoxes());
+      const res = await storageService.getStoredBoxesPaged(page, pageSize);
+      setBoxes(res.data);
+      setPagination({ page: res.page, pageSize: res.pageSize, total: res.total, totalPages: res.totalPages });
     } catch {
       setBoxes([]);
     } finally {
@@ -249,7 +255,7 @@ export default function useStorage() {
       setScannedUnits([]);
       setUnitInput("");
       setForm((f) => ({ ...f, boxName: "" }));
-      loadBoxes();
+      loadBoxes(1, pagination.pageSize);
       refreshNextLabel(form.type, form.blood);
     } catch (err: any) {
       setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
@@ -277,17 +283,26 @@ export default function useStorage() {
     try {
       await storageService.updateBoxUnits(boxId, units);
       setToast({ type: "success", msg: "แก้ไขรายการ units สำเร็จ" });
-      loadBoxes();
+      loadBoxes(pagination.page, pagination.pageSize);
     } catch (err: any) {
       setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
     }
   };
   const dismissToast = () => setToast(null);
-    const handleEditLocation = async (boxId: string, zoneId: string, shelf: string) => {
+
+  const goToPage = useCallback((page: number) => {
+    loadBoxes(page, pagination.pageSize);
+  }, [loadBoxes, pagination.pageSize]);
+
+  const changePageSize = useCallback((size: number) => {
+    loadBoxes(1, size);
+  }, [loadBoxes]);
+
+  const handleEditLocation = async (boxId: string, zoneId: string, shelf: string) => {
     try {
       await storageService.updateBoxLocation(boxId, zoneId, shelf);
       setToast({ type: "success", msg: "แก้ไขตำแหน่งจัดเก็บสำเร็จ" });
-      loadBoxes();
+      loadBoxes(pagination.page, pagination.pageSize);
     } catch (err: any) {
       setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
     }
@@ -296,6 +311,9 @@ export default function useStorage() {
   return {
     boxes,
     loading,
+    pagination,
+    goToPage,
+    changePageSize,
     form,
     master,
     scannedUnits,

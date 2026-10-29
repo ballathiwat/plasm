@@ -6,6 +6,8 @@ import { useState } from "react";
 import { Pencil, Printer, Search, X, Plus, MapPin } from "lucide-react";
 import type { StorageBoxItem, MasterZone } from "../services/StorageType";
 import { groupSurface, groupInk } from "../../../helpers/blood";
+import { Pagination } from "../../../components/shared";
+import type { PaginationInfo } from "../../../components/shared";
 
 interface Props {
   boxes: StorageBoxItem[];
@@ -14,6 +16,9 @@ interface Props {
   onEditUnits: (boxId: string, units: string[]) => void;
   onEditLocation: (boxId: string, zoneId: string, shelf: string) => void;
   zones: MasterZone[];
+  pagination: PaginationInfo;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
 }
 
 export default function StorageBoxList({
@@ -23,6 +28,9 @@ export default function StorageBoxList({
   onEditUnits,
   onEditLocation,
   zones,
+  pagination,
+  onPageChange,
+  onPageSizeChange,
 }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingBox, setEditingBox] = useState<StorageBoxItem | null>(null);
@@ -81,7 +89,7 @@ export default function StorageBoxList({
               marginLeft: 8,
             }}
           >
-            {filtered.length}/{boxes.length}
+            {filtered.length}/{pagination.total}
           </span>
         </h3>
 
@@ -297,6 +305,15 @@ export default function StorageBoxList({
             </div>
           ))}
         </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && boxes.length > 0 && (
+        <Pagination
+          pagination={pagination}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
       )}
 
       {/* ── Edit Units Modal ── */}
