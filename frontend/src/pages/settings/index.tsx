@@ -35,6 +35,7 @@ const SettingsPage = () => {
     handleUserFormChange,
     handleCreateUser,
     handleToggleActive,
+    handleResetPassword,
     toast,
     dismissToast,
     notify,
@@ -158,9 +159,9 @@ const SettingsPage = () => {
           onFormChange={handleUserFormChange}
           onCreate={handleCreateUser}
           onToggleActive={handleToggleActive}
+          onResetPassword={handleResetPassword}
         />
       )}
-
 
       {activeTab === "plasma" && (
         <SettingsCodeList
@@ -191,7 +192,8 @@ const SettingsPage = () => {
           onColorChange={(it, color) => master.updateColor("blood", it, color)}
         />
       )}
-            {activeTab === "zones" && (
+
+      {activeTab === "zones" && (
         <SettingsZones
           zones={master.zones}
           loading={master.loading}
@@ -201,7 +203,6 @@ const SettingsPage = () => {
           onToggleShelf={master.toggleShelf}
         />
       )}
-
     </div>
   );
 };

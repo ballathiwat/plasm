@@ -1,9 +1,12 @@
-// src/routes/users.ts
+// ============================================================
+//  src/routes/users.ts
+// ============================================================
 
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma'
 import { adminOnly } from '../middleware/auth'
+import { validatePassword } from '../lib/passwordValidation'
 
 const router = Router()
 
@@ -43,6 +46,13 @@ router.post('/', adminOnly, async (req, res) => {
       return
     }
 
+    // Validate password
+    const pwError = validatePassword(password)
+    if (pwError) {
+      res.status(400).json({ message: pwError })
+      return
+    }
+
     const existing = await prisma.user.findUnique({ where: { username } })
     if (existing) {
       res.status(409).json({ message: `ชื่อผู้ใช้ "${username}" มีอยู่แล้ว` })
@@ -77,6 +87,15 @@ router.patch('/:id', adminOnly, async (req, res) => {
   try {
     const id = req.params.id as string
     const { name, role, active, password } = req.body
+
+    // Validate password if provided
+    if (password) {
+      const pwError = validatePassword(password)
+      if (pwError) {
+        res.status(400).json({ message: pwError })
+        return
+      }
+    }
 
     const data: any = {}
     if (name !== undefined) data.name = name

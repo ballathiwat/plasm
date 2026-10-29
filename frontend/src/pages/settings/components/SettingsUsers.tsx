@@ -2,12 +2,14 @@
 //  src/pages/settings/components/SettingsUsers.tsx
 // ============================================================
 
-import { useMemo } from 'react'
-import { Plus, X, UserCheck, UserX } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Plus, X, UserCheck, UserX, KeyRound } from 'lucide-react'
 import type { UserItem, UserFormData } from '../services/SettingsType'
 import Button from '../../../components/common/Button'
 import FormInput from '../../../components/common/FormInput'
 import SelectDropdown, { type OptionType } from '../../../components/common/SelectDropdown'
+import Modal from '../../../components/common/Modal'
+import { PASSWORD_MIN_LENGTH, validatePassword } from '../../../helpers/passwordValidation'
 
 const ROLE_OPTIONS: OptionType[] = [
   { value: 'staff', label: 'เจ้าหน้าที่' },
@@ -24,16 +26,52 @@ interface Props {
   onFormChange: (field: keyof UserFormData, value: string) => void
   onCreate: () => void
   onToggleActive: (user: UserItem) => void
+  onResetPassword: (userId: string, newPassword: string) => Promise<void>
 }
 
 export default function SettingsUsers({
   users, loading, showForm, form, saving,
-  onToggleForm, onFormChange, onCreate, onToggleActive,
+  onToggleForm, onFormChange, onCreate, onToggleActive, onResetPassword,
 }: Props) {
   const roleValue = useMemo(
     () => ROLE_OPTIONS.find((o) => o.value === form.role) ?? null,
     [form.role],
   )
+
+  // ── Reset password modal state ──
+  const [resetTarget, setResetTarget] = useState<UserItem | null>(null)
+  const [resetPassword, setResetPassword] = useState('')
+  const [resetError, setResetError] = useState('')
+  const [resetting, setResetting] = useState(false)
+
+  const openResetModal = (user: UserItem) => {
+    setResetTarget(user)
+    setResetPassword('')
+    setResetError('')
+  }
+
+  const closeResetModal = () => {
+    setResetTarget(null)
+    setResetPassword('')
+    setResetError('')
+  }
+
+  const handleResetSubmit = async () => {
+    const err = validatePassword(resetPassword)
+    if (err) {
+      setResetError(err)
+      return
+    }
+    setResetting(true)
+    try {
+      await onResetPassword(resetTarget!.id, resetPassword)
+      closeResetModal()
+    } catch {
+      setResetError('เกิดข้อผิดพลาด')
+    } finally {
+      setResetting(false)
+    }
+  }
 
   return (
     <div style={{
@@ -92,10 +130,11 @@ export default function SettingsUsers({
               label="รหัสผ่าน"
               required
               type="password"
-              placeholder="••••••"
+              placeholder={`อย่างน้อย ${PASSWORD_MIN_LENGTH} ตัวอักษร`}
               value={form.password}
               onChange={(v) => onFormChange('password', v)}
               autoComplete="new-password"
+              helperText={`ขั้นต่ำ ${PASSWORD_MIN_LENGTH} ตัวอักษร`}
             />
             <SelectDropdown
               label="บทบาท"
@@ -143,17 +182,56 @@ export default function SettingsUsers({
                 </div>
               </div>
 
-              <Button
-                variant={user.active ? 'outline-danger' : 'outline-success'}
-                size="sm"
-                icon={user.active ? <UserX size={13} /> : <UserCheck size={13} />}
-                onClick={() => onToggleActive(user)}
-              >
-                {user.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
-              </Button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<KeyRound size={13} />}
+                  onClick={() => openResetModal(user)}
+                >
+                  ตั้งรหัสผ่าน
+                </Button>
+                <Button
+                  variant={user.active ? 'outline-danger' : 'outline-success'}
+                  size="sm"
+                  icon={user.active ? <UserX size={13} /> : <UserCheck size={13} />}
+                  onClick={() => onToggleActive(user)}
+                >
+                  {user.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+                </Button>
+              </div>
             </div>
           ))}
         </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetTarget && (
+        <Modal
+          title={`ตั้งรหัสผ่านใหม่ — ${resetTarget.name}`}
+          onClose={closeResetModal}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
+              ตั้งรหัสผ่านใหม่ให้ @{resetTarget.username}
+            </p>
+            <FormInput
+              label="รหัสผ่านใหม่"
+              type="password"
+              placeholder={`อย่างน้อย ${PASSWORD_MIN_LENGTH} ตัวอักษร`}
+              value={resetPassword}
+              onChange={(v) => { setResetPassword(v); setResetError('') }}
+              autoComplete="new-password"
+              error={resetError || undefined}
+            />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <Button variant="secondary" onClick={closeResetModal}>ยกเลิก</Button>
+              <Button onClick={handleResetSubmit} loading={resetting} disabled={resetting}>
+                {resetting ? 'กำลังบันทึก...' : 'บันทึก'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   )

@@ -10,6 +10,7 @@ import type {
   UserFormData,
   ToastState,
 } from "./SettingsType";
+import { validatePassword } from "../../../helpers/passwordValidation";
 
 const DEFAULT_MIN: MinimumStock = {};
 const DEFAULT_USER_FORM: UserFormData = {
@@ -100,7 +101,7 @@ export default function useSettings() {
     });
   };
 
-  // ── Create user ──
+  // ── Create user (with password validation) ──
   const handleCreateUser = async () => {
     if (
       !userForm.username.trim() ||
@@ -110,6 +111,13 @@ export default function useSettings() {
       setToast({ type: "error", msg: "กรุณากรอกข้อมูลให้ครบ" });
       return;
     }
+
+    const pwError = validatePassword(userForm.password);
+    if (pwError) {
+      setToast({ type: "error", msg: pwError });
+      return;
+    }
+
     setSavingUser(true);
     try {
       await settingsService.createUser(userForm);
@@ -141,6 +149,17 @@ export default function useSettings() {
     }
   };
 
+  // ── Admin reset password ──
+  const handleResetPassword = async (userId: string, newPassword: string) => {
+    try {
+      await settingsService.updateUser(userId, { password: newPassword });
+      setToast({ type: "success", msg: "ตั้งรหัสผ่านใหม่สำเร็จ" });
+    } catch (err: any) {
+      setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
+      throw err; // re-throw ให้ modal จัดการ
+    }
+  };
+
   const handleUserFormChange = (field: keyof UserFormData, value: string) => {
     setUserForm((f) => ({ ...f, [field]: value }));
   };
@@ -163,8 +182,9 @@ export default function useSettings() {
     handleUserFormChange,
     handleCreateUser,
     handleToggleActive,
+    handleResetPassword,
     toast,
     dismissToast,
-    notify: setToast, // เพิ่ม
+    notify: setToast,
   };
 }

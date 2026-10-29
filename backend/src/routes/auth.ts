@@ -1,13 +1,16 @@
-// src/routes/auth.ts
+// ============================================================
+//  src/routes/auth.ts
+// ============================================================
 
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma'
-import { generateToken } from '../middleware/auth'
+import { generateToken, authGuard } from '../middleware/auth'
+import { validatePassword } from '../lib/passwordValidation'
 
 const router = Router()
 
-// POST /api/v1/auth/login
+// ===== POST /api/v1/auth/login =====
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body
@@ -50,10 +53,55 @@ router.post('/login', async (req, res) => {
   }
 })
 
-// POST /api/v1/auth/logout
+// ===== POST /api/v1/auth/logout =====
 router.post('/logout', (_req, res) => {
-  // JWT stateless — client ลบ token เอง
   res.json({ message: 'ออกจากระบบสำเร็จ' })
+})
+
+// ===== PATCH /api/v1/auth/change-password =====
+// User เปลี่ยน password ของตัวเอง (ต้อง login แล้ว)
+router.patch('/change-password', authGuard, async (req, res) => {
+  try {
+    const userId = req.user!.id
+    const { currentPassword, newPassword } = req.body
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ message: 'กรุณากรอกรหัสผ่านเดิมและรหัสผ่านใหม่' })
+      return
+    }
+
+    // Validate new password
+    const pwError = validatePassword(newPassword)
+    if (pwError) {
+      res.status(400).json({ message: pwError })
+      return
+    }
+
+    // Check current password
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      res.status(404).json({ message: 'ไม่พบผู้ใช้' })
+      return
+    }
+
+    const valid = await bcrypt.compare(currentPassword, user.password)
+    if (!valid) {
+      res.status(401).json({ message: 'รหัสผ่านเดิมไม่ถูกต้อง' })
+      return
+    }
+
+    // Update password
+    const hashed = await bcrypt.hash(newPassword, 10)
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashed },
+    })
+
+    res.json({ message: 'เปลี่ยนรหัสผ่านสำเร็จ' })
+  } catch (error) {
+    console.error('Change password error:', error)
+    res.status(500).json({ message: 'เกิดข้อผิดพลาด' })
+  }
 })
 
 export default router
