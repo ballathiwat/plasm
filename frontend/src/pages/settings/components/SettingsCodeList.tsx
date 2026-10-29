@@ -5,8 +5,9 @@
 import { useState, useRef } from 'react'
 import { Plus, Palette } from 'lucide-react'
 import type { CodeItem } from '../services/SettingsType'
+import Button from '../../../components/common/Button'
+import FormInput from '../../../components/common/FormInput'
 
-// สีเริ่มต้นที่แนะนำ (เลือกได้เร็ว)
 const PRESET_COLORS = [
   '#EAB308', '#EC4899', '#0EA5E9', '#8B5CF6',
   '#EF4444', '#F97316', '#10B981', '#2563EB',
@@ -31,7 +32,6 @@ export default function SettingsCodeList({
   const [newColor, setNewColor] = useState(PRESET_COLORS[0])
   const [busy, setBusy] = useState(false)
 
-  // color picker popover state
   const [editingColorId, setEditingColorId] = useState<string | null>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
 
@@ -42,9 +42,8 @@ export default function SettingsCodeList({
     setBusy(false)
     if (ok) {
       setValue('')
-      // เลื่อนไปสีถัดไปที่ยังไม่ได้ใช้
-      const usedColors = items.map(it => it.color).filter(Boolean)
-      const next = PRESET_COLORS.find(c => !usedColors.includes(c) && c !== newColor)
+      const usedColors = items.map((it) => it.color).filter(Boolean)
+      const next = PRESET_COLORS.find((c) => !usedColors.includes(c) && c !== newColor)
       if (next) setNewColor(next)
     }
   }
@@ -66,17 +65,13 @@ export default function SettingsCodeList({
 
       {/* ── Add form ── */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, maxWidth: 520, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input
+        <FormInput
+          style={{ flex: 1, minWidth: 140 }}
           value={value}
           maxLength={20}
           placeholder={placeholder}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={setValue}
           onKeyDown={(e) => { if (e.key === 'Enter') submit() }}
-          style={{
-            flex: 1, minWidth: 140, padding: '8px 12px', fontSize: 14,
-            border: '1px solid var(--border)', borderRadius: 'var(--radius-sm, 6px)',
-            background: 'var(--surface, #fff)', color: 'var(--text-primary)',
-          }}
         />
 
         {/* Color picker for new item */}
@@ -85,45 +80,36 @@ export default function SettingsCodeList({
             title="เลือกสีกราฟ"
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              padding: '7px 10px', borderRadius: 'var(--radius-sm, 6px)',
+              minHeight: 40, padding: '0 10px', borderRadius: 'var(--radius-md, 8px)',
               border: '1px solid var(--border)', cursor: 'pointer',
               background: 'var(--surface, #fff)',
             }}
           >
             <span style={{
               width: 20, height: 20, borderRadius: 4,
-              background: newColor, border: '1px solid rgba(0,0,0,0.1)',
-              flexShrink: 0,
+              background: newColor, border: '1px solid rgba(0,0,0,0.1)', flexShrink: 0,
             }} />
             <input
               type="color"
               value={newColor}
               onChange={(e) => setNewColor(e.target.value)}
-              style={{
-                position: 'absolute', opacity: 0, width: 0, height: 0,
-                pointerEvents: 'none',
-              }}
+              style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
             />
             <Palette size={14} style={{ color: 'var(--text-secondary)' }} />
           </label>
         </div>
 
-        <button
+        <Button
+          icon={<Plus size={14} />}
           onClick={submit}
+          loading={busy}
           disabled={busy || !value.trim()}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
-            borderRadius: 'var(--radius-sm, 6px)', border: 'none',
-            background: 'var(--primary, #2563EB)', color: '#fff',
-            fontWeight: 600, fontSize: 13, cursor: 'pointer',
-            opacity: busy || !value.trim() ? 0.6 : 1,
-          }}
         >
-          <Plus size={14} /> เพิ่ม
-        </button>
+          เพิ่ม
+        </Button>
       </div>
 
-      {/* ── Preset quick-pick (for new item) ── */}
+      {/* ── Preset quick-pick ── */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
         {PRESET_COLORS.map((c) => (
           <button
@@ -131,8 +117,8 @@ export default function SettingsCodeList({
             onClick={() => setNewColor(c)}
             title={c}
             style={{
-              width: 22, height: 22, borderRadius: 4,
-              background: c, border: newColor === c ? '2px solid var(--text-primary)' : '2px solid transparent',
+              width: 22, height: 22, borderRadius: 4, background: c,
+              border: newColor === c ? '2px solid var(--text-primary)' : '2px solid transparent',
               cursor: 'pointer', padding: 0, transition: 'border-color 0.15s',
             }}
           />
@@ -150,7 +136,6 @@ export default function SettingsCodeList({
               border: '1px solid var(--border)', opacity: it.active ? 1 : 0.45,
               background: 'var(--surface, #fff)', position: 'relative',
             }}>
-              {/* Color swatch (clickable) */}
               {onColorChange && (
                 <div style={{ position: 'relative' }}>
                   <button
@@ -164,7 +149,6 @@ export default function SettingsCodeList({
                     }}
                   />
 
-                  {/* Popover color picker */}
                   {editingColorId === it.id && (
                     <div
                       ref={popoverRef}
@@ -173,7 +157,7 @@ export default function SettingsCodeList({
                         background: 'var(--surface, #fff)',
                         border: '1px solid var(--border)',
                         borderRadius: 'var(--radius-md, 8px)',
-                        boxShadow: 'var(--shadow-md, 0 12px 28px rgba(26,35,50,0.14))',
+                        boxShadow: 'var(--shadow-md)',
                         padding: 8, width: 160,
                         animation: 'plasm-fade-in 0.15s ease',
                       }}
@@ -184,8 +168,7 @@ export default function SettingsCodeList({
                             key={c}
                             onClick={() => handleColorPick(it, c)}
                             style={{
-                              width: 32, height: 32, borderRadius: 6,
-                              background: c,
+                              width: 32, height: 32, borderRadius: 6, background: c,
                               border: it.color === c ? '2px solid var(--text-primary)' : '2px solid transparent',
                               cursor: 'pointer', padding: 0, transition: 'border-color 0.15s',
                             }}
@@ -213,18 +196,14 @@ export default function SettingsCodeList({
                 {it.code}
               </span>
 
-              <button
+              <Button
+                pill
+                size="sm"
+                variant={it.active ? 'outline-success' : 'outline-danger'}
                 onClick={() => onToggle(it)}
-                style={{
-                  padding: '4px 10px', borderRadius: 99,
-                  fontSize: 12, fontWeight: 600, border: 'none',
-                  cursor: 'pointer',
-                  background: it.active ? '#F0FDF4' : '#FEF2F2',
-                  color: it.active ? '#166534' : '#991B1B',
-                }}
               >
                 {it.active ? 'เปิด' : 'ปิด'}
-              </button>
+              </Button>
             </div>
           ))}
         </div>
