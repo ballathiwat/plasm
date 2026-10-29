@@ -6,7 +6,7 @@ import { Lock } from 'lucide-react'
 import type { ChangePasswordForm as FormType } from '../services/ProfileType'
 import FormInput from '../../../components/common/FormInput'
 import Button from '../../../components/common/Button'
-import { PASSWORD_MIN_LENGTH } from '../../../helpers/passwordValidation'
+import PasswordRules from '../../../components/common/PasswordRules'
 
 interface Props {
   form: FormType
@@ -37,9 +37,6 @@ export default function ChangePasswordForm({
         </div>
         <div>
           <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>เปลี่ยนรหัสผ่าน</h3>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
-            ขั้นต่ำ {PASSWORD_MIN_LENGTH} ตัวอักษร
-          </p>
         </div>
       </div>
 
@@ -58,12 +55,15 @@ export default function ChangePasswordForm({
           label="รหัสผ่านใหม่"
           type="password"
           required
-          placeholder={`อย่างน้อย ${PASSWORD_MIN_LENGTH} ตัวอักษร`}
+          placeholder="กรอกรหัสผ่านใหม่"
           value={form.newPassword}
           onChange={(v) => onChange('newPassword', v)}
           error={errors.newPassword}
           autoComplete="new-password"
         />
+
+        <PasswordRules password={form.newPassword} />
+
         <FormInput
           label="ยืนยันรหัสผ่านใหม่"
           type="password"

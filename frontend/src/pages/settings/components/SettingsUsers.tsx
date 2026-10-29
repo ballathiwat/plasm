@@ -9,6 +9,7 @@ import Button from '../../../components/common/Button'
 import FormInput from '../../../components/common/FormInput'
 import SelectDropdown, { type OptionType } from '../../../components/common/SelectDropdown'
 import Modal from '../../../components/common/Modal'
+import PasswordRules from '../../../components/common/PasswordRules'
 import { PASSWORD_MIN_LENGTH, validatePassword } from '../../../helpers/passwordValidation'
 
 const ROLE_OPTIONS: OptionType[] = [
@@ -109,7 +110,7 @@ export default function SettingsUsers({
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: 12, marginBottom: 16,
+            gap: 12, marginBottom: 12,
           }}>
             <FormInput
               label="ชื่อผู้ใช้"
@@ -126,20 +127,15 @@ export default function SettingsUsers({
               value={form.name}
               onChange={(v) => onFormChange('name', v)}
             />
-            <div>
-              <FormInput
-                label="รหัสผ่าน"
-                required
-                type="password"
-                placeholder={`อย่างน้อย ${PASSWORD_MIN_LENGTH} ตัวอักษร`}
-                value={form.password}
-                onChange={(v) => onFormChange('password', v)}
-                autoComplete="new-password"
-              />
-              <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
-                ขั้นต่ำ {PASSWORD_MIN_LENGTH} ตัวอักษร
-              </p>
-            </div>
+            <FormInput
+              label="รหัสผ่าน"
+              required
+              type="password"
+              placeholder={`อย่างน้อย ${PASSWORD_MIN_LENGTH} ตัวอักษร`}
+              value={form.password}
+              onChange={(v) => onFormChange('password', v)}
+              autoComplete="new-password"
+            />
             <SelectDropdown
               label="บทบาท"
               options={ROLE_OPTIONS}
@@ -150,9 +146,13 @@ export default function SettingsUsers({
             />
           </div>
 
-          <Button onClick={onCreate} loading={saving} disabled={saving}>
-            {saving ? 'กำลังบันทึก...' : 'เพิ่มผู้ใช้'}
-          </Button>
+          <PasswordRules password={form.password} />
+
+          <div style={{ marginTop: 12 }}>
+            <Button onClick={onCreate} loading={saving} disabled={saving}>
+              {saving ? 'กำลังบันทึก...' : 'เพิ่มผู้ใช้'}
+            </Button>
+          </div>
         </div>
       )}
 
@@ -228,6 +228,7 @@ export default function SettingsUsers({
             autoComplete="new-password"
             error={resetError || undefined}
           />
+          <PasswordRules password={resetPassword} />
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <Button variant="secondary" onClick={closeResetModal}>ยกเลิก</Button>
             <Button onClick={handleResetSubmit} loading={resetting} disabled={resetting}>
