@@ -106,17 +106,8 @@ router.get("/next-label", async (req, res) => {
     }
 
     const year = bkkYear();
-    const counter = await prisma.boxCounter.findUnique({
-      where: {
-        plasmaTypeId_bloodTypeId_year: {
-          plasmaTypeId: pt.id,
-          bloodTypeId: bt.id,
-          year,
-        },
-      },
-    });
 
-    // หาเลขสูงสุดจาก box จริง (รวม WITHDRAWN)
+    // หาเลขสูงสุดจาก box จริง (รวม WITHDRAWN) — ถ้าลบกล่องท้ายๆ ออก เลขจะรันต่อจากกล่องที่เหลือ
     const maxBox = await prisma.box.findFirst({
       where: { type: pt.code, blood: bt.code, year },
       orderBy: { boxLabel: "desc" },
@@ -126,7 +117,7 @@ router.get("/next-label", async (req, res) => {
       ? parseInt(maxBox.boxLabel.replace(/.*[_\-]/, ""), 10) || 0
       : 0;
 
-    const nextNo = Math.max(counter?.lastNo ?? 0, maxExisting) + 1;
+    const nextNo = maxExisting + 1;
 
     res.json({
       label: formatLabel(pt.code, bt.code, year, nextNo),
@@ -241,20 +232,9 @@ router.post("/", async (req, res) => {
         ? parseInt(maxBox.boxLabel.replace(/.*[_\-]/, ""), 10) || 0
         : 0;
 
-      // อ่าน counter ปัจจุบัน
-      const existing = await tx.boxCounter.findUnique({
-        where: {
-          plasmaTypeId_bloodTypeId_year: {
-            plasmaTypeId: pt.id,
-            bloodTypeId: bt.id,
-            year,
-          },
-        },
-      });
-
-      // ใช้ค่าที่สูงกว่าระหว่าง counter กับเลขจริงใน DB
-      const baseNo = Math.max(existing?.lastNo ?? 0, maxExisting);
-      const newNo = baseNo + 1;
+      // รันเลขต่อจากกล่องที่มีอยู่จริง (ไม่ใช้ counter เดิม เพื่อให้ลบกล่องท้ายๆ แล้วเลขย้อนกลับได้)
+      // counter ยังอัปเดตไว้เป็นข้อมูลอ้างอิง; ถ้ามีคนสร้างพร้อมกัน boxLabel @unique จะกันเลขซ้ำ
+      const newNo = maxExisting + 1;
 
       await tx.boxCounter.upsert({
         where: {
