@@ -28,7 +28,8 @@ jobs:
             npm install
             npx prisma migrate deploy
             npx prisma generate
-            pm2 restart plasm-api
+            npm run build
+            pm2 restart plasm-api --update-env
 
             cd ../frontend
             npm install
