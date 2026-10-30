@@ -2,10 +2,26 @@
 //  src/pages/search/components/SearchResults.tsx
 // ============================================================
 
-import { Package, MapPin, Calendar, Droplets, Search } from "lucide-react";
+import { Package, MapPin, Calendar, Droplets, Search, Box, LogOut } from "lucide-react";
 import type { SearchBoxGroup } from "../services/SearchType";
 import { groupSurface, groupInk } from "../../../helpers/blood";
 import { zoneLabel } from "../../../helpers/zone";
+
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "2-digit",
+  });
+
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 interface Props {
   boxGroups: SearchBoxGroup[];
@@ -145,8 +161,13 @@ export default function SearchResults({
                     fontSize: 15,
                     fontWeight: 700,
                     fontFamily: "var(--font-mono)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
                   }}
                 >
+                  <Box size={15} style={{ color: "var(--color-primary)" }} />
+                  <span>กล่อง {box.boxLabel}</span>
                   {box.boxName && (
                     <span
                       style={{
@@ -185,13 +206,20 @@ export default function SearchResults({
                   <span
                     style={{ display: "flex", alignItems: "center", gap: 3 }}
                   >
-                    <Calendar size={11} /> จัดเก็บ{" "}
-                    {new Date(box.collectionDate).toLocaleDateString("th-TH", {
-                      day: "numeric",
-                      month: "short",
-                      year: "2-digit",
-                    })}
+                    <Calendar size={11} /> จัดเก็บ {fmtDate(box.collectionDate)}
                   </span>
+                  {box.withdrawnAt && (
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 3,
+                        color: "#DC2626",
+                      }}
+                    >
+                      <LogOut size={11} /> นำออกกล่อง {fmtDateTime(box.withdrawnAt)}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -255,15 +283,38 @@ export default function SearchResults({
                         {unit.unitNumber}
                       </span>
                     </div>
-                    <span
+                    <div
                       style={{
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: isStored ? "#16A34A" : "#DC2626",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-end",
+                        gap: 2,
                       }}
                     >
-                      {isStored ? "เก็บอยู่" : "นำออกแล้ว"}
-                    </span>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 500,
+                          color: isStored ? "#16A34A" : "#DC2626",
+                        }}
+                      >
+                        {isStored
+                          ? `เก็บอยู่ในกล่อง ${box.boxLabel}`
+                          : "นำออกแล้ว"}
+                      </span>
+                      {!isStored && (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: "var(--text-secondary)",
+                          }}
+                        >
+                          {unit.withdrawnAt
+                            ? `วันที่นำออก ${fmtDateTime(unit.withdrawnAt)}`
+                            : "ไม่มีข้อมูลวันที่นำออก"}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}

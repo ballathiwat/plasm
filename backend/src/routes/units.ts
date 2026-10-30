@@ -58,9 +58,11 @@ router.get("/search", async (req, res) => {
             status: true,
             collectionDate: true,
             boxName: true,
+            withdrawnAt: true,
           },
         },
       },
+      orderBy: [{ status: "asc" }, { unitNumber: "asc" }],
       take: 50,
     });
 
@@ -68,6 +70,7 @@ router.get("/search", async (req, res) => {
       id: u.id,
       unitNumber: u.unitNumber,
       status: u.status.toLowerCase(),
+      withdrawnAt: u.withdrawnAt ? u.withdrawnAt.toISOString() : null,
       box: {
         id: u.box.id,
         blood: u.box.blood,
@@ -79,6 +82,7 @@ router.get("/search", async (req, res) => {
         collectionDate: u.box.collectionDate.toISOString().split("T")[0],
         boxLabel: u.box.boxLabel,
         boxName: u.box.boxName,
+        withdrawnAt: u.box.withdrawnAt ? u.box.withdrawnAt.toISOString() : null,
       },
     }));
 
@@ -110,7 +114,7 @@ router.patch("/:id/withdraw", async (req, res) => {
     await prisma.$transaction(async (tx) => {
       await tx.unit.update({
         where: { id: unit.id },
-        data: { status: "WITHDRAWN" },
+        data: { status: "WITHDRAWN", withdrawnAt: new Date() },
       });
 
       await tx.logEntry.create({

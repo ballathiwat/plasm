@@ -8,6 +8,7 @@ export interface SearchUnitResult {
   id: string
   unitNumber: string
   status: 'stored' | 'withdrawn'
+  withdrawnAt: string | null
   box: {
     id: string
     boxLabel: string
@@ -19,6 +20,7 @@ export interface SearchUnitResult {
     status: BoxStatus
     collectionDate: string
     boxName?: string | null
+    withdrawnAt?: string | null
   }
 }
 
