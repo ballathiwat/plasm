@@ -23,19 +23,6 @@ const axiosInstance: AxiosInstance = axios.create({
   },
 });
 
-/* ----------------------------------------------------------
-   Request Interceptor — inject Bearer token
----------------------------------------------------------- */
-axiosInstance.interceptors.request.use(
-  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    const token = sessionStorage.getItem("authToken");
-    if (token) {
-      config.headers.set("Authorization", `Bearer ${token}`);
-    }
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
 
 /* ----------------------------------------------------------
    Response Interceptor — handle errors
@@ -77,15 +64,6 @@ axiosInstance.interceptors.response.use(
   },
 );
 
-/* ----------------------------------------------------------
-   Helper: update/clear token
----------------------------------------------------------- */
-export const setInstanceToken = (token: string): void => {
-  axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-};
 
-export const clearInstanceToken = (): void => {
-  delete axiosInstance.defaults.headers.common["Authorization"];
-};
 
 export default axiosInstance;

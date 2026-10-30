@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { Clock } from 'lucide-react'
 import Modal from './Modal'
 import Button from './Button'
-import { clearInstanceToken } from '../../helpers/http/axiosInstance'
 
 export default function SessionExpiredModal() {
   const [open, setOpen] = useState(false)
