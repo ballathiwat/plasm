@@ -126,7 +126,7 @@ export default function BarcodeLabel({ data, onClose }: Props) {
   .print-label .lbl-row-top {
     display: grid !important;
     grid-template-columns: 34mm 1fr !important;
-    border-bottom: 0.6mm solid #000 !important;
+    border-bottom: 0.3mm solid #000 !important;
     min-height: 27mm !important;
   }
   .print-label .lbl-blood-cell {
@@ -134,7 +134,7 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    border-right: 0.6mm solid #000 !important;
+    border-right: 0.3mm solid #000 !important;
     padding: 2mm !important;
   }
   .print-label .lbl-blood-cell .lbl-sub {
@@ -172,7 +172,7 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     flex-direction: column !important;
     justify-content: center !important;
     padding: 1.5mm 4mm !important;
-    border-bottom: 0.6mm solid #000 !important;
+    border-bottom: 0.3mm solid #000 !important;
     min-height: 14mm !important;
   }
   .print-label .lbl-row-box .lbl-sub {
@@ -195,7 +195,7 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     flex-direction: column !important;
     justify-content: center !important;
     padding: 1.5mm 4mm !important;
-    border-bottom: 0.6mm solid #000 !important;
+    border-bottom: 0.3mm solid #000 !important;
     min-height: 12mm !important;
   }
   .print-label .lbl-row-date .lbl-sub {
@@ -219,7 +219,7 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     align-items: center !important;
     justify-content: center !important;
     padding: 1mm 2mm !important;
-    border-bottom: 0.6mm solid #000 !important;
+    border-bottom: 0.3mm solid #000 !important;
   }
   .print-label .lbl-row-barcode svg {
     width: 100% !important;
@@ -236,7 +236,7 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     flex-direction: column !important;
     justify-content: center !important;
     padding: 1mm 4mm !important;
-    border-bottom: 0.6mm solid #000 !important;
+    border-bottom: 0.3mm solid #000 !important;
     min-height: 8mm !important;
   }
   .print-label .lbl-row-location .lbl-sub {
@@ -266,7 +266,7 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     gap: 1.5mm !important;
   }
   .print-label .lbl-row-bottom .lbl-cell + .lbl-cell {
-    border-left: 0.6mm solid #000 !important;
+    border-left: 0.3mm solid #000 !important;
   }
   .print-label .lbl-row-bottom .lbl-sub {
     font-size: 2.5mm !important;

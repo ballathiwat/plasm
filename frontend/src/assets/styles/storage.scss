@@ -49,7 +49,7 @@
 /* Hierarchy: Blood Group (life-critical) → Type → Box ID → Barcode → Ops */
 
 .lbl-grid {
-  border: 2px solid #222;
+  border: 1px solid #222;
   border-radius: 4px;
   overflow: hidden;
   background: #fff;
@@ -61,7 +61,7 @@
 .lbl-row-top {
   display: grid;
   grid-template-columns: 120px 1fr;
-  border-bottom: 2px solid #222;
+  border-bottom: 1px solid #222;
 }
 
 .lbl-blood-cell {
@@ -69,7 +69,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-right: 2px solid #222;
+  border-right: 1px solid #222;
   padding: 8px;
   gap: 0;
 }
@@ -109,7 +109,7 @@
   flex-direction: column;
   justify-content: center;
   padding: 6px 16px;
-  border-bottom: 2px solid #222;
+  border-bottom: 1px solid #222;
 }
 
 .lbl-box-id {
@@ -128,7 +128,7 @@
   flex-direction: column;
   justify-content: center;
   padding: 6px 16px;
-  border-bottom: 2px solid #222;
+  border-bottom: 1px solid #222;
 }
 
 .lbl-date-val {
@@ -146,7 +146,7 @@
   align-items: center;
   justify-content: center;
   padding: 4px 8px;
-  border-bottom: 2px solid #222;
+  border-bottom: 1px solid #222;
 }
 
 .lbl-row-barcode svg {
@@ -164,7 +164,7 @@
   flex-direction: column;
   justify-content: center;
   padding: 4px 16px;
-  border-bottom: 2px solid #222;
+  border-bottom: 1px solid #222;
 }
 
 .lbl-location-val {
@@ -197,7 +197,7 @@
 }
 
 .lbl-row-bottom .lbl-cell + .lbl-cell {
-  border-left: 2px solid #222;
+  border-left: 1px solid #222;
 }
 
 .lbl-val {
