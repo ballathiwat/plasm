@@ -103,13 +103,62 @@
   letter-spacing: 0.5px;
 }
 
-/* ── Row 2: Box number (55%) + Collection date (45%) ── */
-.lbl-row-mid {
-  display: grid;
-  grid-template-columns: 55fr 45fr;
+/* ── Row 2: Box number (full width, large) ── */
+.lbl-row-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 16px;
   border-bottom: 2px solid #222;
 }
 
+.lbl-box-id {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #000;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── Row 3: Date (full width, large) ── */
+.lbl-row-date {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 16px;
+  border-bottom: 2px solid #222;
+}
+
+.lbl-date-val {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #000;
+  white-space: nowrap;
+}
+
+/* ── Row 4: Barcode (compact) ── */
+.lbl-row-barcode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-bottom: 2px solid #222;
+}
+
+.lbl-row-barcode svg {
+  width: 100%;
+  height: auto;
+  max-height: 56px;
+  display: block;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+/* ── Row 5: Position + Units + Storage temp (3-col) ── */
 .lbl-cell {
   padding: 6px 16px;
   display: flex;
@@ -118,40 +167,6 @@
   gap: 2px;
 }
 
-.lbl-cell-border {
-  border-right: 2px solid #222;
-}
-
-.lbl-mid {
-  font-size: 20px;
-  font-weight: 800;
-  line-height: 1.15;
-  color: #000;
-  letter-spacing: 0.3px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-/* ── Row 3: Barcode ── */
-.lbl-row-barcode {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 8px;
-  border-bottom: 2px solid #222;
-}
-
-.lbl-row-barcode svg {
-  width: 100%;
-  height: auto;
-  max-height: 72px;
-  display: block;
-  margin: 0 auto;
-  overflow: visible;
-}
-
-/* ── Row 4: Position + Units + Storage temp (3-col) ── */
 .lbl-row-bottom {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;

@@ -61,7 +61,7 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     JsBarcode(barcodeRef.current, data.boxLabel, {
       format: "CODE128",
       width: 2,
-      height: 58,
+      height: 44,
       displayValue: true,
       text: barcodeText,
       fontSize: 14,
@@ -166,37 +166,52 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     line-height: 1.05 !important;
     letter-spacing: 0.2mm !important;
   }
-  /* ── Row 2: box number (55%) + date (45%) ── */
-  .print-label .lbl-row-mid {
-    display: grid !important;
-    grid-template-columns: 55fr 45fr !important;
-    border-bottom: 0.6mm solid #000 !important;
-    min-height: 18mm !important;
-  }
-  .print-label .lbl-cell {
-    padding: 1.5mm 4mm !important;
+  /* ── Row 2: box number (full width, large) ── */
+  .print-label .lbl-row-box {
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
-    gap: 0.5mm !important;
+    padding: 1.5mm 4mm !important;
+    border-bottom: 0.6mm solid #000 !important;
+    min-height: 14mm !important;
   }
-  .print-label .lbl-cell-border {
-    border-right: 0.6mm solid #000 !important;
-  }
-  .print-label .lbl-cell .lbl-sub {
+  .print-label .lbl-row-box .lbl-sub {
     font-size: 2.8mm !important;
     font-weight: 700 !important;
     color: #444 !important;
+    margin-bottom: 0.3mm !important;
   }
-  .print-label .lbl-cell .lbl-mid {
-    font-size: 5mm !important;
-    font-weight: 800 !important;
-    line-height: 1.15 !important;
-    letter-spacing: 0.1mm !important;
+  .print-label .lbl-box-id {
+    font-size: 7mm !important;
+    font-weight: 900 !important;
+    line-height: 1.1 !important;
+    letter-spacing: 0.2mm !important;
     white-space: nowrap !important;
   }
 
-  /* ── Row 3: barcode ── */
+  /* ── Row 3: date (full width, large) ── */
+  .print-label .lbl-row-date {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding: 1.5mm 4mm !important;
+    border-bottom: 0.6mm solid #000 !important;
+    min-height: 12mm !important;
+  }
+  .print-label .lbl-row-date .lbl-sub {
+    font-size: 2.8mm !important;
+    font-weight: 700 !important;
+    color: #444 !important;
+    margin-bottom: 0.3mm !important;
+  }
+  .print-label .lbl-date-val {
+    font-size: 6.5mm !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+  }
+
+  /* ── Row 4: barcode (compact) ── */
   .print-label .lbl-row-barcode {
     flex: 1 !important;
     display: flex !important;
@@ -209,7 +224,7 @@ export default function BarcodeLabel({ data, onClose }: Props) {
   .print-label .lbl-row-barcode svg {
     width: 100% !important;
     height: auto !important;
-    max-height: 22mm !important;
+    max-height: 16mm !important;
     display: block !important;
     margin: 0 auto !important;
     overflow: visible !important;
@@ -280,16 +295,16 @@ export default function BarcodeLabel({ data, onClose }: Props) {
               </div>
             </div>
 
-            {/* Row 2: Box number (60%) + Collection date (40%) */}
-            <div className="lbl-row-mid">
-              <div className="lbl-cell lbl-cell-border">
-                <span className="lbl-sub">หมายเลขกล่อง</span>
-                <span className="lbl-mid">{data.boxLabel}</span>
-              </div>
-              <div className="lbl-cell">
-                <span className="lbl-sub">วันที่เก็บ</span>
-                <span className="lbl-mid">{thaiDate}</span>
-              </div>
+            {/* Row 2: Box number (full width, large) */}
+            <div className="lbl-row-box">
+              <span className="lbl-sub">หมายเลขกล่อง</span>
+              <span className="lbl-box-id">{data.boxLabel}</span>
+            </div>
+
+            {/* Row 3: Collection date (full width, large) */}
+            <div className="lbl-row-date">
+              <span className="lbl-sub">วันที่เก็บ</span>
+              <span className="lbl-date-val">{thaiDate}</span>
             </div>
 
             {/* Row 3: Barcode */}
