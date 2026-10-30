@@ -47,3 +47,11 @@ export interface ZoneItem {
   active: boolean
   shelves: ShelfItem[]
 }
+
+/** ตัวเลือกหมายเหตุการลบ unit */
+export interface RemovalReasonItem {
+  id: string
+  name: string
+  active: boolean
+  sort: number
+}

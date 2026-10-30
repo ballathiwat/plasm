@@ -5,8 +5,9 @@
 import apiAdapter from '../../../helpers/http/apiAdapter'
 import {
   MASTER_PLASMA_TYPES, MASTER_BLOOD_TYPES, MASTER_ZONES, MASTER_SHELVES,
+  MASTER_REMOVAL_REASONS,
 } from '../../../helpers/url_helper'
-import type { CodeItem, ZoneItem, ShelfItem } from './SettingsType'
+import type { CodeItem, ZoneItem, ShelfItem, RemovalReasonItem } from './SettingsType'
 
 export type CodeKind = 'plasma' | 'blood'
 const URL_OF: Record<CodeKind, string> = {
@@ -31,6 +32,13 @@ const masterService = {
     apiAdapter.post<{ code: string }, ShelfItem>(`${MASTER_ZONES}/${zoneId}/shelves`, { code }),
   updateShelf: (shelfId: string, data: Partial<ShelfItem>) =>
     apiAdapter.patch<typeof data, ShelfItem>(`${MASTER_SHELVES}/${shelfId}`, data),
+
+  // ── หมายเหตุการลบ unit ──
+  listRemovalReasons: () => apiAdapter.get<RemovalReasonItem[]>(MASTER_REMOVAL_REASONS),
+  createRemovalReason: (name: string) =>
+    apiAdapter.post<{ name: string }, RemovalReasonItem>(MASTER_REMOVAL_REASONS, { name }),
+  updateRemovalReason: (id: string, data: Partial<RemovalReasonItem>) =>
+    apiAdapter.patch<typeof data, RemovalReasonItem>(`${MASTER_REMOVAL_REASONS}/${id}`, data),
 }
 
 export default masterService

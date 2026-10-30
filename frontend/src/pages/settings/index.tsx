@@ -9,6 +9,7 @@ import SettingsMinStock from "./components/SettingsMinStock";
 import SettingsUsers from "./components/SettingsUsers";
 import SettingsCodeList from "./components/SettingsCodeList";
 import SettingsZones from "./components/SettingsZones";
+import SettingsRemovalReasons from "./components/SettingsRemovalReasons";
 
 const TABS = [
   { key: "stock" as const, label: "ค่าขั้นต่ำ" },
@@ -16,6 +17,7 @@ const TABS = [
   { key: "plasma" as const, label: "ชนิดพลาสมา" },
   { key: "blood" as const, label: "หมู่เลือด" },
   { key: "zones" as const, label: "สถานที่จัดเก็บ" },
+  { key: "removal" as const, label: "หมายเหตุการลบ" },
 ];
 
 const SettingsPage = () => {
@@ -201,6 +203,16 @@ const SettingsPage = () => {
           onToggleZone={master.toggleZone}
           onAddShelf={master.addShelf}
           onToggleShelf={master.toggleShelf}
+        />
+      )}
+
+      {activeTab === "removal" && (
+        <SettingsRemovalReasons
+          items={master.removalReasons}
+          loading={master.loading}
+          onAdd={master.addRemovalReason}
+          onRename={master.renameRemovalReason}
+          onToggle={master.toggleRemovalReason}
         />
       )}
     </div>

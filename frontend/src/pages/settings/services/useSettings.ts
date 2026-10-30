@@ -35,7 +35,7 @@ export default function useSettings() {
   // ── UI ──
   const [toast, setToast] = useState<ToastState | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "stock" | "users" | "plasma" | "blood" | "zones"
+    "stock" | "users" | "plasma" | "blood" | "zones" | "removal"
   >("stock");
 
   // Auto-hide toast

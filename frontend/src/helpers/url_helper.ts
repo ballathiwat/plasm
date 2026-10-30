@@ -46,3 +46,4 @@ export const MASTER_PLASMA_TYPES = `${API}/master/plasma-types`
 export const MASTER_BLOOD_TYPES = `${API}/master/blood-types`
 export const MASTER_ZONES = `${API}/master/zones`
 export const MASTER_SHELVES = `${API}/master/shelves`
+export const MASTER_REMOVAL_REASONS = `${API}/master/removal-reasons`

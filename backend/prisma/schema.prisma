@@ -21,7 +21,8 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  logs LogEntry[]
+  logs         LogEntry[]
+  unitRemovals UnitRemoval[]
 
   @@map("users")
 }
@@ -54,6 +55,24 @@ model Unit {
 enum UnitStatus {
   STORED
   WITHDRAWN
+}
+
+// ===== บันทึกการลบ unit ออกจากกล่อง (ต้องระบุหมายเหตุทุกครั้ง) =====
+model UnitRemoval {
+  id         String   @id @default(cuid())
+  unitNumber String   @map("unit_number")
+  boxId      String   @map("box_id")
+  boxLabel   String   @map("box_label")
+  note       String
+  userId     String?  @map("user_id")
+  removedAt  DateTime @default(now()) @map("removed_at")
+
+  box  Box   @relation(fields: [boxId], references: [id])
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([unitNumber])
+  @@index([boxId])
+  @@map("unit_removals")
 }
 
 // ===== ประวัติการทำงาน =====
@@ -140,6 +159,16 @@ model MasterShelf {
   @@map("master_shelves")
 }
 
+// หมายเหตุการลบ unit (กำหนดจากเมนูตั้งค่า)
+model MasterRemovalReason {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  active Boolean @default(true)
+  sort   Int     @default(0)
+
+  @@map("master_removal_reasons")
+}
+
 // เฟส 2 จะใช้รันเลขกล่อง
 model BoxCounter {
   plasmaTypeId String @map("plasma_type_id")
@@ -174,6 +203,7 @@ model Box {
   zone       MasterZone       @relation(fields: [zoneId], references: [id])
   units      Unit[]
   logs       LogEntry[]
+  removals   UnitRemoval[]
 
   @@index([blood, status])
   @@index([bloodTypeId, status])

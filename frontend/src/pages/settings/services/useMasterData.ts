@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import masterService, { type CodeKind } from './MasterService'
-import type { CodeItem, ZoneItem, ShelfItem, ToastState } from './SettingsType'
+import type { CodeItem, ZoneItem, ShelfItem, ToastState, RemovalReasonItem } from './SettingsType'
 import { registerMasterColors } from '../../../helpers/blood'
 
 
@@ -12,16 +12,19 @@ export default function useMasterData(notify: (t: ToastState) => void) {
   const [plasmaTypes, setPlasmaTypes] = useState<CodeItem[]>([])
   const [bloodTypes, setBloodTypes] = useState<CodeItem[]>([])
   const [zones, setZones] = useState<ZoneItem[]>([])
+  const [removalReasons, setRemovalReasons] = useState<RemovalReasonItem[]>([])
   const [loading, setLoading] = useState(true)
 
   const reload = useCallback(async () => {
     setLoading(true)
     try {
-      const [p, b, z] = await Promise.all([
+      const [p, b, z, rr] = await Promise.all([
         masterService.listCodes('plasma'),
         masterService.listCodes('blood'),
         masterService.listZones(),
+        masterService.listRemovalReasons(),
       ])
+      setRemovalReasons(rr)
       setPlasmaTypes(p)
       setBloodTypes(b)
       registerMasterColors(b, p)
@@ -82,8 +85,21 @@ export default function useMasterData(notify: (t: ToastState) => void) {
       `${s.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}ชั้น "${s.code}" สำเร็จ`,
     )
 
+  const addRemovalReason = (name: string) =>
+    run(() => masterService.createRemovalReason(name), `เพิ่ม "${name}" สำเร็จ`)
+
+  const renameRemovalReason = (r: RemovalReasonItem, name: string) =>
+    run(() => masterService.updateRemovalReason(r.id, { name }), `แก้ไขเป็น "${name}" สำเร็จ`)
+
+  const toggleRemovalReason = (r: RemovalReasonItem) =>
+    run(
+      () => masterService.updateRemovalReason(r.id, { active: !r.active }),
+      `${r.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'} "${r.name}" สำเร็จ`,
+    )
+
   return {
-    plasmaTypes, bloodTypes, zones, loading,
+    plasmaTypes, bloodTypes, zones, removalReasons, loading,
     addCode, toggleCode,updateColor, addZone, toggleZone, addShelf, toggleShelf,
+    addRemovalReason, renameRemovalReason, toggleRemovalReason,
   }
 }
