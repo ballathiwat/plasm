@@ -4,12 +4,13 @@
 
 import apiAdapter from '../../../helpers/http/apiAdapter'
 import {
-  GET_BOXES, POST_BOX, GET_UNIT_CHECK,
+  GET_BOXES, POST_BOX, GET_UNIT_CHECK, MASTER_REMOVAL_REASONS,
   MASTER_PLASMA_TYPES, MASTER_BLOOD_TYPES, MASTER_ZONES,
 } from '../../../helpers/url_helper'
 import type {
   StorageBoxItem, CreateBoxPayload, MasterCode, MasterShelf, MasterZone,
   PaginatedBoxResponse, UnitCheckResult,
+  UnitRemovalInput, UnitRemovalRecord, RemovalReasonOption,
 } from './StorageType'
 
 const storageService = {
@@ -35,8 +36,25 @@ const storageService = {
     return await apiAdapter.get<{ label: string; year: number }>(`${GET_BOXES}/next-label`, { type, blood })
   },
     /** PUT /boxes/:id/units */
-  updateBoxUnits: async (boxId: string, units: string[]): Promise<StorageBoxItem> => {
-    return await apiAdapter.put<{ units: string[] }, StorageBoxItem>(`${GET_BOXES}/${boxId}/units`, { units })
+  updateBoxUnits: async (
+    boxId: string,
+    units: string[],
+    removals: UnitRemovalInput[] = [],
+  ): Promise<StorageBoxItem> => {
+    return await apiAdapter.put<{ units: string[]; removals: UnitRemovalInput[] }, StorageBoxItem>(
+      `${GET_BOXES}/${boxId}/units`,
+      { units, removals },
+    )
+  },
+
+  /** GET /master/removal-reasons — ตัวเลือกหมายเหตุการลบ */
+  listRemovalReasons: async (): Promise<RemovalReasonOption[]> => {
+    return await apiAdapter.get<RemovalReasonOption[]>(MASTER_REMOVAL_REASONS)
+  },
+
+  /** GET /boxes/:id/removals — ประวัติการลบ unit พร้อมหมายเหตุ */
+  getBoxRemovals: async (boxId: string): Promise<UnitRemovalRecord[]> => {
+    return await apiAdapter.get<UnitRemovalRecord[]>(`${GET_BOXES}/${boxId}/removals`)
   },
 
   /** GET /units/check?unit= — ตรวจว่ามีเลข unit นี้ในระบบแล้วหรือไม่ (รวมที่นำออกแล้ว) */

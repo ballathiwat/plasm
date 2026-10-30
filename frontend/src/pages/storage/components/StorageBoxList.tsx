@@ -3,8 +3,14 @@
 // ============================================================
 
 import { useState } from "react";
-import { Pencil, Printer, Search, X, Plus, MapPin } from "lucide-react";
-import type { StorageBoxItem, MasterZone } from "../services/StorageType";
+import { Pencil, Printer, Search, X, Plus, MapPin, Undo2 } from "lucide-react";
+import type {
+  StorageBoxItem,
+  MasterZone,
+  UnitRemovalInput,
+  UnitRemovalRecord,
+  RemovalReasonOption,
+} from "../services/StorageType";
 import storageService from "../services/StorageService";
 import { groupSurface, groupInk } from "../../../helpers/blood";
 import { Pagination } from "../../../components/shared";
@@ -15,7 +21,11 @@ interface Props {
   loading: boolean;
   onPrintBox: (box: StorageBoxItem) => void;
   /** คืน null = สำเร็จ, string = ข้อความ error */
-  onEditUnits: (boxId: string, units: string[]) => Promise<string | null>;
+  onEditUnits: (
+    boxId: string,
+    units: string[],
+    removals: UnitRemovalInput[],
+  ) => Promise<string | null>;
   onEditLocation: (boxId: string, zoneId: string, shelf: string) => void;
   zones: MasterZone[];
   pagination: PaginationInfo;
@@ -40,6 +50,83 @@ export default function StorageBoxList({
   const [unitInput, setUnitInput] = useState("");
   const [editError, setEditError] = useState("");
   const [editBusy, setEditBusy] = useState(false);
+  // unit เดิมที่ถูกลบในรอบแก้ไขนี้ → หมายเหตุที่เลือก
+  const [removals, setRemovals] = useState<
+    Record<string, { reasonId: string; reasonName: string; detail: string }>
+  >({});
+  // unit ที่กำลังเลือกหมายเหตุก่อนลบ
+  const [pendingRemove, setPendingRemove] = useState<string | null>(null);
+  const [removeReasonId, setRemoveReasonId] = useState("");
+  const [removeDetail, setRemoveDetail] = useState("");
+  const [removeHistory, setRemoveHistory] = useState<UnitRemovalRecord[]>([]);
+  // ตัวเลือกหมายเหตุ (กำหนดจาก ตั้งค่า > หมายเหตุการลบ)
+  const [reasonOptions, setReasonOptions] = useState<RemovalReasonOption[]>([]);
+
+  const openEditUnits = (box: StorageBoxItem) => {
+    setEditingBox(box);
+    setEditUnits([...box.units]);
+    setUnitInput("");
+    setEditError("");
+    setRemovals({});
+    setPendingRemove(null);
+    setRemoveReasonId("");
+    setRemoveDetail("");
+    setRemoveHistory([]);
+    storageService
+      .listRemovalReasons()
+      .then((rs) => setReasonOptions(rs.filter((r) => r.active)))
+      .catch(() => setReasonOptions([]));
+    storageService
+      .getBoxRemovals(box.id)
+      .then(setRemoveHistory)
+      .catch(() => setRemoveHistory([]));
+  };
+
+  const isOriginalUnit = (u: string) => !!editingBox?.units.includes(u);
+
+  // กด X: unit เดิมต้องกรอกหมายเหตุก่อน / unit ที่เพิ่งเพิ่มในรอบนี้ลบได้ทันที
+  const requestRemove = (u: string) => {
+    setEditError("");
+    if (isOriginalUnit(u)) {
+      setPendingRemove(u);
+      setRemoveReasonId("");
+      setRemoveDetail("");
+    } else {
+      setEditUnits((prev) => prev.filter((x) => x !== u));
+    }
+  };
+
+  const confirmRemove = () => {
+    if (!pendingRemove) return;
+    const reason = reasonOptions.find((r) => r.id === removeReasonId);
+    if (!reason) {
+      setEditError(`กรุณาเลือกหมายเหตุการลบ unit ${pendingRemove}`);
+      return;
+    }
+    const u = pendingRemove;
+    setEditUnits((prev) => prev.filter((x) => x !== u));
+    setRemovals((prev) => ({
+      ...prev,
+      [u]: {
+        reasonId: reason.id,
+        reasonName: reason.name,
+        detail: removeDetail.trim(),
+      },
+    }));
+    setPendingRemove(null);
+    setRemoveReasonId("");
+    setRemoveDetail("");
+    setEditError("");
+  };
+
+  const undoRemove = (u: string) => {
+    setRemovals((prev) => {
+      const next = { ...prev };
+      delete next[u];
+      return next;
+    });
+    setEditUnits((prev) => (prev.includes(u) ? prev : [...prev, u]));
+  };
   const [locBox, setLocBox] = useState<StorageBoxItem | null>(null);
   const [locZoneId, setLocZoneId] = useState("");
   const [locShelf, setLocShelf] = useState("");
@@ -65,7 +152,9 @@ export default function StorageBoxList({
       .split(/[,\s\n]+/)
       .map((u) => u.trim())
       .filter(Boolean);
-    const original = editingBox.units.map((u) => u.toUpperCase());
+    const original = editingBox.units;
+    const findOriginal = (u: string) =>
+      original.find((o) => o.toUpperCase() === u);
     const added: string[] = [];
     const dupes: string[] = [];
 
@@ -81,8 +170,9 @@ export default function StorageBoxList({
           continue;
         }
         // เคยอยู่ในกล่องนี้แล้วถูกลบออกในหน้านี้ → เพิ่มกลับได้
-        if (original.includes(u)) {
-          added.push(u);
+        const orig = findOriginal(u);
+        if (orig) {
+          added.push(orig);
           continue;
         }
         // ตรวจกับฐานข้อมูล (รวม unit ที่นำออกแล้ว)
@@ -104,15 +194,34 @@ export default function StorageBoxList({
     }
     setEditBusy(false);
 
-    if (added.length > 0) setEditUnits((prev) => [...prev, ...added]);
+    if (added.length > 0) {
+      setEditUnits((prev) => [...prev, ...added]);
+      // เพิ่ม unit เดิมกลับเข้ามา → ยกเลิกหมายเหตุการลบ
+      setRemovals((prev) => {
+        const next = { ...prev };
+        added.forEach((u) => delete next[u]);
+        return next;
+      });
+    }
     setEditError(dupes.length > 0 ? `Unit ซ้ำ: ${dupes.join(", ")}` : "");
     setUnitInput("");
   };
 
   const handleEditSave = async () => {
     if (!editingBox || editUnits.length === 0 || editBusy) return;
+    if (pendingRemove) {
+      setEditError("กรุณายืนยันหรือยกเลิกการลบ unit ที่ค้างอยู่ก่อนบันทึก");
+      return;
+    }
     setEditBusy(true);
-    const err = await onEditUnits(editingBox.id, editUnits);
+    const removalList: UnitRemovalInput[] = Object.entries(removals).map(
+      ([unitNumber, r]) => ({
+        unitNumber,
+        reasonId: r.reasonId,
+        detail: r.detail || undefined,
+      }),
+    );
+    const err = await onEditUnits(editingBox.id, editUnits, removalList);
     setEditBusy(false);
     if (err) {
       setEditError(err);
@@ -287,12 +396,7 @@ export default function StorageBoxList({
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {/* ปุ่มแก้ไข units */}
                 <button
-                  onClick={() => {
-                    setEditingBox(box);
-                    setEditUnits([...box.units]);
-                    setUnitInput("");
-                    setEditError("");
-                  }}
+                  onClick={() => openEditUnits(box)}
                   title="แก้ไข units"
                   style={{
                     display: "flex",
@@ -506,35 +610,171 @@ export default function StorageBoxList({
                 marginBottom: 16,
               }}
             >
-              {editUnits.map((u, i) => (
+              {editUnits.map((u) => (
                 <div
-                  key={i}
+                  key={u}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
                     padding: "6px 10px",
-                    background: "var(--surface-raised, #F4F4F5)",
+                    background:
+                      pendingRemove === u
+                        ? "#FEF2F2"
+                        : "var(--surface-raised, #F4F4F5)",
+                    border:
+                      pendingRemove === u
+                        ? "1px solid #FECACA"
+                        : "1px solid transparent",
                     borderRadius: 6,
                     fontSize: 13,
-                    fontFamily: "var(--font-mono)",
                   }}
                 >
-                  {u}
-                  <button
-                    onClick={() => {
-                      setEditUnits(editUnits.filter((_, j) => j !== i));
-                      setEditError("");
-                    }}
+                  <div
                     style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      fontFamily: "var(--font-mono)",
                     }}
                   >
-                    <X size={13} color="var(--text-secondary)" />
-                  </button>
+                    <span>
+                      {u}
+                      {!isOriginalUnit(u) && (
+                        <span
+                          style={{
+                            marginLeft: 8,
+                            fontSize: 11,
+                            color: "var(--primary, #2563EB)",
+                            fontFamily: "var(--font-family)",
+                          }}
+                        >
+                          ใหม่
+                        </span>
+                      )}
+                    </span>
+                    {pendingRemove !== u && (
+                      <button
+                        onClick={() => requestRemove(u)}
+                        title="ลบ unit"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 2,
+                        }}
+                      >
+                        <X size={13} color="var(--text-secondary)" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* กรอกหมายเหตุก่อนลบ */}
+                  {pendingRemove === u && (
+                    <div style={{ marginTop: 8 }}>
+                      {reasonOptions.length === 0 ? (
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: "#B91C1C",
+                            marginBottom: 6,
+                          }}
+                        >
+                          ยังไม่มีตัวเลือกหมายเหตุที่เปิดใช้งาน — ให้ผู้ดูแลเพิ่มที่
+                          เมนู ตั้งค่า › หมายเหตุการลบ
+                        </div>
+                      ) : (
+                        <>
+                          <select
+                            autoFocus
+                            value={removeReasonId}
+                            onChange={(e) => {
+                              setRemoveReasonId(e.target.value);
+                              if (editError) setEditError("");
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Escape") setPendingRemove(null);
+                            }}
+                            style={{
+                              width: "100%",
+                              boxSizing: "border-box",
+                              padding: "6px 10px",
+                              border: "1px solid #FCA5A5",
+                              borderRadius: 6,
+                              fontSize: 13,
+                              marginBottom: 6,
+                              background: "#fff",
+                              fontFamily: "var(--font-family)",
+                            }}
+                          >
+                            <option value="">— เลือกหมายเหตุการลบ —</option>
+                            {reasonOptions.map((r) => (
+                              <option key={r.id} value={r.id}>
+                                {r.name}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            value={removeDetail}
+                            maxLength={300}
+                            onChange={(e) => setRemoveDetail(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                confirmRemove();
+                              } else if (e.key === "Escape") {
+                                setPendingRemove(null);
+                              }
+                            }}
+                            placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"
+                            style={{
+                              width: "100%",
+                              boxSizing: "border-box",
+                              padding: "6px 10px",
+                              border: "1px solid var(--border)",
+                              borderRadius: 6,
+                              fontSize: 13,
+                              marginBottom: 6,
+                            }}
+                          />
+                        </>
+                      )}
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={confirmRemove}
+                          disabled={!removeReasonId}
+                          style={{
+                            flex: 1,
+                            padding: "6px 0",
+                            borderRadius: 6,
+                            border: "none",
+                            background: "#DC2626",
+                            color: "#fff",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            cursor: removeReasonId ? "pointer" : "not-allowed",
+                            opacity: removeReasonId ? 1 : 0.5,
+                          }}
+                        >
+                          ยืนยันลบ
+                        </button>
+                        <button
+                          onClick={() => {
+                            setPendingRemove(null);
+                            setRemoveReasonId("");
+                            setRemoveDetail("");
+                          }}
+                          style={{
+                            padding: "6px 14px",
+                            borderRadius: 6,
+                            border: "1px solid var(--border)",
+                            background: "#fff",
+                            fontSize: 13,
+                            cursor: "pointer",
+                          }}
+                        >
+                          ยกเลิก
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
               {editUnits.length === 0 && (
@@ -550,6 +790,120 @@ export default function StorageBoxList({
                 </div>
               )}
             </div>
+
+            {/* รายการที่จะลบในรอบนี้ */}
+            {Object.keys(removals).length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#B91C1C",
+                    marginBottom: 6,
+                  }}
+                >
+                  จะลบเมื่อกดบันทึก ({Object.keys(removals).length})
+                </div>
+                {Object.entries(removals).map(([u, r]) => (
+                  <div
+                    key={u}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      gap: 8,
+                      padding: "6px 10px",
+                      marginBottom: 4,
+                      background: "#FEF2F2",
+                      borderRadius: 6,
+                      fontSize: 13,
+                    }}
+                  >
+                    <div>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          textDecoration: "line-through",
+                        }}
+                      >
+                        {u}
+                      </div>
+                      <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>
+                        หมายเหตุ: {r.reasonName}
+                        {r.detail ? ` — ${r.detail}` : ""}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => undoRemove(u)}
+                      title="ยกเลิกการลบ"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "var(--primary, #2563EB)",
+                        fontSize: 12,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <Undo2 size={13} /> คืน
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ประวัติการลบ unit ของกล่องนี้ */}
+            {removeHistory.length > 0 && (
+              <details style={{ marginBottom: 16, fontSize: 13 }}>
+                <summary
+                  style={{
+                    cursor: "pointer",
+                    color: "var(--text-secondary)",
+                    marginBottom: 6,
+                  }}
+                >
+                  ประวัติการลบ unit ({removeHistory.length})
+                </summary>
+                {removeHistory.map((r) => (
+                  <div
+                    key={r.id}
+                    style={{
+                      padding: "6px 10px",
+                      marginBottom: 4,
+                      background: "var(--surface-raised, #F4F4F5)",
+                      borderRadius: 6,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 8,
+                      }}
+                    >
+                      <span style={{ fontFamily: "var(--font-mono)" }}>
+                        {r.unitNumber}
+                      </span>
+                      <span
+                        style={{ fontSize: 12, color: "var(--text-secondary)" }}
+                      >
+                        {new Date(r.removedAt).toLocaleString("th-TH", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                        {r.userName ? ` · ${r.userName}` : ""}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                      หมายเหตุ: {r.note}
+                    </div>
+                  </div>
+                ))}
+              </details>
+            )}
 
             {/* Actions */}
             <div style={{ display: "flex", gap: 8 }}>

@@ -90,3 +90,27 @@ export interface UnitCheckResult {
   boxId?: string
   boxLabel?: string
 }
+
+/** หมายเหตุการลบ unit (ส่งไปกับ PUT /boxes/:id/units) */
+export interface UnitRemovalInput {
+  unitNumber: string
+  reasonId: string
+  detail?: string
+}
+
+/** ตัวเลือกหมายเหตุการลบ (GET /master/removal-reasons — กำหนดในเมนูตั้งค่า) */
+export interface RemovalReasonOption {
+  id: string
+  name: string
+  active: boolean
+}
+
+/** ประวัติการลบ unit (GET /boxes/:id/removals) */
+export interface UnitRemovalRecord {
+  id: string
+  unitNumber: string
+  boxLabel: string
+  note: string
+  userName: string | null
+  removedAt: string
+}

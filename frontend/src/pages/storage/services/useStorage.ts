@@ -10,6 +10,7 @@ import type {
   ToastState,
   MasterOptions,
   QuickAddKind,
+  UnitRemovalInput,
 } from "./StorageType";
 import type { BarcodeLabelData } from "../components/BarcodeLabel";
 import type { PaginationInfo } from "../../../components/shared/Pagination";
@@ -283,9 +284,10 @@ export default function useStorage() {
   const handleEditUnits = async (
     boxId: string,
     units: string[],
+    removals: UnitRemovalInput[],
   ): Promise<string | null> => {
     try {
-      await storageService.updateBoxUnits(boxId, units);
+      await storageService.updateBoxUnits(boxId, units, removals);
       setToast({ type: "success", msg: "แก้ไขรายการ units สำเร็จ" });
       loadBoxes(pagination.page, pagination.pageSize);
       return null;

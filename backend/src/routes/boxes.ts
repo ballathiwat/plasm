@@ -350,7 +350,28 @@ router.patch("/:id/withdraw", async (req, res) => {
 // แก้ไขรายการ units ในกล่อง (เพิ่ม/ลบ)
 router.put("/:id/units", async (req, res) => {
   try {
-    const { units } = req.body;
+    const { units, removals } = req.body;
+    // หมายเหตุการลบ: [{ unitNumber, reasonId, detail? }] — reasonId ต้องเป็นตัวเลือกที่เปิดใช้งานในเมนูตั้งค่า
+    const removalNotes = new Map<string, string>();
+    if (Array.isArray(removals) && removals.length > 0) {
+      const reasonIds = removals
+        .map((r: any) => String(r?.reasonId ?? "").trim())
+        .filter(Boolean);
+      const reasons = await prisma.masterRemovalReason.findMany({
+        where: { id: { in: reasonIds }, active: true },
+        select: { id: true, name: true },
+      });
+      const reasonName = new Map(reasons.map((r) => [r.id, r.name]));
+
+      for (const r of removals) {
+        const num = String(r?.unitNumber ?? "").trim();
+        const name = reasonName.get(String(r?.reasonId ?? "").trim());
+        const detail = String(r?.detail ?? "").trim().slice(0, 300);
+        if (num && name) {
+          removalNotes.set(num, detail ? `${name} — ${detail}` : name);
+        }
+      }
+    }
     const unitList: string[] = Array.from(
       new Set(
         (Array.isArray(units) ? units : [])
@@ -388,6 +409,18 @@ router.put("/:id/units", async (req, res) => {
     const toAdd = unitList.filter((u) => !storedNumbers.includes(u));
     const toRemove = storedUnits.filter((u) => !unitList.includes(u.unitNumber));
 
+    // ลบ unit ต้องระบุหมายเหตุทุกครั้ง
+    const missingNote = toRemove
+      .filter((u) => !removalNotes.has(u.unitNumber))
+      .map((u) => u.unitNumber);
+    if (missingNote.length > 0) {
+      res.status(400).json({
+        message: `กรุณาเลือกหมายเหตุการลบ unit: ${missingNote.join(", ")}`,
+        missingNote,
+      });
+      return;
+    }
+
     // ตรวจ unit ซ้ำ (ทั้งกล่องอื่น และ unit ที่นำออกแล้วในกล่องนี้)
     if (toAdd.length > 0) {
       const existing = await prisma.unit.findMany({
@@ -413,6 +446,16 @@ router.put("/:id/units", async (req, res) => {
     await prisma.$transaction(async (tx) => {
       // ลบ units ที่ไม่อยู่ในรายการใหม่
       if (toRemove.length > 0) {
+        // บันทึกข้อมูลการลบ (เลข unit, กล่อง, หมายเหตุ, ผู้ลบ, เวลา)
+        await tx.unitRemoval.createMany({
+          data: toRemove.map((u) => ({
+            unitNumber: u.unitNumber,
+            boxId: box.id,
+            boxLabel: box.boxLabel,
+            note: removalNotes.get(u.unitNumber)!,
+            userId: req.user?.id,
+          })),
+        });
         await tx.unit.deleteMany({
           where: { id: { in: toRemove.map((u) => u.id) } },
         });
@@ -428,7 +471,12 @@ router.put("/:id/units", async (req, res) => {
       // log
       const details: string[] = [];
       if (toAdd.length > 0) details.push(`เพิ่ม ${toAdd.length} units`);
-      if (toRemove.length > 0) details.push(`ลบ ${toRemove.length} units`);
+      if (toRemove.length > 0)
+        details.push(
+          `ลบ ${toRemove.length} units (${toRemove
+            .map((u) => `${u.unitNumber}: ${removalNotes.get(u.unitNumber)}`)
+            .join(", ")})`,
+        );
 
       if (details.length > 0) {
         await tx.logEntry.create({
@@ -454,6 +502,31 @@ router.put("/:id/units", async (req, res) => {
     });
   } catch (error) {
     console.error("PUT /boxes/:id/units error:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+  }
+});
+
+// ===== GET /api/v1/boxes/:id/removals =====
+// ประวัติการลบ unit ของกล่องนี้ (พร้อมหมายเหตุ)
+router.get("/:id/removals", async (req, res) => {
+  try {
+    const rows = await prisma.unitRemoval.findMany({
+      where: { boxId: req.params.id },
+      include: { user: { select: { name: true } } },
+      orderBy: { removedAt: "desc" },
+    });
+    res.json(
+      rows.map((r) => ({
+        id: r.id,
+        unitNumber: r.unitNumber,
+        boxLabel: r.boxLabel,
+        note: r.note,
+        userName: r.user?.name ?? null,
+        removedAt: r.removedAt.toISOString(),
+      })),
+    );
+  } catch (error) {
+    console.error("GET /boxes/:id/removals error:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาด" });
   }
 });

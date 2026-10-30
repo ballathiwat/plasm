@@ -67,6 +67,56 @@ router.patch(`${path}/:id`, adminOnly, async (req, res) => {
 codeMaster('/plasma-types', 'masterPlasmaType', false)
 codeMaster('/blood-types', 'masterBloodType', true)
 
+// ───────── หมายเหตุการลบ unit ─────────
+router.get('/removal-reasons', async (_req, res) => {
+  try {
+    res.json(await prisma.masterRemovalReason.findMany({
+      orderBy: [{ sort: 'asc' }, { name: 'asc' }],
+    }))
+  } catch (e) { fail(res, e, 'GET /removal-reasons') }
+})
+
+router.post('/removal-reasons', adminOnly, async (req, res) => {
+  try {
+    const name = String(req.body.name ?? '').trim()
+    if (!name) { res.status(400).json({ message: 'กรุณาระบุหมายเหตุ' }); return }
+    if (name.length > 100) { res.status(400).json({ message: 'หมายเหตุยาวเกินไป (สูงสุด 100 ตัวอักษร)' }); return }
+
+    const dup = await prisma.masterRemovalReason.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' } },
+    })
+    if (dup) { res.status(409).json({ message: `"${dup.name}" มีอยู่แล้ว` }); return }
+
+    const max = await prisma.masterRemovalReason.aggregate({ _max: { sort: true } })
+    const created = await prisma.masterRemovalReason.create({
+      data: { name, sort: (max._max.sort ?? -1) + 1 },
+    })
+    res.status(201).json(created)
+  } catch (e) { fail(res, e, 'POST /removal-reasons') }
+})
+
+router.patch('/removal-reasons/:id', adminOnly, async (req, res) => {
+  try {
+    const data: Record<string, unknown> = {}
+    if (req.body.name !== undefined) {
+      const name = String(req.body.name ?? '').trim()
+      if (!name) { res.status(400).json({ message: 'กรุณาระบุหมายเหตุ' }); return }
+      if (name.length > 100) { res.status(400).json({ message: 'หมายเหตุยาวเกินไป (สูงสุด 100 ตัวอักษร)' }); return }
+      const dup = await prisma.masterRemovalReason.findFirst({
+        where: { name: { equals: name, mode: 'insensitive' }, NOT: { id: req.params.id } },
+      })
+      if (dup) { res.status(409).json({ message: `"${dup.name}" มีอยู่แล้ว` }); return }
+      data.name = name
+    }
+    if (req.body.active !== undefined) data.active = !!req.body.active
+    if (req.body.sort !== undefined) data.sort = Number(req.body.sort)
+    res.json(await prisma.masterRemovalReason.update({ where: { id: req.params.id }, data }))
+  } catch (e: any) {
+    if (e?.code === 'P2025') { res.status(404).json({ message: 'ไม่พบข้อมูล' }); return }
+    fail(res, e, 'PATCH /removal-reasons')
+  }
+})
+
 // ───────── สถานที่ (ห้อง/ตู้) + ชั้นวาง ─────────
 router.get('/zones', async (_req, res) => {
   try {
