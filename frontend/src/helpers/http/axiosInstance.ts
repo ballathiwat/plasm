@@ -53,11 +53,10 @@ axiosInstance.interceptors.response.use(
     const { status, data } = error.response;
 
     // 401 → ลบ token อย่างเดียว (AuthProtected จัดการ redirect)
-    if (status === 401) {
-      const isLogin = error.config?.url?.includes("/login");
-      sessionStorage.removeItem("authToken");
-      sessionStorage.removeItem("authUser");
-      if (!isLogin) window.dispatchEvent(new Event("plasm:session-expired"));
+     if (status === 401) {
+      sessionStorage.removeItem('authUser')
+      const isLogin = error.config?.url?.includes('/login')
+      if (!isLogin) window.dispatchEvent(new Event('plasm:session-expired'))
     }
 
     const errorMessages: Record<number, string> = {
