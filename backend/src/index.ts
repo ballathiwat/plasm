@@ -17,7 +17,6 @@ import settingsRoutes from './routes/settings'
 import usersRoutes from './routes/users'
 import masterRoutes from './routes/master'
 
-dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 3000
