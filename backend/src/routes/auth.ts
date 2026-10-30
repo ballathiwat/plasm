@@ -12,11 +12,17 @@ import {
   clearAuthCookie,
 } from "../middleware/auth";
 import { validatePassword } from "../lib/passwordValidation";
+import rateLimit from 'express-rate-limit'
+
 
 const router = Router();
+ const loginLimiter = rateLimit({
+     windowMs: 15 * 60 * 1000, limit: 10,
+     message: { message: 'พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอ 15 นาที' },
+   })
 
 // ===== POST /api/v1/auth/login =====
-router.post("/login", async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
 

@@ -238,7 +238,7 @@ router.post("/", async (req, res) => {
         select: { boxLabel: true },
       });
       const maxExisting = maxBox
-        ? parseInt(maxBox.boxLabel.split("_").pop() || "0", 10)
+        ? parseInt(maxBox.boxLabel.replace(/.*[_\-]/, ""), 10) || 0
         : 0;
 
       // อ่าน counter ปัจจุบัน
@@ -281,8 +281,8 @@ router.post("/", async (req, res) => {
           boxName: boxName?.toString().trim() || null,
           type: pt.code,
           blood: bt.code,
-          plasmaTypeId: pt.id,   
-          bloodTypeId: bt.id,     
+          plasmaTypeId: pt.id,
+          bloodTypeId: bt.id,
           year,
           zoneId: zone.id,
           shelf: shelfCode,
