@@ -4,12 +4,12 @@
 
 import apiAdapter from '../../../helpers/http/apiAdapter'
 import {
-  GET_BOXES, POST_BOX,
+  GET_BOXES, POST_BOX, GET_UNIT_CHECK,
   MASTER_PLASMA_TYPES, MASTER_BLOOD_TYPES, MASTER_ZONES,
 } from '../../../helpers/url_helper'
 import type {
   StorageBoxItem, CreateBoxPayload, MasterCode, MasterShelf, MasterZone,
-  PaginatedBoxResponse,
+  PaginatedBoxResponse, UnitCheckResult,
 } from './StorageType'
 
 const storageService = {
@@ -37,6 +37,11 @@ const storageService = {
     /** PUT /boxes/:id/units */
   updateBoxUnits: async (boxId: string, units: string[]): Promise<StorageBoxItem> => {
     return await apiAdapter.put<{ units: string[] }, StorageBoxItem>(`${GET_BOXES}/${boxId}/units`, { units })
+  },
+
+  /** GET /units/check?unit= — ตรวจว่ามีเลข unit นี้ในระบบแล้วหรือไม่ (รวมที่นำออกแล้ว) */
+  checkUnit: async (unit: string): Promise<UnitCheckResult> => {
+    return await apiAdapter.get<UnitCheckResult>(GET_UNIT_CHECK, { unit })
   },
 
   listPlasmaTypes: () => apiAdapter.get<MasterCode[]>(MASTER_PLASMA_TYPES),

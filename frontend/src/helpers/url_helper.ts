@@ -21,6 +21,7 @@ export const PATCH_BOX_WITHDRAW = `${API}/boxes`    // + /:id/withdraw
 // ===== Units =====
 export const GET_UNITS = `${API}/units`
 export const GET_UNIT_SEARCH = `${API}/units/search` // ?q=
+export const GET_UNIT_CHECK = `${API}/units/check`   // ?unit=
 export const PATCH_UNIT_WITHDRAW = `${API}/units`    // + /:id/withdraw
 
 // ===== Stock =====

@@ -93,6 +93,43 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// ===== GET /api/v1/units/check?unit= =====
+// ตรวจว่าเลข unit นี้มีในระบบแล้วหรือไม่ (รวม unit ที่นำออกแล้ว)
+router.get("/check", async (req, res) => {
+  try {
+    const unit = ((req.query.unit as string) || "").trim();
+    if (!unit) {
+      res.json({ exists: false });
+      return;
+    }
+
+    const found = await prisma.unit.findFirst({
+      where: { unitNumber: { equals: unit, mode: "insensitive" } },
+      select: {
+        unitNumber: true,
+        status: true,
+        box: { select: { id: true, boxLabel: true } },
+      },
+    });
+
+    if (!found) {
+      res.json({ exists: false });
+      return;
+    }
+
+    res.json({
+      exists: true,
+      unitNumber: found.unitNumber,
+      status: found.status.toLowerCase(),
+      boxId: found.box.id,
+      boxLabel: found.box.boxLabel,
+    });
+  } catch (error) {
+    console.error("GET /units/check error:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+  }
+});
+
 // ===== PATCH /api/v1/units/:id/withdraw =====
 router.patch("/:id/withdraw", async (req, res) => {
   try {

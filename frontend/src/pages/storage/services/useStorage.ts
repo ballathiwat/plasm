@@ -279,13 +279,18 @@ export default function useStorage() {
 
 
   const closePrint = () => setPrintData(null);
-  const handleEditUnits = async (boxId: string, units: string[]) => {
+  /** คืนค่า null ถ้าสำเร็จ / ข้อความ error ถ้าไม่สำเร็จ (ให้ modal แสดงและไม่ปิด) */
+  const handleEditUnits = async (
+    boxId: string,
+    units: string[],
+  ): Promise<string | null> => {
     try {
       await storageService.updateBoxUnits(boxId, units);
       setToast({ type: "success", msg: "แก้ไขรายการ units สำเร็จ" });
       loadBoxes(pagination.page, pagination.pageSize);
+      return null;
     } catch (err: any) {
-      setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
+      return err?.message || "เกิดข้อผิดพลาด";
     }
   };
   const dismissToast = () => setToast(null);
