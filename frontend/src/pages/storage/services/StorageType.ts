@@ -81,3 +81,12 @@ export interface PaginatedBoxResponse {
   pageSize: number
   totalPages: number
 }
+
+/** ผลตรวจเลข unit ซ้ำในระบบ (GET /units/check) */
+export interface UnitCheckResult {
+  exists: boolean
+  unitNumber?: string
+  status?: 'stored' | 'withdrawn'
+  boxId?: string
+  boxLabel?: string
+}

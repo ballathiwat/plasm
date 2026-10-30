@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { Pencil, Printer, Search, X, Plus, MapPin } from "lucide-react";
 import type { StorageBoxItem, MasterZone } from "../services/StorageType";
+import storageService from "../services/StorageService";
 import { groupSurface, groupInk } from "../../../helpers/blood";
 import { Pagination } from "../../../components/shared";
 import type { PaginationInfo } from "../../../components/shared";
@@ -13,7 +14,8 @@ interface Props {
   boxes: StorageBoxItem[];
   loading: boolean;
   onPrintBox: (box: StorageBoxItem) => void;
-  onEditUnits: (boxId: string, units: string[]) => void;
+  /** คืน null = สำเร็จ, string = ข้อความ error */
+  onEditUnits: (boxId: string, units: string[]) => Promise<string | null>;
   onEditLocation: (boxId: string, zoneId: string, shelf: string) => void;
   zones: MasterZone[];
   pagination: PaginationInfo;
@@ -36,6 +38,8 @@ export default function StorageBoxList({
   const [editingBox, setEditingBox] = useState<StorageBoxItem | null>(null);
   const [editUnits, setEditUnits] = useState<string[]>([]);
   const [unitInput, setUnitInput] = useState("");
+  const [editError, setEditError] = useState("");
+  const [editBusy, setEditBusy] = useState(false);
   const [locBox, setLocBox] = useState<StorageBoxItem | null>(null);
   const [locZoneId, setLocZoneId] = useState("");
   const [locShelf, setLocShelf] = useState("");
@@ -50,6 +54,72 @@ export default function StorageBoxList({
       b.units.some((u) => u.toLowerCase().includes(q))
     );
   });
+
+  // ── เพิ่ม unit ในหน้าแก้ไข: ตัวพิมพ์ใหญ่อัตโนมัติ + ตรวจซ้ำ ──
+  const handleEditAdd = async () => {
+    if (!editingBox || editBusy) return;
+    const raw = unitInput.trim().toUpperCase();
+    if (!raw) return;
+
+    const inputs = raw
+      .split(/[,\s\n]+/)
+      .map((u) => u.trim())
+      .filter(Boolean);
+    const original = editingBox.units.map((u) => u.toUpperCase());
+    const added: string[] = [];
+    const dupes: string[] = [];
+
+    setEditBusy(true);
+    try {
+      for (const u of inputs) {
+        // ซ้ำในรายการที่กำลังแก้ไข
+        if (
+          editUnits.some((x) => x.toUpperCase() === u) ||
+          added.includes(u)
+        ) {
+          dupes.push(u);
+          continue;
+        }
+        // เคยอยู่ในกล่องนี้แล้วถูกลบออกในหน้านี้ → เพิ่มกลับได้
+        if (original.includes(u)) {
+          added.push(u);
+          continue;
+        }
+        // ตรวจกับฐานข้อมูล (รวม unit ที่นำออกแล้ว)
+        const res = await storageService.checkUnit(u);
+        if (res.exists) {
+          dupes.push(
+            res.status === "withdrawn"
+              ? `${u} (นำออกแล้ว — กล่อง ${res.boxLabel})`
+              : `${u} (อยู่ในกล่อง ${res.boxLabel})`,
+          );
+        } else {
+          added.push(u);
+        }
+      }
+    } catch (err: any) {
+      setEditError(err?.message || "ตรวจสอบ unit ไม่สำเร็จ");
+      setEditBusy(false);
+      return;
+    }
+    setEditBusy(false);
+
+    if (added.length > 0) setEditUnits((prev) => [...prev, ...added]);
+    setEditError(dupes.length > 0 ? `Unit ซ้ำ: ${dupes.join(", ")}` : "");
+    setUnitInput("");
+  };
+
+  const handleEditSave = async () => {
+    if (!editingBox || editUnits.length === 0 || editBusy) return;
+    setEditBusy(true);
+    const err = await onEditUnits(editingBox.id, editUnits);
+    setEditBusy(false);
+    if (err) {
+      setEditError(err);
+      return;
+    }
+    setEditingBox(null);
+  };
 
   return (
     <div
@@ -221,6 +291,7 @@ export default function StorageBoxList({
                     setEditingBox(box);
                     setEditUnits([...box.units]);
                     setUnitInput("");
+                    setEditError("");
                   }}
                   title="แก้ไข units"
                   style={{
@@ -367,18 +438,21 @@ export default function StorageBoxList({
             {/* Add unit input */}
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               <input
+                autoFocus
                 value={unitInput}
-                onChange={(e) => setUnitInput(e.target.value)}
+                onChange={(e) => {
+                  setUnitInput(e.target.value.toUpperCase());
+                  if (editError) setEditError("");
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && unitInput.trim()) {
-                    if (!editUnits.includes(unitInput.trim())) {
-                      setEditUnits([...editUnits, unitInput.trim()]);
-                    }
-                    setUnitInput("");
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleEditAdd();
                   }
                 }}
                 placeholder="สแกนหรือพิมพ์ unit number"
                 style={{
+                  textTransform: "uppercase",
                   flex: 1,
                   padding: "8px 12px",
                   border: "1px solid var(--border)",
@@ -387,16 +461,10 @@ export default function StorageBoxList({
                 }}
               />
               <button
-                onClick={() => {
-                  if (
-                    unitInput.trim() &&
-                    !editUnits.includes(unitInput.trim())
-                  ) {
-                    setEditUnits([...editUnits, unitInput.trim()]);
-                  }
-                  setUnitInput("");
-                }}
+                onClick={handleEditAdd}
+                disabled={editBusy}
                 style={{
+                  opacity: editBusy ? 0.6 : 1,
                   padding: "8px 12px",
                   borderRadius: 6,
                   border: "none",
@@ -411,6 +479,23 @@ export default function StorageBoxList({
                 <Plus size={14} /> เพิ่ม
               </button>
             </div>
+
+            {editError && (
+              <div
+                role="alert"
+                style={{
+                  marginBottom: 12,
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  background: "#FEF2F2",
+                  border: "1px solid #FECACA",
+                  color: "#B91C1C",
+                  fontSize: 13,
+                }}
+              >
+                {editError}
+              </div>
+            )}
 
             {/* Unit list */}
             <div
@@ -437,9 +522,10 @@ export default function StorageBoxList({
                 >
                   {u}
                   <button
-                    onClick={() =>
-                      setEditUnits(editUnits.filter((_, j) => j !== i))
-                    }
+                    onClick={() => {
+                      setEditUnits(editUnits.filter((_, j) => j !== i));
+                      setEditError("");
+                    }}
                     style={{
                       background: "none",
                       border: "none",
@@ -468,11 +554,8 @@ export default function StorageBoxList({
             {/* Actions */}
             <div style={{ display: "flex", gap: 8 }}>
               <button
-                onClick={() => {
-                  onEditUnits(editingBox.id, editUnits);
-                  setEditingBox(null);
-                }}
-                disabled={editUnits.length === 0}
+                onClick={handleEditSave}
+                disabled={editUnits.length === 0 || editBusy}
                 style={{
                   flex: 1,
                   padding: "10px 0",
@@ -483,7 +566,7 @@ export default function StorageBoxList({
                   fontWeight: 600,
                   fontSize: 14,
                   cursor: "pointer",
-                  opacity: editUnits.length === 0 ? 0.5 : 1,
+                  opacity: editUnits.length === 0 || editBusy ? 0.5 : 1,
                 }}
               >
                 บันทึก ({editUnits.length} units)

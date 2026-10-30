@@ -351,7 +351,13 @@ router.patch("/:id/withdraw", async (req, res) => {
 router.put("/:id/units", async (req, res) => {
   try {
     const { units } = req.body;
-    const unitList: string[] = Array.isArray(units) ? units : [];
+    const unitList: string[] = Array.from(
+      new Set(
+        (Array.isArray(units) ? units : [])
+          .map((u: unknown) => String(u).trim())
+          .filter(Boolean),
+      ),
+    );
 
     if (unitList.length === 0) {
       res.status(400).json({ message: "กรุณาเพิ่ม Unit อย่างน้อย 1 รายการ" });
@@ -376,21 +382,29 @@ router.put("/:id/units", async (req, res) => {
       return;
     }
 
-    const currentUnits = box.units.map((u) => u.unitNumber);
-    const toAdd = unitList.filter((u) => !currentUnits.includes(u));
-    const toRemove = box.units.filter((u) => !unitList.includes(u.unitNumber));
+    // แก้ไขได้เฉพาะ unit ที่ยังจัดเก็บอยู่ — unit ที่นำออกแล้วต้องคงไว้ (ห้ามลบ/ห้ามเพิ่มซ้ำ)
+    const storedUnits = box.units.filter((u) => u.status === "STORED");
+    const storedNumbers = storedUnits.map((u) => u.unitNumber);
+    const toAdd = unitList.filter((u) => !storedNumbers.includes(u));
+    const toRemove = storedUnits.filter((u) => !unitList.includes(u.unitNumber));
 
-    // ตรวจ unit ซ้ำกับกล่องอื่น
+    // ตรวจ unit ซ้ำ (ทั้งกล่องอื่น และ unit ที่นำออกแล้วในกล่องนี้)
     if (toAdd.length > 0) {
       const existing = await prisma.unit.findMany({
-        where: { unitNumber: { in: toAdd } },
-        select: { unitNumber: true },
+        where: {
+          OR: toAdd.map((u) => ({
+            unitNumber: { equals: u, mode: "insensitive" as const },
+          })),
+        },
+        select: { unitNumber: true, status: true },
       });
       if (existing.length > 0) {
-        const dupes = existing.map((u) => u.unitNumber);
+        const dupes = existing.map((u) =>
+          u.status === "WITHDRAWN" ? `${u.unitNumber} (นำออกแล้ว)` : u.unitNumber,
+        );
         res.status(409).json({
           message: `Unit ซ้ำ: ${dupes.join(", ")}`,
-          duplicates: dupes,
+          duplicates: existing.map((u) => u.unitNumber),
         });
         return;
       }
