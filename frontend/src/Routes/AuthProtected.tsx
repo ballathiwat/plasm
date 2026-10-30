@@ -11,14 +11,12 @@ interface AuthUser {
 
 // ===== Simple auth hook =====
 export function useAuth(): { isAuthenticated: boolean; user: AuthUser } {
-  const token = sessionStorage.getItem('authToken')
-  const userStr = sessionStorage.getItem('authUser')
+   const userStr = sessionStorage.getItem('authUser')
 
-  if (token && userStr) {
+  if (userStr) {
     try {
       return { isAuthenticated: true, user: JSON.parse(userStr) }
     } catch {
-      sessionStorage.removeItem('authToken')
       sessionStorage.removeItem('authUser')
     }
   }

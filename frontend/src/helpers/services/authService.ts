@@ -5,7 +5,7 @@
 
 import apiAdapter from '../http/apiAdapter'
 import { setInstanceToken, clearInstanceToken } from '../http/axiosInstance'
-import { POST_LOGIN } from '../url_helper'
+import { POST_LOGIN, POST_LOGOUT } from '../url_helper'
 
 /* ----------------------------------------------------------
    Types
@@ -16,12 +16,7 @@ export interface LoginPayload {
 }
 
 export interface LoginResponse {
-  token: string
-  user: {
-    id: string
-    name: string
-    role: 'ADMIN' | 'STAFF'
-  }
+  user: AuthUser
 }
 
 export interface AuthUser {
@@ -34,31 +29,19 @@ export interface AuthUser {
    Service
 ---------------------------------------------------------- */
 const authService = {
-  /**
-   * Login — บันทึก token + user ลง sessionStorage
-   */
-  login: async (payload: LoginPayload): Promise<LoginResponse> => {
-    const res = await apiAdapter.post<LoginPayload, LoginResponse>(
-      POST_LOGIN,
-      payload,
-    )
-
-    sessionStorage.setItem('authToken', res.token)
+    login: async (payload: LoginPayload): Promise<LoginResponse> => {
+    const res = await apiAdapter.post<LoginPayload, LoginResponse>(POST_LOGIN, payload)
     sessionStorage.setItem('authUser', JSON.stringify(res.user))
-    setInstanceToken(res.token)
-
     return res
   },
 
-  /**
-   * Logout — ล้าง session และ token
-   */
-  logout: (): void => {
-    sessionStorage.removeItem('authToken')
-    sessionStorage.removeItem('authUser')
-    clearInstanceToken()
+  logout: async (): Promise<void> => {
+    try {
+      await apiAdapter.post<Record<string, never>, { message: string }>(POST_LOGOUT, {})
+    } finally {
+      sessionStorage.removeItem('authUser')
+    }
   },
-
   /**
    * Get current user จาก session
    */
