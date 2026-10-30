@@ -74,15 +74,17 @@ export default function BarcodeLabel({ data, onClose }: Props) {
       marginRight: 10,
     });
 
+    // Use getBBox() to get the ACTUAL bounding box including text below bars
     const svg = barcodeRef.current;
-    const w = svg.getAttribute("width");
-    const h = svg.getAttribute("height");
-    if (w && h) {
-      svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-      svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-      svg.removeAttribute("width");
-      svg.removeAttribute("height");
-    }
+    const bbox = svg.getBBox();
+    const pad = 2; // small padding
+    svg.setAttribute(
+      "viewBox",
+      `${bbox.x - pad} ${bbox.y - pad} ${bbox.width + pad * 2} ${bbox.height + pad * 2}`
+    );
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    svg.removeAttribute("width");
+    svg.removeAttribute("height");
   }, [data.boxLabel, barcodeText]);
 
   const handlePrint = () => {
