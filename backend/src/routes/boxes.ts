@@ -345,8 +345,8 @@ router.patch("/:id/withdraw", async (req, res) => {
         data: { status: "WITHDRAWN", withdrawnAt: now },
       }),
       prisma.unit.updateMany({
-        where: { boxId: box.id },
-        data: { status: "WITHDRAWN" },
+        where: { boxId: box.id, status: "STORED" },
+        data: { status: "WITHDRAWN", withdrawnAt: now },
       }),
       prisma.logEntry.create({
         data: {
