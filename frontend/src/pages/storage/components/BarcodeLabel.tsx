@@ -230,11 +230,33 @@ export default function BarcodeLabel({ data, onClose }: Props) {
     overflow: visible !important;
   }
 
-  /* ── Row 4: position + units + temp (3-col) ── */
+  /* ── Row 5: storage location (full width) ── */
+  .print-label .lbl-row-location {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding: 1mm 4mm !important;
+    border-bottom: 0.6mm solid #000 !important;
+    min-height: 8mm !important;
+  }
+  .print-label .lbl-row-location .lbl-sub {
+    font-size: 2.5mm !important;
+    font-weight: 700 !important;
+    color: #444 !important;
+    margin-bottom: 0.2mm !important;
+  }
+  .print-label .lbl-location-val {
+    font-size: 4mm !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+  }
+
+  /* ── Row 6: position + units (2-col) ── */
   .print-label .lbl-row-bottom {
     display: grid !important;
-    grid-template-columns: 1fr 1fr 1fr !important;
-    min-height: 10mm !important;
+    grid-template-columns: 1fr 1fr !important;
+    min-height: 8mm !important;
   }
   .print-label .lbl-row-bottom .lbl-cell {
     padding: 1.5mm 3mm !important;
@@ -312,7 +334,13 @@ export default function BarcodeLabel({ data, onClose }: Props) {
               <svg ref={barcodeRef} />
             </div>
 
-            {/* Row 4: Position + Units + Storage temp (3-col) */}
+            {/* Row 5: Storage location (full width) */}
+            <div className="lbl-row-location">
+              <span className="lbl-sub">จัดเก็บ</span>
+              <span className="lbl-location-val">{data.location}</span>
+            </div>
+
+            {/* Row 6: Position + Units (2-col) */}
             <div className="lbl-row-bottom">
               <div className="lbl-cell">
                 <span className="lbl-sub">ตำแหน่ง</span>
@@ -321,10 +349,6 @@ export default function BarcodeLabel({ data, onClose }: Props) {
               <div className="lbl-cell">
                 <span className="lbl-sub">จำนวน</span>
                 <span className="lbl-val">{data.unitCount} units</span>
-              </div>
-              <div className="lbl-cell">
-                <span className="lbl-sub">อุณหภูมิ</span>
-                <span className="lbl-val">-30°C</span>
               </div>
             </div>
           </div>
