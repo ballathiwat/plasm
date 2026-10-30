@@ -4,7 +4,6 @@
 // Component เรียกผ่านนี้เท่านั้น ไม่แตะ apiAdapter โดยตรง
 
 import apiAdapter from '../http/apiAdapter'
-import { setInstanceToken, clearInstanceToken } from '../http/axiosInstance'
 import { POST_LOGIN, POST_LOGOUT } from '../url_helper'
 
 /* ----------------------------------------------------------
