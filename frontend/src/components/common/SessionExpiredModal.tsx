@@ -16,7 +16,6 @@ export default function SessionExpiredModal() {
   }, [])
 
   const goLogin = () => {
-    clearInstanceToken()
     setOpen(false)
     navigate('/login', { replace: true })
   }
