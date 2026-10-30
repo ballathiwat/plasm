@@ -17,6 +17,7 @@ const API_URL = import.meta.env.VITE_API_URL || "";
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_URL,
   timeout: 30000,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -53,10 +54,10 @@ axiosInstance.interceptors.response.use(
     const { status, data } = error.response;
 
     // 401 → ลบ token อย่างเดียว (AuthProtected จัดการ redirect)
-     if (status === 401) {
-      sessionStorage.removeItem('authUser')
-      const isLogin = error.config?.url?.includes('/login')
-      if (!isLogin) window.dispatchEvent(new Event('plasm:session-expired'))
+    if (status === 401) {
+      sessionStorage.removeItem("authUser");
+      const isLogin = error.config?.url?.includes("/login");
+      if (!isLogin) window.dispatchEvent(new Event("plasm:session-expired"));
     }
 
     const errorMessages: Record<number, string> = {
