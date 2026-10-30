@@ -158,7 +158,24 @@
   overflow: visible;
 }
 
-/* ── Row 5: Position + Units + Storage temp (3-col) ── */
+/* ── Row 5: Storage location (full width) ── */
+.lbl-row-location {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px 16px;
+  border-bottom: 2px solid #222;
+}
+
+.lbl-location-val {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #000;
+  white-space: nowrap;
+}
+
+/* ── Row 6: Position + Units (2-col) ── */
 .lbl-cell {
   padding: 6px 16px;
   display: flex;
@@ -169,7 +186,7 @@
 
 .lbl-row-bottom {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
 }
 
 .lbl-row-bottom .lbl-cell {
