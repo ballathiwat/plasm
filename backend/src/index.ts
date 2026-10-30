@@ -19,6 +19,7 @@ import masterRoutes from './routes/master'
 
 
 const app = express()
+app.set('trust proxy', 1)
 const PORT = process.env.PORT || 3000
 
 // ===== Middleware =====
