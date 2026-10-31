@@ -2,6 +2,8 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma'
 import { adminOnly } from '../middleware/auth'
+import { boxDto, zoneSelect } from '../lib/boxDto'
+import { RACK_LEVELS, purgeExpiredLocks } from '../lib/rack'
 
 const router = Router()
 const fail = (res: any, e: unknown, tag: string) => {
@@ -177,6 +179,79 @@ router.post('/zones/:id/shelves', async (req, res) => {
     if (e?.code === 'P2003') { res.status(404).json({ message: 'ไม่พบสถานที่' }); return }
     fail(res, e, 'POST /zones/:id/shelves')
   }
+})
+
+// ───────── Rack (ห้อง -30°C): ชั้น 1–5 × ช่อง 1–20 ─────────
+// GET /master/zones/:zoneId/racks/:shelf
+// → { shelf, levels: [{ level, slots: { [position]: Box + units(เรียงตาม seq) } }], locks: [...] }
+router.get('/zones/:zoneId/racks/:shelf', async (req, res) => {
+  try {
+    const zoneId = req.params.zoneId as string
+    const shelf = String(req.params.shelf).trim().toUpperCase()
+
+    const zone = await prisma.masterZone.findUnique({ where: { id: zoneId } })
+    if (!zone) { res.status(404).json({ message: 'ไม่พบสถานที่' }); return }
+
+    await purgeExpiredLocks(prisma)
+
+    const [boxes, locks, lastLogs] = await Promise.all([
+      prisma.box.findMany({
+        where: { zoneId, shelf, status: 'STORED', level: { not: null }, position: { not: null } },
+        include: {
+          zone: zoneSelect,
+          units: {
+            where: { status: 'STORED' },
+            select: { id: true, unitNumber: true, seq: true },
+            orderBy: [{ seq: 'asc' }, { createdAt: 'asc' }],
+          },
+        },
+      }),
+      prisma.slotLock.findMany({
+        where: { zoneId, shelf },
+        include: { user: { select: { name: true } } },
+      }),
+      // ประวัติล่าสุดของแต่ละกล่องใน rack นี้ ("ล่าสุด: ผู้ทำ · วันเวลา")
+      prisma.logEntry.findMany({
+        where: { box: { zoneId, shelf, status: 'STORED' } },
+        orderBy: { timestamp: 'desc' },
+        distinct: ['boxId'],
+        select: { boxId: true, timestamp: true, user: { select: { name: true } } },
+      }),
+    ])
+
+    const lastByBox = new Map(lastLogs.map((l) => [l.boxId, l]))
+
+    const levels = Array.from({ length: RACK_LEVELS }, (_, i) => {
+      const level = i + 1
+      const slots: Record<number, unknown> = {}
+      for (const b of boxes) {
+        if (b.level !== level || b.position == null) continue
+        const last = lastByBox.get(b.id)
+        slots[b.position] = {
+          ...boxDto(b),
+          units: b.units.map((u) => u.unitNumber),
+          lastAction: last
+            ? { userName: last.user?.name ?? null, timestamp: last.timestamp.toISOString() }
+            : null,
+        }
+      }
+      return { level, slots }
+    })
+
+    res.json({
+      zoneId,
+      shelf,
+      levels,
+      locks: locks.map((l) => ({
+        id: l.id,
+        level: l.level,
+        position: l.position,
+        userId: l.userId,
+        userName: l.user.name,
+        expiresAt: l.expiresAt.toISOString(),
+      })),
+    })
+  } catch (e) { fail(res, e, 'GET /zones/:zoneId/racks/:shelf') }
 })
 
 router.patch('/shelves/:shelfId', adminOnly, async (req, res) => {

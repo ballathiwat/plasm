@@ -5,9 +5,12 @@
 //  - สถานที่อื่น      → รายการชั้นเรียงลง
 // ============================================================
 
+import { useNavigate } from 'react-router-dom'
 import type { ShelfSummary, ZoneSummary } from '../services/MapType'
 import { ROOM_LAYOUT, ROOM_LEGACY_KEY } from '../services/MapType'
 import { bloodBase } from '../../../helpers/blood'
+import { rackUrl } from '../../../helpers/rack'
+import '../map.css'
 
 interface Props {
   zone: ZoneSummary
@@ -43,18 +46,20 @@ function BloodBadges({ shelf, bloodOrder }: { shelf: ShelfSummary; bloodOrder: s
   )
 }
 
-// ── ช่องชั้นแบบการ์ดเล็ก (ใช้ในผังห้อง) ──
+// ── ช่องชั้นแบบการ์ดเล็ก (ใช้ในผังห้อง) — คลิกเพื่อเปิด rack ──
 function ShelfTile({ code, shelf, bloodOrder }: { code: string; shelf: ShelfSummary | undefined; bloodOrder: string[] }) {
+  const navigate = useNavigate()
   const hasBoxes = !!shelf && shelf.totalBoxes > 0
 
   return (
-    <div
+    <button
+      type="button"
+      className="map-shelf-tile"
+      onClick={() => navigate(rackUrl(code))}
+      aria-label={`เปิด rack ${code}${shelf ? ` · ${shelf.totalBoxes} กล่อง ${shelf.totalUnits} units` : ' · ว่าง'}`}
       style={{
-        padding: 14,
-        borderRadius: 'var(--radius-md, 8px)',
         border: `1px solid ${hasBoxes ? 'var(--primary, #2563EB)' : 'var(--border, #E4E4E7)'}`,
         background: hasBoxes ? 'var(--group-a-surface, #DBEAFE)' : 'var(--surface-raised, #F4F4F5)',
-        transition: 'all 0.15s',
       }}
     >
       <div style={{
@@ -71,7 +76,8 @@ function ShelfTile({ code, shelf, bloodOrder }: { code: string; shelf: ShelfSumm
           <BloodBadges shelf={shelf} bloodOrder={bloodOrder} />
         </div>
       )}
-    </div>
+      <span className="map-shelf-tile__open">เปิด rack ›</span>
+    </button>
   )
 }
 
@@ -180,6 +186,11 @@ export default function MapZoneCard({ zone, bloodOrder }: Props) {
           {zone.totalBoxes} กล่อง · {zone.totalUnits} units
         </span>
       </div>
+      {zone.legacyKey === ROOM_LEGACY_KEY && (
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '-12px 0 16px' }}>
+          คลิกที่ rack เพื่อดูกล่องในแต่ละชั้น (ชั้น 1–5)
+        </p>
+      )}
 
       {zone.legacyKey === ROOM_LEGACY_KEY
         ? <RoomBody zone={zone} bloodOrder={bloodOrder} />

@@ -4,7 +4,7 @@
 
 import apiAdapter from '../../../helpers/http/apiAdapter'
 import {
-  GET_BOXES, POST_BOX, GET_UNIT_CHECK, MASTER_REMOVAL_REASONS,
+  GET_BOXES, POST_BOX, GET_UNIT_CHECK, MASTER_REMOVAL_REASONS, GET_RACK,
   MASTER_PLASMA_TYPES, MASTER_BLOOD_TYPES, MASTER_ZONES,
 } from '../../../helpers/url_helper'
 import type {
@@ -60,6 +60,16 @@ const storageService = {
   /** GET /units/check?unit= — ตรวจว่ามีเลข unit นี้ในระบบแล้วหรือไม่ (รวมที่นำออกแล้ว) */
   checkUnit: async (unit: string): Promise<UnitCheckResult> => {
     return await apiAdapter.get<UnitCheckResult>(GET_UNIT_CHECK, { unit })
+  },
+
+  /** GET /master/zones/:zoneId/racks/:shelf — ช่องที่มีกล่องแล้วในแต่ละชั้น (ห้อง -30°C) */
+  getRackOccupancy: async (zoneId: string, shelf: string): Promise<Record<number, number[]>> => {
+    const r = await apiAdapter.get<{ levels: { level: number; slots: Record<string, unknown> }[] }>(
+      `${GET_RACK}/${zoneId}/racks/${encodeURIComponent(shelf)}`,
+    )
+    const out: Record<number, number[]> = {}
+    for (const l of r.levels) out[l.level] = Object.keys(l.slots).map(Number)
+    return out
   },
 
   listPlasmaTypes: () => apiAdapter.get<MasterCode[]>(MASTER_PLASMA_TYPES),

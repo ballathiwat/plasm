@@ -8,6 +8,7 @@ import type { WithdrawBoxItem } from "../services/WithdrawType";
 import { groupSurface, groupInk } from "../../../helpers/blood";
 import useBloodTypes from "../../../helpers/useBloodTypes";
 import { zoneLabel } from "../../../helpers/zone";
+import { positionLabel } from "../../../helpers/rack";
 import FormInput from "../../../components/common/FormInput";
 import SelectDropdown, {
   type OptionType,
@@ -179,8 +180,8 @@ export default function WithdrawBoxList({
                       marginTop: 2,
                     }}
                   >
-                    {box.type} · {zoneLabel(box.zoneName, box.location)} · ชั้น{" "}
-                    {box.shelf} · {box.units.length} units
+                    {box.type} · {zoneLabel(box.zoneName, box.location)} ·{" "}
+                    {positionLabel(box)} · {box.units.length} units
                   </div>
                 </div>
 

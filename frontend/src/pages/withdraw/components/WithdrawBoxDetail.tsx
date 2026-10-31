@@ -6,6 +6,7 @@ import { PackageOpen, X, Package, Loader2 } from "lucide-react";
 import type { WithdrawBoxDetail as BoxDetailType } from "../services/WithdrawType";
 import { groupSurface, groupInk } from "../../../helpers/blood";
 import { zoneLabel } from "../../../helpers/zone";
+import { positionLabel } from "../../../helpers/rack";
 import Button from "../../../components/common/Button";
 
 interface Props {
@@ -117,8 +118,8 @@ export default function WithdrawBoxDetail({
               {box.boxLabel}
             </div>
             <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-              {box.type} · {zoneLabel(box.zoneName, box.location)} · ชั้น{" "}
-              {box.shelf}
+              {box.type} · {zoneLabel(box.zoneName, box.location)} ·{" "}
+              {positionLabel(box)}
             </div>
           </div>
         </div>

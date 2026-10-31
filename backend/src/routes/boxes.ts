@@ -3,18 +3,31 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { boxDto, zoneSelect } from "../lib/boxDto";
+import {
+  BOX_CAPACITY,
+  HttpError,
+  assertNotLockedByOther,
+  assertSlotFree,
+  isRackZone,
+  parseSlot,
+  positionLabel,
+  releaseOwnLock,
+} from "../lib/rack";
 
 const router = Router();
 
-class HttpError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-    public extra?: object,
-  ) {
-    super(message);
+const sendHttpError = (res: any, error: unknown, tag: string) => {
+  if (error instanceof HttpError) {
+    res.status(error.status).json({ message: error.message, ...error.extra });
+    return;
   }
-}
+  if ((error as any)?.code === "P2002") {
+    res.status(409).json({ message: "ช่องนี้มีกล่องอยู่แล้ว หรือข้อมูลซ้ำ" });
+    return;
+  }
+  console.error(tag, error);
+  res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+};
 
 // ปี ค.ศ. ตามเวลาไทย
 const bkkYear = () =>
@@ -49,7 +62,10 @@ router.get("/", async (req, res) => {
 
     const include = {
       zone: zoneSelect,
-      units: { select: { unitNumber: true, status: true } },
+      units: {
+        select: { unitNumber: true, status: true },
+        orderBy: [{ seq: "asc" as const }, { createdAt: "asc" as const }],
+      },
     };
 
     // ถ้าส่ง page → paginated response, ถ้าไม่ส่ง → array เดิม (backward compat)
@@ -129,6 +145,63 @@ router.get("/next-label", async (req, res) => {
   }
 });
 
+// ===== GET /api/v1/boxes/search?q= =====
+// ค้นหากล่องหรือ unit ที่ยังจัดเก็บอยู่ ทุกสถานที่ (≥ 2 ตัวอักษร, ≤ 20 รายการ) — ต้องอยู่ก่อน /:id
+router.get("/search", async (req, res) => {
+  try {
+    const q = String(req.query.q ?? "").trim();
+    if (q.length < 2) {
+      res.json([]);
+      return;
+    }
+
+    const [byBox, byUnit] = await Promise.all([
+      prisma.box.findMany({
+        where: { status: "STORED", boxLabel: { contains: q, mode: "insensitive" } },
+        include: { zone: zoneSelect },
+        orderBy: { boxLabel: "asc" },
+        take: 20,
+      }),
+      prisma.unit.findMany({
+        where: {
+          status: "STORED",
+          unitNumber: { contains: q, mode: "insensitive" },
+          box: { status: "STORED" },
+        },
+        include: { box: { include: { zone: zoneSelect } } },
+        orderBy: { unitNumber: "asc" },
+        take: 20,
+      }),
+    ]);
+
+    const out: any[] = [];
+    const seen = new Set<string>();
+    for (const b of byBox) {
+      seen.add(b.id);
+      out.push({ box: boxDto(b), matchedUnit: null });
+    }
+    for (const u of byUnit) {
+      const key = `${u.boxId}:${u.unitNumber}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ box: boxDto(u.box), matchedUnit: u.unitNumber });
+    }
+
+    res.json(
+      out.slice(0, 20).map((r) => ({
+        ...r,
+        zoneName: r.box.zoneName,
+        shelf: r.box.shelf,
+        level: r.box.level,
+        position: r.box.position,
+      })),
+    );
+  } catch (error) {
+    console.error("GET /boxes/search error:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+  }
+});
+
 // ===== GET /api/v1/boxes/:id =====
 router.get("/:id", async (req, res) => {
   try {
@@ -136,7 +209,10 @@ router.get("/:id", async (req, res) => {
       where: { id: req.params.id },
       include: {
         zone: zoneSelect,
-        units: { select: { id: true, unitNumber: true, status: true } },
+        units: {
+          select: { id: true, unitNumber: true, status: true },
+          orderBy: [{ seq: "asc" }, { createdAt: "asc" }],
+        },
       },
     });
 
@@ -167,7 +243,14 @@ router.post("/", async (req, res) => {
   try {
     const { boxName, type, blood, zoneId, shelf, collectionDate, units } =
       req.body;
-    const unitList: string[] = Array.isArray(units) ? units : [];
+    const unitList: string[] = Array.from(
+      new Set(
+        (Array.isArray(units) ? units : [])
+          .map((u: unknown) => String(u).trim().toUpperCase())
+          .filter(Boolean),
+      ),
+    );
+    const slot = parseSlot(req.body.level, req.body.position);
 
     if (!type || !blood || !zoneId || !shelf || !collectionDate) {
       res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบ" });
@@ -177,10 +260,20 @@ router.post("/", async (req, res) => {
       res.status(400).json({ message: "กรุณาเพิ่ม Unit อย่างน้อย 1 รายการ" });
       return;
     }
+    if (unitList.length > BOX_CAPACITY) {
+      res
+        .status(400)
+        .json({ message: `กล่องรับได้สูงสุด ${BOX_CAPACITY} ถุง` });
+      return;
+    }
 
-    // ตรวจ unit ซ้ำ
+    // ตรวจ unit ซ้ำ (รวม unit ที่นำออกแล้ว)
     const existing = await prisma.unit.findMany({
-      where: { unitNumber: { in: unitList } },
+      where: {
+        OR: unitList.map((u) => ({
+          unitNumber: { equals: u, mode: "insensitive" as const },
+        })),
+      },
       select: { unitNumber: true },
     });
     if (existing.length > 0) {
@@ -218,6 +311,18 @@ router.post("/", async (req, res) => {
           `ไม่พบชั้น "${shelfCode}" ในสถานที่นี้ หรือถูกปิดใช้งาน`,
         );
       }
+
+      // ห้อง -30°C ต้องระบุชั้น + ช่อง และช่องต้องว่าง/ไม่ถูกล็อกโดยคนอื่น
+      const rackSlot = isRackZone(zone) ? slot : null;
+      if (isRackZone(zone)) {
+        if (!rackSlot) throw new HttpError(400, "กรุณาเลือกชั้นและช่องใน rack");
+        const slotWhere = { zoneId: zone.id, shelf: shelfCode, ...rackSlot };
+        await assertNotLockedByOther(tx, slotWhere, req.user?.id);
+        await assertSlotFree(tx, slotWhere);
+      }
+      const whereLabel = rackSlot
+        ? positionLabel({ shelf: shelfCode, ...rackSlot })
+        : null;
 
       // เพิ่มเลขแบบ atomic ภายใน transaction
       const year = bkkYear();
@@ -266,19 +371,37 @@ router.post("/", async (req, res) => {
           year,
           zoneId: zone.id,
           shelf: shelfCode,
+          level: rackSlot?.level ?? null,
+          position: rackSlot?.position ?? null,
           collectionDate: new Date(collectionDate),
           status: "STORED",
-          units: { create: unitList.map((u) => ({ unitNumber: u })) },
+          units: {
+            create: unitList.map((u, i) => ({ unitNumber: u, seq: i + 1 })),
+          },
           logs: {
             create: {
               action: "STORE",
-              detail: `จัดเก็บกล่อง ${boxLabel} จำนวน ${unitList.length} units`,
+              detail:
+                `จัดเก็บกล่อง ${boxLabel} จำนวน ${unitList.length} units` +
+                (whereLabel ? ` ที่ ${whereLabel}` : ""),
               unitCount: unitList.length,
               userId: req.user?.id,
             },
           },
         },
-        include: { zone: zoneSelect, units: { select: { unitNumber: true } } },
+        include: {
+          zone: zoneSelect,
+          units: { select: { unitNumber: true }, orderBy: { seq: "asc" } },
+        },
+      }).then(async (created) => {
+        if (rackSlot) {
+          await releaseOwnLock(
+            tx,
+            { zoneId: zone.id, shelf: shelfCode, ...rackSlot },
+            req.user?.id,
+          );
+        }
+        return created;
       });
     });
 
@@ -286,16 +409,13 @@ router.post("/", async (req, res) => {
       .status(201)
       .json({ ...boxDto(box), units: box.units.map((u) => u.unitNumber) });
   } catch (error: any) {
-    if (error instanceof HttpError) {
-      res.status(error.status).json({ message: error.message, ...error.extra });
+    if (error?.code === "P2002" && !(error instanceof HttpError)) {
+      res
+        .status(409)
+        .json({ message: "ข้อมูลซ้ำ (หมายเลขกล่อง, Unit หรือช่องนี้มีกล่องแล้ว)" });
       return;
     }
-    if (error?.code === "P2002") {
-      res.status(409).json({ message: "ข้อมูลซ้ำ (หมายเลขกล่องหรือ Unit)" });
-      return;
-    }
-    console.error("POST /boxes error:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+    sendHttpError(res, error, "POST /boxes error:");
   }
 });
 
@@ -346,6 +466,86 @@ router.patch("/:id/withdraw", async (req, res) => {
   }
 });
 
+// ===== POST /api/v1/boxes/:id/withdraw =====
+// นำออกบางถุง (หรือทั้งกล่อง) — body { units: string[] }
+// ถ้าไม่เหลือถุงที่จัดเก็บ → ปิดกล่อง (level/position คงไว้เป็นประวัติ ช่องว่างเพราะ partial index)
+router.post("/:id/withdraw", async (req, res) => {
+  try {
+    const picked: string[] = Array.from(
+      new Set(
+        (Array.isArray(req.body?.units) ? req.body.units : [])
+          .map((u: unknown) => String(u).trim())
+          .filter(Boolean),
+      ),
+    );
+    if (picked.length === 0) {
+      res.status(400).json({ message: "กรุณาเลือก unit ที่จะนำออก" });
+      return;
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const box = await tx.box.findUnique({
+        where: { id: req.params.id },
+        include: { units: { where: { status: "STORED" } } },
+      });
+      if (!box) throw new HttpError(404, "ไม่พบกล่อง");
+      if (box.status === "WITHDRAWN") throw new HttpError(400, "กล่องนี้ถูกนำออกแล้ว");
+
+      if (box.level != null && box.position != null) {
+        await assertNotLockedByOther(
+          tx,
+          { zoneId: box.zoneId, shelf: box.shelf, level: box.level, position: box.position },
+          req.user?.id,
+        );
+      }
+
+      const stored = box.units.map((u) => u.unitNumber);
+      const invalid = picked.filter((u) => !stored.includes(u));
+      if (invalid.length > 0) {
+        throw new HttpError(400, `Unit ${invalid.join(", ")} ไม่ได้อยู่ในกล่องนี้`);
+      }
+
+      const now = new Date();
+      const all = picked.length === stored.length;
+
+      await tx.unit.updateMany({
+        where: { boxId: box.id, unitNumber: { in: picked }, status: "STORED" },
+        data: { status: "WITHDRAWN", withdrawnAt: now },
+      });
+      if (all) {
+        await tx.box.update({
+          where: { id: box.id },
+          data: { status: "WITHDRAWN", withdrawnAt: now },
+        });
+      }
+      await tx.logEntry.create({
+        data: {
+          action: "WITHDRAW",
+          boxId: box.id,
+          detail:
+            (all
+              ? `นำออกทั้งกล่อง ${box.boxLabel} จำนวน ${picked.length} units`
+              : `นำออก Unit ${picked.join(", ")}`) + ` จาก ${positionLabel(box)}`,
+          unitCount: picked.length,
+          userId: req.user?.id,
+        },
+      });
+      if (box.level != null && box.position != null) {
+        await releaseOwnLock(
+          tx,
+          { zoneId: box.zoneId, shelf: box.shelf, level: box.level, position: box.position },
+          req.user?.id,
+        );
+      }
+      return { allWithdrawn: all, count: picked.length, boxLabel: box.boxLabel };
+    });
+
+    res.json({ success: true, ...result });
+  } catch (error) {
+    sendHttpError(res, error, "POST /boxes/:id/withdraw error:");
+  }
+});
+
 // ===== PUT /api/v1/boxes/:id/units =====
 // แก้ไขรายการ units ในกล่อง (เพิ่ม/ลบ)
 router.put("/:id/units", async (req, res) => {
@@ -382,6 +582,12 @@ router.put("/:id/units", async (req, res) => {
 
     if (unitList.length === 0) {
       res.status(400).json({ message: "กรุณาเพิ่ม Unit อย่างน้อย 1 รายการ" });
+      return;
+    }
+    if (unitList.length > BOX_CAPACITY) {
+      res
+        .status(400)
+        .json({ message: `กล่องรับได้สูงสุด ${BOX_CAPACITY} ถุง` });
       return;
     }
 
@@ -444,6 +650,14 @@ router.put("/:id/units", async (req, res) => {
     }
 
     await prisma.$transaction(async (tx) => {
+      if (box.level != null && box.position != null) {
+        await assertNotLockedByOther(
+          tx,
+          { zoneId: box.zoneId, shelf: box.shelf, level: box.level, position: box.position },
+          req.user?.id,
+        );
+      }
+
       // ลบ units ที่ไม่อยู่ในรายการใหม่
       if (toRemove.length > 0) {
         // บันทึกข้อมูลการลบ (เลข unit, กล่อง, หมายเหตุ, ผู้ลบ, เวลา)
@@ -464,18 +678,31 @@ router.put("/:id/units", async (req, res) => {
       // เพิ่ม units ใหม่
       if (toAdd.length > 0) {
         await tx.unit.createMany({
-          data: toAdd.map((u) => ({ unitNumber: u, boxId: box.id })),
+          data: toAdd.map((u) => ({
+            unitNumber: u,
+            boxId: box.id,
+            seq: unitList.indexOf(u) + 1,
+          })),
         });
       }
 
-      // log
+      // เรียงลำดับถุงตาม array ที่ส่งมา (1 = หน้า … 10 = หลัง)
+      const reordered = storedUnits.filter((u) => unitList.includes(u.unitNumber));
+      for (const u of reordered) {
+        await tx.unit.update({
+          where: { id: u.id },
+          data: { seq: unitList.indexOf(u.unitNumber) + 1 },
+        });
+      }
+
+      // log — "แก้ไขข้อมูล · เพิ่ม A0240 · ลบ A0233 (สแกนผิดกล่อง)"
       const details: string[] = [];
-      if (toAdd.length > 0) details.push(`เพิ่ม ${toAdd.length} units`);
+      if (toAdd.length > 0) details.push(`เพิ่ม ${toAdd.join(", ")}`);
       if (toRemove.length > 0)
         details.push(
-          `ลบ ${toRemove.length} units (${toRemove
-            .map((u) => `${u.unitNumber}: ${removalNotes.get(u.unitNumber)}`)
-            .join(", ")})`,
+          `ลบ ${toRemove
+            .map((u) => `${u.unitNumber} (${removalNotes.get(u.unitNumber)})`)
+            .join(", ")}`,
         );
 
       if (details.length > 0) {
@@ -483,17 +710,32 @@ router.put("/:id/units", async (req, res) => {
           data: {
             action: "EDIT",
             boxId: box.id,
-            detail: `แก้ไขกล่อง ${box.boxLabel}: ${details.join(", ")}`,
+            detail: `แก้ไขข้อมูล ${box.boxLabel} · ${details.join(" · ")}`,
             unitCount: unitList.length,
             userId: req.user?.id,
           },
         });
       }
+
+      if (box.level != null && box.position != null) {
+        await releaseOwnLock(
+          tx,
+          { zoneId: box.zoneId, shelf: box.shelf, level: box.level, position: box.position },
+          req.user?.id,
+        );
+      }
     });
 
     const updated = await prisma.box.findUnique({
       where: { id: box.id },
-      include: { zone: zoneSelect, units: { select: { unitNumber: true } } },
+      include: {
+        zone: zoneSelect,
+        units: {
+          where: { status: "STORED" },
+          select: { unitNumber: true },
+          orderBy: [{ seq: "asc" }, { createdAt: "asc" }],
+        },
+      },
     });
 
     res.json({
@@ -501,8 +743,7 @@ router.put("/:id/units", async (req, res) => {
       units: updated!.units.map((u) => u.unitNumber),
     });
   } catch (error) {
-    console.error("PUT /boxes/:id/units error:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+    sendHttpError(res, error, "PUT /boxes/:id/units error:");
   }
 });
 
@@ -532,60 +773,98 @@ router.get("/:id/removals", async (req, res) => {
 });
 
 // ===== PATCH /api/v1/boxes/:id/location =====
-// แก้ไขตำแหน่งจัดเก็บ (สถานที่ + ชั้นวาง)
+// แก้ไขตำแหน่งจัดเก็บ (สถานที่ + ชั้นวาง [+ ชั้น/ช่อง สำหรับห้อง -30°C])
 router.patch("/:id/location", async (req, res) => {
   try {
-    const { zoneId, shelf } = req.body;
+    const { zoneId } = req.body;
+    const shelf = String(req.body.shelf ?? "").trim().toUpperCase();
 
     if (!zoneId || !shelf) {
       res.status(400).json({ message: "กรุณาระบุสถานที่และชั้นวาง" });
       return;
     }
-
-    const box = await prisma.box.findUnique({ where: { id: req.params.id } });
-    if (!box) {
-      res.status(404).json({ message: "ไม่พบกล่อง" });
-      return;
-    }
-    if (box.status === "WITHDRAWN") {
-      res
-        .status(400)
-        .json({ message: "กล่องนี้ถูกนำออกแล้ว ไม่สามารถแก้ไขตำแหน่งได้" });
-      return;
-    }
-
-    // ตรวจว่า zone + shelf มีอยู่จริง
-    const zone = await prisma.masterZone.findUnique({
-      where: { id: zoneId },
-      include: { shelves: { where: { code: shelf, active: true } } },
-    });
-    if (!zone) {
-      res.status(400).json({ message: "ไม่พบสถานที่ที่ระบุ" });
-      return;
-    }
-    if (zone.shelves.length === 0) {
-      res
-        .status(400)
-        .json({ message: `ไม่พบชั้น "${shelf}" ในสถานที่ "${zone.name}"` });
-      return;
-    }
+    const slot = parseSlot(req.body.level, req.body.position);
 
     const updated = await prisma.$transaction(async (tx) => {
+      const box = await tx.box.findUnique({ where: { id: req.params.id } });
+      if (!box) throw new HttpError(404, "ไม่พบกล่อง");
+      if (box.status === "WITHDRAWN") {
+        throw new HttpError(400, "กล่องนี้ถูกนำออกแล้ว ไม่สามารถแก้ไขตำแหน่งได้");
+      }
+
+      // ตรวจว่า zone + shelf มีอยู่จริง
+      const zone = await tx.masterZone.findUnique({
+        where: { id: zoneId },
+        include: { shelves: { where: { code: shelf, active: true } } },
+      });
+      if (!zone) throw new HttpError(400, "ไม่พบสถานที่ที่ระบุ");
+      if (zone.shelves.length === 0) {
+        throw new HttpError(400, `ไม่พบชั้น "${shelf}" ในสถานที่ "${zone.name}"`);
+      }
+
+      const rack = isRackZone(zone);
+      if (rack && !slot) throw new HttpError(400, "กรุณาเลือกชั้นและช่องปลายทาง");
+      const target = rack && slot ? slot : null;
+
+      // ต้นทางถูกคนอื่นล็อกอยู่ → ห้ามย้าย
+      if (box.level != null && box.position != null) {
+        await assertNotLockedByOther(
+          tx,
+          { zoneId: box.zoneId, shelf: box.shelf, level: box.level, position: box.position },
+          req.user?.id,
+        );
+      }
+      // ปลายทางต้องว่าง + ไม่ถูกล็อก
+      if (target) {
+        const where = { zoneId: zone.id, shelf, ...target };
+        await assertNotLockedByOther(tx, where, req.user?.id);
+        await assertSlotFree(tx, where, box.id);
+      }
+
+      const from = `${positionLabel(box)}`;
+      const to = positionLabel({ shelf, level: target?.level, position: target?.position });
+
       const result = await tx.box.update({
         where: { id: box.id },
-        data: { zoneId, shelf },
-        include: { zone: zoneSelect, units: { select: { unitNumber: true } } },
+        data: {
+          zoneId,
+          shelf,
+          level: target?.level ?? null,
+          position: target?.position ?? null,
+        },
+        include: {
+          zone: zoneSelect,
+          units: {
+            where: { status: "STORED" },
+            select: { unitNumber: true },
+            orderBy: [{ seq: "asc" }, { createdAt: "asc" }],
+          },
+        },
       });
 
       await tx.logEntry.create({
         data: {
           action: "EDIT",
           boxId: box.id,
-          detail: `แก้ไขตำแหน่งกล่อง ${box.boxLabel} → ${zone.name} ชั้น ${shelf}`,
+          detail:
+            zone.id === box.zoneId
+              ? `ย้ายตำแหน่ง ${box.boxLabel} ${from} → ${to}`
+              : `ย้ายตำแหน่ง ${box.boxLabel} ${from} → ${zone.name} ${to}`,
           unitCount: 0,
           userId: req.user?.id,
         },
       });
+
+      if (box.level != null && box.position != null) {
+        await releaseOwnLock(
+          tx,
+          { zoneId: box.zoneId, shelf: box.shelf, level: box.level, position: box.position },
+          req.user?.id,
+        );
+      }
+      if (target) {
+        await releaseOwnLock(tx, { zoneId: zone.id, shelf, ...target }, req.user?.id);
+      }
 
       return result;
     });
@@ -595,8 +874,7 @@ router.patch("/:id/location", async (req, res) => {
       units: updated.units.map((u) => u.unitNumber),
     });
   } catch (error) {
-    console.error("PATCH /boxes/:id/location error:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+    sendHttpError(res, error, "PATCH /boxes/:id/location error:");
   }
 });
 

@@ -23,6 +23,7 @@ model User {
 
   logs         LogEntry[]
   unitRemovals UnitRemoval[]
+  slotLocks    SlotLock[]
 
   @@map("users")
 }
@@ -43,6 +44,7 @@ model Unit {
   unitNumber String     @unique @map("unit_number")
   boxId      String     @map("box_id")
   status      UnitStatus @default(STORED)
+  seq         Int?       // ลำดับถุงในกล่อง 1 = หน้า (ฝาเปิด) … 10 = หลัง
   withdrawnAt DateTime?  @map("withdrawn_at")
   createdAt   DateTime   @default(now()) @map("created_at")
 
@@ -142,6 +144,7 @@ model MasterZone {
   sort      Int           @default(0)
   shelves   MasterShelf[]
   boxes Box[]
+  slotLocks SlotLock[]
 
 
   @@map("master_zones")
@@ -191,6 +194,8 @@ model Box {
   year           Int
   zoneId         String    @map("zone_id")
   shelf          String
+  level          Int?      // ชั้นใน rack 1–5 (1 = บนสุด) — เฉพาะห้อง -30°C
+  position       Int?      // ช่องในชั้น 1–20 — เฉพาะห้อง -30°C
   collectionDate DateTime  @map("collection_date") @db.Date
   status         BoxStatus @default(STORED)
   storedAt       DateTime  @default(now()) @map("stored_at")
@@ -213,3 +218,22 @@ model Box {
 
 }
 
+// ===== ล็อกช่อง rack ระหว่างมีคนแก้ไข (TTL 60s) =====
+// unique (zone, shelf, level, position) — กล่องในช่องเดียวกันกันด้วย partial index ใน migration
+model SlotLock {
+  id        String   @id @default(cuid())
+  zoneId    String   @map("zone_id")
+  shelf     String
+  level     Int
+  position  Int
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  zone MasterZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([zoneId, shelf, level, position])
+  @@index([expiresAt])
+  @@map("slot_locks")
+}

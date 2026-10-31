@@ -13,6 +13,8 @@ export interface WithdrawBoxItem {
   location: string
   zoneName?: string
   shelf: string
+  level?: number | null
+  position?: number | null
   collectionDate: string
   units: string[]
   status: BoxStatus
@@ -37,6 +39,8 @@ export interface WithdrawBoxDetail {
   location: string
   zoneName?: string
   shelf: string
+  level?: number | null
+  position?: number | null
   collectionDate: string
   units: WithdrawUnitInfo[]
   unitCount: number

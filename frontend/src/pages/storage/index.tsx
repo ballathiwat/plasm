@@ -10,6 +10,12 @@ import BarcodeLabel from "./components/BarcodeLabel";
 
 const StoragePage = () => {
   const {
+    isRackZone,
+    rackLevel,
+    setRackLevel,
+    rackPosition,
+    setRackPosition,
+    freeSlots,
     boxes,
     loading,
     form,
@@ -69,6 +75,12 @@ const StoragePage = () => {
         onUnitKeyDown={handleUnitKeyDown}
         onRemoveUnit={handleRemoveUnit}
         onSubmit={handleSubmit}
+        isRackZone={isRackZone}
+        rackLevel={rackLevel}
+        rackPosition={rackPosition}
+        freeSlots={freeSlots}
+        onRackLevelChange={setRackLevel}
+        onRackPositionChange={setRackPosition}
       />
 
       <StorageBoxList

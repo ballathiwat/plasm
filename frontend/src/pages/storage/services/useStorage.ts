@@ -14,6 +14,11 @@ import type {
 } from "./StorageType";
 import type { BarcodeLabelData } from "../components/BarcodeLabel";
 import type { PaginationInfo } from "../../../components/shared/Pagination";
+import {
+  BOX_CAPACITY,
+  POSITION_LIST,
+  ROOM_LEGACY_KEY,
+} from "../../../helpers/rack";
 
 const EMPTY_FORM: StorageFormData = {
   boxName: "",
@@ -42,6 +47,10 @@ export default function useStorage() {
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1, pageSize: 20, total: 0, totalPages: 0,
   });
+  // ── ตำแหน่งใน rack (เฉพาะห้อง -30°C) ──
+  const [rackLevel, setRackLevel] = useState(1);
+  const [rackPosition, setRackPosition] = useState<number | null>(null);
+  const [occupied, setOccupied] = useState<Record<number, number[]>>({});
 
   // ── Load boxes (paginated) ──
   const loadBoxes = useCallback(async (page = 1, pageSize = 20) => {
@@ -131,6 +140,42 @@ export default function useStorage() {
     [master.zones, form.zoneId],
   );
 
+  // ── ห้อง -30°C: โหลดช่องที่ถูกใช้ของ rack ที่เลือก ──
+  const isRackZone =
+    master.zones.find((z) => z.id === form.zoneId)?.legacyKey === ROOM_LEGACY_KEY;
+
+  const freeSlots = useCallback(
+    (lv: number) => POSITION_LIST.filter((p) => !(occupied[lv] ?? []).includes(p)),
+    [occupied],
+  );
+
+  const loadOccupancy = useCallback(async () => {
+    if (!isRackZone || !form.zoneId || !form.shelf) {
+      setOccupied({});
+      return;
+    }
+    try {
+      setOccupied(await storageService.getRackOccupancy(form.zoneId, form.shelf));
+    } catch {
+      setOccupied({});
+    }
+  }, [isRackZone, form.zoneId, form.shelf]);
+
+  useEffect(() => {
+    loadOccupancy();
+  }, [loadOccupancy]);
+
+  // เลือกช่องว่างแรกของชั้นอัตโนมัติ
+  useEffect(() => {
+    if (!isRackZone) {
+      setRackPosition(null);
+      return;
+    }
+    setRackPosition((cur) =>
+      cur && freeSlots(rackLevel).includes(cur) ? cur : (freeSlots(rackLevel)[0] ?? null),
+    );
+  }, [isRackZone, rackLevel, freeSlots]);
+
   // ── Form handlers ──
   const handleFormChange = (field: keyof StorageFormData, value: string) => {
     setForm((f) => {
@@ -199,14 +244,18 @@ export default function useStorage() {
       .filter(Boolean);
     const dupes: string[] = [];
     const added: string[] = [];
+    let overflow = false;
 
     for (const u of newUnits) {
       if (scannedUnits.includes(u) || added.includes(u)) dupes.push(u);
+      else if (scannedUnits.length + added.length >= BOX_CAPACITY) overflow = true;
       else added.push(u);
     }
 
     if (added.length > 0) setScannedUnits((prev) => [...prev, ...added]);
-    if (dupes.length > 0)
+    if (overflow)
+      setToast({ type: "error", msg: `กล่องเต็มแล้ว (สูงสุด ${BOX_CAPACITY} ถุง)` });
+    else if (dupes.length > 0)
       setToast({ type: "error", msg: `Unit ซ้ำ: ${dupes.join(", ")}` });
     setUnitInput("");
   };
@@ -235,6 +284,10 @@ export default function useStorage() {
       });
       return;
     }
+    if (isRackZone && !rackPosition) {
+      setToast({ type: "error", msg: "กรุณาเลือกชั้นและช่องใน rack" });
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -246,6 +299,9 @@ export default function useStorage() {
         shelf: form.shelf,
         collectionDate: form.collectionDate,
         units: scannedUnits,
+        ...(isRackZone && rackPosition
+          ? { level: rackLevel, position: rackPosition }
+          : {}),
       });
 
       setToast({
@@ -258,8 +314,10 @@ export default function useStorage() {
       setForm((f) => ({ ...f, boxName: "" }));
       loadBoxes(1, pagination.pageSize);
       refreshNextLabel(form.type, form.blood);
+      loadOccupancy();
     } catch (err: any) {
       setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
+      if (err?.statusCode === 409) loadOccupancy();
     } finally {
       setSubmitting(false);
     }
@@ -272,7 +330,10 @@ export default function useStorage() {
       type: box.type,
       blood: box.blood,
       location: box.zoneName || String(box.location),
-      shelf: box.shelf,
+      shelf:
+        box.level != null && box.position != null
+          ? `${box.shelf}-${box.level} ช่อง ${box.position}`
+          : box.shelf,
       collectionDate: box.collectionDate,
       unitCount: box.units.length,
     });
@@ -316,6 +377,12 @@ export default function useStorage() {
   };
 
   return {
+    isRackZone,
+    rackLevel,
+    setRackLevel,
+    rackPosition,
+    setRackPosition,
+    freeSlots,
     boxes,
     loading,
     pagination,
