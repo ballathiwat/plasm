@@ -6,6 +6,7 @@ import { Package, MapPin, Calendar, Droplets, Search, Box, LogOut } from "lucide
 import type { SearchBoxGroup } from "../services/SearchType";
 import { groupSurface, groupInk } from "../../../helpers/blood";
 import { zoneLabel } from "../../../helpers/zone";
+import { positionLabel } from "../../../helpers/rack";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString("th-TH", {
@@ -201,7 +202,7 @@ export default function SearchResults({
                     style={{ display: "flex", alignItems: "center", gap: 3 }}
                   >
                     <MapPin size={11} /> {zoneLabel(box.zoneName, box.location)}{" "}
-                    · ชั้น {box.shelf}
+                    · {positionLabel(box)}
                   </span>
                   <span
                     style={{ display: "flex", alignItems: "center", gap: 3 }}

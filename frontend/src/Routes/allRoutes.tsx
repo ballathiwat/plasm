@@ -9,6 +9,7 @@ import StoragePage from '../pages/storage'
 import WithdrawPage from '../pages/withdraw'
 import SearchPage from '../pages/search'
 import MapPage from '../pages/map'
+import RackPage from '../pages/rack'
 import LogPage from '../pages/log'
 import SettingsPage from '../pages/settings'
 import ProfilePage from '../pages/profile'
@@ -29,6 +30,7 @@ const authProtectedRoutes: RouteConfig[] = [
   { path: '/withdraw', component: <WithdrawPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/search', component: <SearchPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/map', component: <MapPage />, roles: ['ADMIN', 'STAFF'] },
+  { path: '/map/rack/:code', component: <RackPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/log', component: <LogPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/report', component: <ReportPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/report/daily', component: <DailyReportPage />, roles: ['ADMIN', 'STAFF'] },

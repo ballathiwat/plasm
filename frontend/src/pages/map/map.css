@@ -1,0 +1,13 @@
+/* src/pages/map/map.css */
+.map-shelf-tile {
+  display: block; width: 100%; padding: 14px; text-align: left; font: inherit; color: inherit;
+  border-radius: var(--radius-md, 8px); transition: box-shadow .15s, transform .15s;
+}
+button.map-shelf-tile { cursor: pointer; }
+button.map-shelf-tile:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+button.map-shelf-tile:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.map-shelf-tile__open { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 600; color: var(--primary); }
+@media (prefers-reduced-motion: reduce) {
+  button.map-shelf-tile { transition: none; }
+  button.map-shelf-tile:hover { transform: none; }
+}

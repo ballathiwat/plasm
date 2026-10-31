@@ -17,6 +17,8 @@ export function boxDto(b: any) {
     zoneId: b.zoneId,
     zoneName: b.zone?.name ?? '',
     shelf: b.shelf,
+    level: b.level ?? null,
+    position: b.position ?? null,
     collectionDate: b.collectionDate.toISOString().split('T')[0],
     status: b.status.toLowerCase(),
     storedAt: b.storedAt.toISOString(),

@@ -17,6 +17,8 @@ export interface SearchUnitResult {
     location: string
     zoneName?: string
     shelf: string
+    level?: number | null
+    position?: number | null
     status: BoxStatus
     collectionDate: string
     boxName?: string | null

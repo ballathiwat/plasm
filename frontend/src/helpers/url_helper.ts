@@ -17,6 +17,8 @@ export const GET_BOXES = `${API}/boxes`
 export const GET_BOX_DETAIL = `${API}/boxes`       // + /:id
 export const POST_BOX = `${API}/boxes`
 export const PATCH_BOX_WITHDRAW = `${API}/boxes`    // + /:id/withdraw
+export const GET_BOX_SEARCH = `${API}/boxes/search` // ?q= (กล่อง + unit ที่จัดเก็บอยู่)
+export const POST_BOX_WITHDRAW_UNITS = `${API}/boxes` // + /:id/withdraw  { units: string[] }
 
 // ===== Units =====
 export const GET_UNITS = `${API}/units`
@@ -47,3 +49,7 @@ export const MASTER_BLOOD_TYPES = `${API}/master/blood-types`
 export const MASTER_ZONES = `${API}/master/zones`
 export const MASTER_SHELVES = `${API}/master/shelves`
 export const MASTER_REMOVAL_REASONS = `${API}/master/removal-reasons`
+
+// ===== Rack (ห้อง -30°C) =====
+export const GET_RACK = `${API}/master/zones`       // + /:zoneId/racks/:shelf
+export const SLOT_LOCKS = `${API}/locks`            // POST · PUT /:id (heartbeat) · DELETE /:id

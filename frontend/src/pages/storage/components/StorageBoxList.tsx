@@ -3,6 +3,7 @@
 // ============================================================
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Pencil, Printer, Search, X, Plus, MapPin, Undo2 } from "lucide-react";
 import type {
   StorageBoxItem,
@@ -15,6 +16,7 @@ import storageService from "../services/StorageService";
 import { groupSurface, groupInk } from "../../../helpers/blood";
 import { Pagination } from "../../../components/shared";
 import type { PaginationInfo } from "../../../components/shared";
+import { ROOM_LEGACY_KEY, hasRackPosition, rackUrl } from "../../../helpers/rack";
 
 interface Props {
   boxes: StorageBoxItem[];
@@ -44,6 +46,7 @@ export default function StorageBoxList({
   onPageChange,
   onPageSizeChange,
 }: Props) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [editingBox, setEditingBox] = useState<StorageBoxItem | null>(null);
   const [editUnits, setEditUnits] = useState<string[]>([]);
@@ -474,7 +477,10 @@ export default function StorageBoxList({
                 >
                   {box.zoneName ||
                     (box.location === "room" ? "ห้อง -30°C" : "ตู้ -30°C")}{" "}
-                  · {box.shelf}{" "}
+                  ·{" "}
+                  {hasRackPosition(box)
+                    ? `${box.shelf}-${box.level} ช่อง ${box.position}`
+                    : box.shelf}{" "}
                 </span>
               </div>
             </div>
@@ -1059,6 +1065,50 @@ export default function StorageBoxList({
               </select>
             </div>
 
+            {/* ห้อง -30°C ต้องเลือกชั้น/ช่อง → ทำที่หน้า rack */}
+            {zones.find((z) => z.id === locZoneId)?.legacyKey === ROOM_LEGACY_KEY && (
+              <div
+                style={{
+                  marginTop: -8,
+                  marginBottom: 16,
+                  padding: "8px 10px",
+                  borderRadius: 6,
+                  background: "var(--primary-surface)",
+                  color: "var(--primary)",
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                }}
+              >
+                ห้อง -30°C ต้องระบุชั้นและช่องใน rack — เปิดหน้า rack แล้วใช้ปุ่ม "ย้าย" ที่กล่องนี้
+                <div style={{ marginTop: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const here = locBox.zoneId === locZoneId && locBox.shelf === locShelf;
+                      navigate(
+                        here
+                          ? rackUrl(locShelf, locBox.level, locBox.position)
+                          : rackUrl(locShelf),
+                      );
+                    }}
+                    disabled={!locShelf}
+                    style={{
+                      padding: 0,
+                      border: "none",
+                      background: "none",
+                      color: "var(--primary)",
+                      fontWeight: 600,
+                      fontSize: 12,
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    เปิด Rack {locShelf} ›
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Actions */}
             <div style={{ display: "flex", gap: 8 }}>
               <button
@@ -1066,7 +1116,11 @@ export default function StorageBoxList({
                   onEditLocation(locBox.id, locZoneId, locShelf);
                   setLocBox(null);
                 }}
-                disabled={!locZoneId || !locShelf}
+                disabled={
+                  !locZoneId ||
+                  !locShelf ||
+                  zones.find((z) => z.id === locZoneId)?.legacyKey === ROOM_LEGACY_KEY
+                }
                 style={{
                   flex: 1,
                   padding: "10px 0",
@@ -1077,7 +1131,12 @@ export default function StorageBoxList({
                   fontWeight: 600,
                   fontSize: 14,
                   cursor: "pointer",
-                  opacity: !locZoneId || !locShelf ? 0.5 : 1,
+                  opacity:
+                    !locZoneId ||
+                    !locShelf ||
+                    zones.find((z) => z.id === locZoneId)?.legacyKey === ROOM_LEGACY_KEY
+                      ? 0.5
+                      : 1,
                 }}
               >
                 บันทึกตำแหน่ง

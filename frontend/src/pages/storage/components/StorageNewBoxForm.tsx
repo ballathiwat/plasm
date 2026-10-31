@@ -16,6 +16,12 @@ import type {
 } from "../services/StorageType";
 import StorageQuickAdd from "./StorageQuickAdd";
 import Button from "../../../components/common/Button";
+import {
+  BOX_CAPACITY,
+  LEVEL_LIST,
+  slotLabel,
+} from "../../../helpers/rack";
+import "../../rack/rack.css";
 
 const inputStyle: React.CSSProperties = {
   padding: "10px 14px",
@@ -50,6 +56,13 @@ interface Props {
   onUnitKeyDown: (e: React.KeyboardEvent) => void;
   onRemoveUnit: (unit: string) => void;
   onSubmit: () => void;
+  /** ห้อง -30°C → ต้องเลือกชั้น/ช่องใน rack */
+  isRackZone: boolean;
+  rackLevel: number;
+  rackPosition: number | null;
+  freeSlots: (level: number) => number[];
+  onRackLevelChange: (level: number) => void;
+  onRackPositionChange: (position: number | null) => void;
 }
 
 /* ----------------------------------------------------------
@@ -78,8 +91,24 @@ export default function StorageNewBoxForm({
   onUnitKeyDown,
   onRemoveUnit,
   onSubmit,
+  isRackZone,
+  rackLevel,
+  rackPosition,
+  freeSlots,
+  onRackLevelChange,
+  onRackPositionChange,
 }: Props) {
-  const ready = !!(form.type && form.blood && form.zoneId && form.shelf);
+  const ready =
+    !!(form.type && form.blood && form.zoneId && form.shelf) &&
+    (!isRackZone || !!rackPosition);
+  const full = scannedUnits.length >= BOX_CAPACITY;
+
+  const levelOpts: OptionType[] = LEVEL_LIST.map((l) =>
+    toOption(String(l), `ชั้น ${l} · ว่าง ${freeSlots(l).length} ช่อง`),
+  );
+  const posOpts: OptionType[] = freeSlots(rackLevel).map((p) =>
+    toOption(String(p), slotLabel(p)),
+  );
 
   // Memoize options เพื่อไม่ re-create ทุก render
   const plasmaOpts = useMemo<OptionType[]>(
@@ -241,12 +270,42 @@ export default function StorageNewBoxForm({
             onAdd={(v) => onQuickAdd("shelf", v)}
           />
         </div>
+
+        {/* ชั้น / ช่องใน rack (เฉพาะห้อง -30°C) */}
+        {isRackZone && (
+          <>
+            <div>
+              <SelectDropdown
+                label="ชั้น (1 = บนสุด)"
+                options={levelOpts}
+                value={findOption(levelOpts, String(rackLevel))}
+                onChange={(o) => o && onRackLevelChange(Number(o.value))}
+                isClearable={false}
+                isSearchable={false}
+                disabled={!form.shelf}
+              />
+            </div>
+            <div>
+              <SelectDropdown
+                label="ช่องในชั้น"
+                placeholder={posOpts.length ? "เลือกช่อง..." : "ชั้นนี้เต็มแล้ว"}
+                options={posOpts}
+                value={rackPosition ? findOption(posOpts, String(rackPosition)) : null}
+                onChange={(o) => onRackPositionChange(o ? Number(o.value) : null)}
+                isClearable={false}
+                isSearchable={false}
+                noOptionsMessage="ชั้นนี้ไม่มีช่องว่าง"
+                disabled={!form.shelf}
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Unit input */}
+      {/* Unit input — สแกนถุงที่ 1–10 เรียงจากหน้าไปหลัง */}
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>
-          Unit ที่สแกนแล้ว · {scannedUnits.length} units
+          สแกนถุง
           <span
             style={{
               fontWeight: 400,
@@ -254,61 +313,77 @@ export default function StorageNewBoxForm({
               marginLeft: 8,
             }}
           >
-            (ตรวจจับ Unit ซ้ำอัตโนมัติ)
+            (ตรวจจับ Unit ซ้ำอัตโนมัติ · สูงสุด {BOX_CAPACITY} ถุง)
           </span>
         </label>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           <input
             type="text"
-            placeholder="พิมพ์หรือสแกนหมายเลข Unit แล้วกด Enter"
+            aria-label="สแกนหมายเลข Unit"
+            placeholder={
+              full
+                ? "กล่องเต็มแล้ว"
+                : `สแกนถุงที่ ${scannedUnits.length + 1} แล้วกด Enter`
+            }
             value={unitInput}
+            disabled={full}
             onChange={(e) => onUnitInputChange(e.target.value)}
             onKeyDown={onUnitKeyDown}
             style={{ ...inputStyle, fontFamily: "var(--font-mono)" }}
           />
-          <Button variant="outline" onClick={onAddUnit}>
+          <Button variant="outline" onClick={onAddUnit} disabled={full}>
             เพิ่ม
           </Button>
         </div>
 
-        {scannedUnits.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {scannedUnits.map((unit) => (
-              <span
-                key={unit}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "6px 12px",
-                  borderRadius: "var(--radius-sm, 6px)",
-                  border: "1px solid var(--border, #E4E4E7)",
-                  background: "var(--surface, #fff)",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "var(--primary, #2563EB)",
-                }}
+        <div className="bag-grid-head">
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>
+            หน้า (เปิดฝา) → หลัง
+          </span>
+          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            {scannedUnits.length}/{BOX_CAPACITY} ถุง
+          </span>
+        </div>
+        <ol className="bag-grid" aria-label="ลำดับถุงในกล่อง จากหน้าไปหลัง" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {Array.from({ length: BOX_CAPACITY }, (_, i) => i + 1).map((n) => {
+            const unit = scannedUnits[n - 1];
+            const next = !unit && n === scannedUnits.length + 1;
+            return (
+              <li
+                key={n}
+                className={`bag${unit ? " bag--filled" : ""}${next ? " bag--next" : ""}`}
+                style={unit ? { background: "var(--primary-surface)" } : undefined}
               >
-                {unit}
-                <button
-                  onClick={() => onRemoveUnit(unit)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: 0,
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  <X size={13} color="var(--text-secondary)" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
+                <span className="bag__row">
+                  <span className="bag__no">ถุงที่ {n}</span>
+                  {unit && (
+                    <button
+                      type="button"
+                      className="bag__x"
+                      style={{ marginLeft: "auto" }}
+                      aria-label={`ลบ ${unit}`}
+                      onClick={() => onRemoveUnit(unit)}
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </span>
+                {unit ? (
+                  <span className="bag__unit" style={{ color: "var(--primary)" }}>{unit}</span>
+                ) : (
+                  <span className="bag__empty">{next ? "สแกนถัดไป" : "ว่าง"}</span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+        <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "8px 0 0" }}>
+          สแกนถุงที่ 1–{BOX_CAPACITY} เรียงจากหน้าไปหลัง
+          {isRackZone && rackPosition
+            ? ` · จะวางที่ ${form.shelf}-${rackLevel} ช่อง ${rackPosition}`
+            : ""}
+        </p>
       </div>
 
       {/* Submit */}

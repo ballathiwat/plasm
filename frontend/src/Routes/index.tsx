@@ -42,10 +42,15 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   // ต้อง match path ที่ยาวกว่าก่อน (เช่น /report/daily ก่อน /report)
+  // หน้าย่อย (เช่น /map/rack/L1) ให้เมนูแม่ active
   const activeModule =
     Object.entries(PATH_TO_MODULE)
       .sort((a, b) => b[0].length - a[0].length)
-      .find(([path]) => location.pathname === path)?.[1] || "dashboard";
+      .find(
+        ([path]) =>
+          location.pathname === path ||
+          (path !== "/" && location.pathname.startsWith(`${path}/`)),
+      )?.[1] || "dashboard";
 
   const handleNavigate = (key: string) => {
     const path = MODULE_TO_PATH[key];

@@ -18,6 +18,10 @@ export interface StorageBoxItem {
   zoneId?: string
   zoneName?: string
   shelf: string
+  /** ชั้นใน rack 1–5 (เฉพาะห้อง -30°C) */
+  level?: number | null
+  /** ช่องในชั้น 1–20 (เฉพาะห้อง -30°C) */
+  position?: number | null
   collectionDate: string
   units: string[]
   status: BoxStatus
@@ -54,6 +58,7 @@ export interface MasterShelf {
 export interface MasterZone {
   id: string
   name: string
+  legacyKey?: string | null
   active: boolean
   shelves: MasterShelf[]
 }
@@ -70,6 +75,8 @@ export interface CreateBoxPayload {
   blood: string
   zoneId: string
   shelf: string
+  level?: number
+  position?: number
   collectionDate: string
   units: string[]
 }
