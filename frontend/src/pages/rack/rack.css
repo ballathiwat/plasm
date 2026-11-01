@@ -79,7 +79,7 @@
 .rack-slot__top { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
 .rack-slot__no { font-size: 12px; font-weight: 700; color: var(--text-secondary); }
 .rack-slot__blood { font-size: 16px; font-weight: 800; }
-.rack-slot__label { font-family: var(--font-mono); font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rack-slot__label { font-family: var(--font-mono); font-size: 11px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
 .rack-slot__count { font-size: 12px; white-space: nowrap; }
 .rack-slot__empty { font-size: 11px; color: var(--text-disabled); }
 .rack-slot--pending .rack-slot__empty { color: var(--primary); font-weight: 600; }

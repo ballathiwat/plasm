@@ -51,7 +51,7 @@ function RackSlot({ p, box, selected, pending, lockedBy, onSelect }: SlotProps) 
       </span>
       {box ? (
         <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <span className="rack-slot__label" style={{ color: ink }}>{box.boxLabel.split(/[_-]/).pop()}</span>
+          <span className="rack-slot__label" title={box.boxLabel} style={{ color: ink }}>{box.boxLabel}</span>
           <span className="rack-slot__count" style={{ color: ink }}>{box.units.length}/{BOX_CAPACITY}</span>
         </span>
       ) : (
