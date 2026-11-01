@@ -94,9 +94,23 @@ export default function useMap() {
     for (const b of boxes) {
       if (!map[b.blood]) map[b.blood] = { oldest: null, newest: null };
       const entry = map[b.blood];
-      if (!entry.oldest || b.collectionDate < entry.oldest.collectionDate)
+
+      // เก่าสุด: วันที่น้อยกว่า หรือ วันที่เท่ากันแต่เลขลำดับน้อยกว่า
+      if (
+        !entry.oldest ||
+        b.collectionDate < entry.oldest.collectionDate ||
+        (b.collectionDate === entry.oldest.collectionDate &&
+          b.boxLabel < entry.oldest.boxLabel)
+      )
         entry.oldest = b;
-      if (!entry.newest || b.collectionDate > entry.newest.collectionDate)
+
+      // ใหม่สุด: วันที่มากกว่า หรือ วันที่เท่ากันแต่เลขลำดับมากกว่า
+      if (
+        !entry.newest ||
+        b.collectionDate > entry.newest.collectionDate ||
+        (b.collectionDate === entry.newest.collectionDate &&
+          b.boxLabel > entry.newest.boxLabel)
+      )
         entry.newest = b;
     }
 
@@ -123,5 +137,12 @@ export default function useMap() {
   const totalBoxes = zoneSummaries.reduce((s, z) => s + z.totalBoxes, 0);
   const totalUnits = zoneSummaries.reduce((s, z) => s + z.totalUnits, 0);
 
-  return { zones: zoneSummaries, bloodOrder, bloodAgeMap, totalBoxes, totalUnits, loading };
+  return {
+    zones: zoneSummaries,
+    bloodOrder,
+    bloodAgeMap,
+    totalBoxes,
+    totalUnits,
+    loading,
+  };
 }
