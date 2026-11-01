@@ -1085,11 +1085,13 @@ export default function StorageBoxList({
                     type="button"
                     onClick={() => {
                       const here = locBox.zoneId === locZoneId && locBox.shelf === locShelf;
-                      navigate(
-                        here
-                          ? rackUrl(locShelf, locBox.level, locBox.position)
-                          : rackUrl(locShelf),
-                      );
+                      if (here) {
+                        navigate(rackUrl(locShelf, locBox.level, locBox.position), {
+                          state: { openBox: true },
+                        });
+                      } else {
+                        navigate(rackUrl(locShelf));
+                      }
                     }}
                     disabled={!locShelf}
                     style={{

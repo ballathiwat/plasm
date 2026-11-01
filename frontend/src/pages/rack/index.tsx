@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, CircleCheck, Info, Layers } from 'lucide-react'
 import { ConfirmModal } from '../../components/common/Modal'
 import StorageToast from '../storage/components/StorageToast'
@@ -15,17 +15,27 @@ import useRack from './services/useRack'
 import RackSearch from './components/RackSearch'
 import RackLevelPicker from './components/RackLevelPicker'
 import RackLevelPlan from './components/RackLevelPlan'
-import RackBoxPanel, { RackEmptyPanel } from './components/RackBoxPanel'
+import RackBoxModal from './components/RackBoxModal'
 import RackAddBoxModal, { type SavedBox } from './components/RackAddBoxModal'
 import type { ApiError, PanelMode, RackBox, RackSearchResult } from './services/RackType'
 import './rack.css'
 
 const NOTICE_MS = 3500
 
+/** state ที่ส่งมากับการ navigate เข้าหน้า rack */
+export interface RackNavState {
+  /** เปิด modal กล่องที่ ?slot= เมื่อโหลดเสร็จ (จากผลค้นหา / ลิงก์จากหน้าอื่น) */
+  openBox?: boolean
+  /** คงช่องที่เลือกไว้ (หลังย้ายกล่องข้าม rack) */
+  keepSlot?: boolean
+}
+
 export default function RackPage() {
   const { code: rawCode = '' } = useParams<{ code: string }>()
   const code = rawCode.toUpperCase()
   const navigate = useNavigate()
+  const location = useLocation()
+  const navState = (location.state ?? null) as RackNavState | null
 
   const {
     zone, rackCodes, plasmaTypes, bloodTypes, reasons,
@@ -34,6 +44,7 @@ export default function RackPage() {
   } = useRack(code)
 
   const [mode, setMode] = useState<PanelMode>('view')
+  const [boxOpen, setBoxOpen] = useState(false)
   const [adding, setAdding] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [askDiscard, setAskDiscard] = useState<null | (() => void)>(null)
@@ -53,6 +64,20 @@ export default function RackPage() {
     const t = setTimeout(() => setToast(null), 4000)
     return () => clearTimeout(t)
   }, [toast])
+
+  // ── เข้าหน้า / สลับ rack: ไม่เลือกช่องอัตโนมัติ เว้นแต่มาจากผลค้นหาหรือการย้าย ──
+  useEffect(() => {
+    setBoxOpen(false)
+    if (!navState?.openBox && !navState?.keepSlot && slot) select({ slot: null })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code])
+
+  // เปิด modal กล่องหลังโหลด rack เสร็จ (มาจากผลค้นหาข้าม rack / ลิงก์จากหน้าอื่น)
+  useEffect(() => {
+    if (!navState?.openBox || !rack || !currentLevel || !slot) return
+    if (currentLevel.slots[slot]) setBoxOpen(true)
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: null })
+  }, [navState, rack, currentLevel, slot, navigate, location.pathname, location.search])
 
   // ── derived ──
   const box: RackBox | undefined = slot && currentLevel ? currentLevel.slots[slot] : undefined
@@ -77,6 +102,13 @@ export default function RackPage() {
     setDirty(false)
     void release()
   }, [release])
+
+  /** ปิด modal กล่อง (ผ่าน discard guard) */
+  const closeBox = () => guard(() => {
+    leaveEdit()
+    setBoxOpen(false)
+    setHighlight(null)
+  })
 
   /** ถ้ามีข้อมูลค้าง → ถามก่อน */
   const guard = (fn: () => void) => {
@@ -122,27 +154,36 @@ export default function RackPage() {
   // ── navigation ──
   const pickLevel = (lv: number) => guard(() => {
     leaveEdit()
+    setBoxOpen(false)
     setHighlight(null)
     select({ level: lv, slot: null })
   })
 
-  const pickSlot = (p: number) => {
-    const empty = !currentLevel?.slots[p]
-    const free = empty && !lockOf(level, p)
-    if (p === slot && (adding || mode !== 'view')) return
-    guard(() => {
-      leaveEdit()
-      setHighlight(null)
+  const pickSlot = (p: number) => guard(() => {
+    leaveEdit()
+    setHighlight(null)
+    const hasBox = !!currentLevel?.slots[p]
+    const lockedBy = lockOf(level, p)
+    if (hasBox) {
+      // ช่องมีกล่อง → เปิด modal (ถ้าถูกล็อกจะดูได้อย่างเดียว)
       select({ slot: p })
-      // คลิกช่องว่าง → เปิด "กล่องใหม่" ทันที
-      if (free) void openAdd(p)
-    })
-  }
+      setBoxOpen(true)
+    } else if (lockedBy) {
+      setBoxOpen(false)
+      setToast({ type: 'error', msg: `${lockedBy} กำลังใช้ช่อง ${p} อยู่` })
+    } else {
+      // ช่องว่าง → modal เพิ่มกล่อง
+      setBoxOpen(false)
+      select({ slot: p })
+      void openAdd(p)
+    }
+  })
 
   const switchRack = (c: string) => {
     if (c === code) return
     guard(() => {
       leaveEdit()
+      setBoxOpen(false)
       setHighlight(null)
       navigate(rackUrl(c))
     })
@@ -158,8 +199,14 @@ export default function RackPage() {
       return
     }
     setHighlight(r.matchedUnit)
-    if (r.shelf.toUpperCase() !== code) navigate(rackUrl(r.shelf, r.level, r.position))
-    else select({ level: r.level, slot: r.position })
+    if (r.shelf.toUpperCase() !== code) {
+      // อยู่ rack อื่น → สลับ rack ก่อน แล้วเปิด modal เมื่อโหลดเสร็จ
+      setBoxOpen(false)
+      navigate(rackUrl(r.shelf, r.level, r.position), { state: { openBox: true } satisfies RackNavState })
+    } else {
+      select({ level: r.level, slot: r.position })
+      setBoxOpen(true)
+    }
   })
 
   // ── results ──
@@ -175,12 +222,13 @@ export default function RackPage() {
     })
   }
 
-  const onPanelDone = (msg: string, jump?: { code: string; level: number; position: number }) => {
+  const onBoxDone = (msg: string, jump?: { code: string; level: number; position: number }) => {
     leaveEdit()
+    setBoxOpen(false)
     setHighlight(null)
-    setNotice({ tone: 'success', msg })
+    setToast({ type: 'success', msg })
     if (jump && jump.code !== code) {
-      navigate(rackUrl(jump.code, jump.level, jump.position))
+      navigate(rackUrl(jump.code, jump.level, jump.position), { state: { keepSlot: true } satisfies RackNavState })
       return
     }
     if (jump) select({ level: jump.level, slot: jump.position })
@@ -190,7 +238,7 @@ export default function RackPage() {
   const onAddSaved = (b: SavedBox) => {
     if (!slot) return
     leaveEdit()
-    setNotice({ tone: 'success', msg: `จัดเก็บ ${b.boxLabel} ที่ ${code}-${level} ช่อง ${slot} แล้ว` })
+    setToast({ type: 'success', msg: `จัดเก็บ ${b.boxLabel} ที่ ${code}-${level} ช่อง ${slot} แล้ว` })
     toPrint(b, level, slot)
     void refetch()
   }
@@ -277,27 +325,34 @@ export default function RackPage() {
             onSelect={pickSlot}
           />
 
-          {box ? (
-            <RackBoxPanel
-              code={code}
-              zoneId={zone.id}
-              box={box}
-              levels={rack.levels}
-              rackCodes={tabs}
-              reasons={reasons}
-              mode={mode}
-              lockedBy={slotLockedBy}
-              highlight={highlight}
-              onMode={(m) => void changeMode(m)}
-              onDirty={setDirty}
-              onPrint={(b) => toPrint(b, b.level, b.position)}
-              onDone={onPanelDone}
-              onError={handleConflict}
-            />
-          ) : (
-            <RackEmptyPanel position={slot} lockedBy={slotLockedBy} onAdd={() => void openAdd()} />
-          )}
         </div>
+      )}
+
+      {zone && rack && (
+        <RackBoxModal
+          open={boxOpen && !!box}
+          code={code}
+          zoneId={zone.id}
+          box={box}
+          levels={rack.levels}
+          rackCodes={tabs}
+          reasons={reasons}
+          mode={mode}
+          lockedBy={slotLockedBy}
+          highlight={highlight}
+          escEnabled={!askDiscard}
+          onClose={closeBox}
+          onMode={(m) => void changeMode(m)}
+          onDirty={setDirty}
+          onPrint={(b) => {
+            // ปิด modal กล่องก่อน แล้วเปิดหน้าพิมพ์
+            leaveEdit()
+            setBoxOpen(false)
+            toPrint(b, b.level, b.position)
+          }}
+          onDone={onBoxDone}
+          onError={handleConflict}
+        />
       )}
 
       {zone && slot && !box && (
@@ -319,7 +374,7 @@ export default function RackPage() {
 
       <ConfirmModal
         open={!!askDiscard}
-        type="danger"
+        type="warning"
         title="ยกเลิกการแก้ไขที่ยังไม่บันทึก?"
         message="การเปลี่ยนแปลงที่ยังไม่ได้บันทึกจะหายไป"
         cancelText="กรอกต่อ"
