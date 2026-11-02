@@ -8,7 +8,7 @@
 
 export const RACK_LEVELS = 5
 export const RACK_POSITIONS = 20
-export const BOX_CAPACITY = 10
+export const BOX_CAPACITY = 12
 export const ROOM_LEGACY_KEY = 'ROOM'
 
 export const LEVEL_LIST = Array.from({ length: RACK_LEVELS }, (_, i) => i + 1)

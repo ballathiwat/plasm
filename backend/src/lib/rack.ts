@@ -5,7 +5,7 @@ import type { Prisma } from '@prisma/client'
 
 export const RACK_LEVELS = 5
 export const RACK_POSITIONS = 20
-export const BOX_CAPACITY = 10
+export const BOX_CAPACITY = 12
 export const LOCK_TTL_MS = 60_000
 export const ROOM_KEY = 'ROOM'
 
