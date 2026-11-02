@@ -17,7 +17,7 @@ import settingsRoutes from './routes/settings'
 import usersRoutes from './routes/users'
 import masterRoutes from './routes/master'
 import lockRoutes from './routes/locks'
-
+import reportRoutes from './routes/reports'
 
 const app = express()
 app.set('trust proxy', 1)
