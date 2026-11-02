@@ -169,27 +169,27 @@ router.get("/report", async (req, res) => {
     const types = plasmaTypes.map((t) => t.code);
     const bloods = bloodTypes.map((b) => b.code);
 
+    // นับจัดเก็บจาก units.created_at (แทน log) — กันกรณีเพิ่ม unit ทีหลังผ่านแก้ไข
     const storeRows = await prisma.$queryRaw<
       { type: string; blood: string; count: bigint }[]
     >`
-      SELECT b.type::text AS type, b.blood::text AS blood, COALESCE(SUM(le.unit_count), 0) AS count
-      FROM log_entries le
-      JOIN boxes b ON b.id = le.box_id
-      WHERE le.action = 'STORE'
-        AND le.timestamp >= ${startDate}
-        AND le.timestamp <= ${endDate}
+      SELECT b.type::text AS type, b.blood::text AS blood, COUNT(u.id) AS count
+      FROM units u
+      JOIN boxes b ON u.box_id = b.id
+      WHERE u.created_at >= ${startDate}
+        AND u.created_at <= ${endDate}
       GROUP BY b.type, b.blood
     `;
 
     const withdrawRows = await prisma.$queryRaw<
       { type: string; blood: string; count: bigint }[]
     >`
-      SELECT b.type::text AS type, b.blood::text AS blood, COALESCE(SUM(le.unit_count), 0) AS count
-      FROM log_entries le
-      JOIN boxes b ON b.id = le.box_id
-      WHERE le.action = 'WITHDRAW'
-        AND le.timestamp >= ${startDate}
-        AND le.timestamp <= ${endDate}
+      SELECT b.type::text AS type, b.blood::text AS blood, COUNT(u.id) AS count
+      FROM units u
+      JOIN boxes b ON u.box_id = b.id
+      WHERE u.status = 'WITHDRAWN'
+        AND u.withdrawn_at >= ${startDate}
+        AND u.withdrawn_at <= ${endDate}
       GROUP BY b.type, b.blood
     `;
 
