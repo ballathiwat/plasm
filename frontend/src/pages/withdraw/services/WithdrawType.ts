@@ -59,7 +59,3 @@ export interface ConfirmAction {
 }
 
 // ── Toast ──
-export interface ToastState {
-  type: 'success' | 'error'
-  msg: string
-}

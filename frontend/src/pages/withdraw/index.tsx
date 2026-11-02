@@ -5,7 +5,8 @@
 import useWithdraw from './services/useWithdraw'
 import WithdrawBoxList from './components/WithdrawBoxList'
 import WithdrawBoxDetail from './components/WithdrawBoxDetail'
-import { WithdrawToast, WithdrawConfirmDialog } from './components/WithdrawConfirmModal'
+import Toast from '../../components/common/Toast'
+import { WithdrawConfirmDialog } from './components/WithdrawConfirmModal'
 
 const WithdrawPage = () => {
   const {
@@ -32,7 +33,7 @@ const WithdrawPage = () => {
   return (
     <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
 
-      <WithdrawToast toast={toast} onDismiss={dismissToast} />
+      <Toast toast={toast} onDismiss={dismissToast} />
       <WithdrawConfirmDialog action={confirmAction} onCancel={cancelConfirm} />
 
       {/* Header */}

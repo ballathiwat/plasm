@@ -8,8 +8,8 @@ import type {
   WithdrawBoxItem,
   WithdrawBoxDetail,
   ConfirmAction,
-  ToastState,
 } from './WithdrawType'
+import type { ToastState } from '../../../components/common/Toast'
 
 export default function useWithdraw() {
   // ── Box list ──
@@ -44,14 +44,6 @@ export default function useWithdraw() {
   }, [filterBlood])
 
   useEffect(() => { loadBoxes() }, [loadBoxes])
-
-  // Auto-hide toast
-  useEffect(() => {
-    if (toast) {
-      const t = setTimeout(() => setToast(null), 4000)
-      return () => clearTimeout(t)
-    }
-  }, [toast])
 
   // ── Open box detail ──
   const openBoxDetail = async (boxId: string) => {

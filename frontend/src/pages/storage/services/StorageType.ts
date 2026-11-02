@@ -37,11 +37,6 @@ export interface StorageFormData {
   shelf: string
 }
 
-export interface ToastState {
-  type: 'success' | 'error'
-  msg: string
-}
-
 // ── Master data ที่ฟอร์มใช้ ──
 export interface MasterCode {
   id: string

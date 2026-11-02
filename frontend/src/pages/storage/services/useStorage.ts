@@ -7,11 +7,11 @@ import storageService from "./StorageService";
 import type {
   StorageBoxItem,
   StorageFormData,
-  ToastState,
   MasterOptions,
   QuickAddKind,
   UnitRemovalInput,
 } from "./StorageType";
+import type { ToastState } from "../../../components/common/Toast";
 import type { BarcodeLabelData } from "../components/BarcodeLabel";
 import type { PaginationInfo } from "../../../components/shared/Pagination";
 import {
@@ -107,14 +107,6 @@ export default function useStorage() {
         });
       });
   }, [loadMaster]);
-
-  // Auto-hide toast
-  useEffect(() => {
-    if (toast) {
-      const t = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(t);
-    }
-  }, [toast]);
 
   // ── เลขกล่องถัดไป (แสดงตัวอย่างเท่านั้น เลขจริง backend ออกตอนบันทึก) ──
   const refreshNextLabel = useCallback(async (type: string, blood: string) => {

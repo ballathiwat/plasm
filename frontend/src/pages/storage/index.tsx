@@ -5,7 +5,7 @@
 import useStorage from "./services/useStorage";
 import StorageNewBoxForm from "./components/StorageNewBoxForm";
 import StorageBoxList from "./components/StorageBoxList";
-import StorageToast from "./components/StorageToast";
+import Toast from "../../components/common/Toast";
 import BarcodeLabel from "./components/BarcodeLabel";
 
 const StoragePage = () => {
@@ -46,7 +46,7 @@ const StoragePage = () => {
 
   return (
     <div style={{ animation: "plasm-fade-in 0.2s ease" }}>
-      <StorageToast toast={toast} onDismiss={dismissToast} />
+      <Toast toast={toast} onDismiss={dismissToast} />
 
       {printData && <BarcodeLabel data={printData} onClose={closePrint} />}
 

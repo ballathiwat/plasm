@@ -21,11 +21,6 @@ export interface UserFormData {
   role: 'admin' | 'staff'
 }
 
-export interface ToastState {
-  type: 'success' | 'error'
-  msg: string
-}
-
 export interface CodeItem {
   id: string
   code: string
