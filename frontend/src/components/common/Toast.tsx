@@ -89,7 +89,7 @@ export default function Toast({
   toast,
   onDismiss,
   autoHide = 4000,
-  variant = 'light',
+  variant = 'filled', // light , filled
   placement = 'top-right',
   width = 312,
 }: ToastProps) {
