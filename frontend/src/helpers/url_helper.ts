@@ -31,6 +31,8 @@ export const GET_STOCK_SUMMARY = `${API}/stock/summary`
 export const GET_STOCK_DAILY = `${API}/stock/daily`
 export const GET_STOCK_REPORT = `${API}/stock/report`
 
+// ===== Reports =====
+export const GET_REPORTS_MOVEMENTS = `${API}/reports/movements`
 // ===== Log =====
 export const GET_LOG = `${API}/log`
 

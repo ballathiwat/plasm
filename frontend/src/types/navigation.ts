@@ -42,7 +42,7 @@ export const MENU_ITEMS: MenuItem[] = [
     roles: ['ADMIN', 'STAFF'],
     children: [
       { key: 'report-summary', label: 'รายงานสรุป', icon: FileText, roles: ['ADMIN', 'STAFF'] },
-      { key: 'report-daily', label: 'นำเข้า/นำออก รายวัน', icon: CalendarDays, roles: ['ADMIN', 'STAFF'] },
+      { key: 'report-daily', label: 'นำเข้า/นำออก', icon: CalendarDays, roles: ['ADMIN', 'STAFF'] },
     ],
   },
   { key: 'storage', label: 'จัดเก็บ', icon: Package, roles: ['ADMIN', 'STAFF'] },
@@ -69,7 +69,7 @@ export const PAGE_TITLES: Record<string, string> = {
   map: 'แผนผังจัดเก็บ',
   log: 'ประวัติการจัดเก็บ/นำออก',
   'report-summary': 'รายงานสรุป',
-  'report-daily': 'รายงาน นำเข้า/นำออก รายวัน',
+  'report-daily': 'รายงาน นำเข้า/นำออก',
   profile: 'โปรไฟล์',
   settings: 'ตั้งค่า',
 }

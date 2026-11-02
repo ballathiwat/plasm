@@ -43,6 +43,10 @@
   --group-other-surface: #F4F4F5;
   --group-other-ink: #3F3F46;
 
+  /* Plasma type identity */
+  --type-ffp: #2563EB;
+  --type-iffp: #F97316;
+  --type-lprc: #DC2626;
   /* Stock status */
   --stock-normal: #10B981;
   --stock-warning: #F59E0B;
