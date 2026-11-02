@@ -69,7 +69,7 @@ function ActionGroup({ actionData, types, groups, max, actionLabel }: {
 interface Props { data: MovementResponse }
 
 export default function DailyChart({ data }: Props) {
-  const { buckets, types, groups, granularity, totals } = data
+  const { buckets, types, groups, granularity } = data
 
   const maxValue = useMemo(() => {
     let m = 1
