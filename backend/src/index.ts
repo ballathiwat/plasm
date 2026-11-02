@@ -48,6 +48,7 @@ app.use('/api/v1/settings', authGuard, settingsRoutes)
 app.use('/api/v1/users', authGuard, usersRoutes)
 app.use('/api/v1/master', authGuard, masterRoutes)
 app.use('/api/v1/locks', authGuard, lockRoutes)
+app.use('/api/v1/reports', authGuard, reportRoutes)
 
 // ===== Start =====
 app.listen(PORT, () => {
