@@ -92,19 +92,28 @@ router.get("/daily", async (req, res) => {
     const todayStart = new Date(`${bkk(new Date())}T00:00:00+07:00`);
     const startDate = new Date(todayStart.getTime() - (days - 1) * DAY_MS);
 
-    const rows = await prisma.$queryRaw<
+        const rows = await prisma.$queryRaw<
       { day: Date; action: string; blood: string; count: bigint }[]
     >`
-      SELECT
-        DATE((le.timestamp AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Bangkok') AS day,
-        le.action::text AS action,
-        b.blood::text AS blood,
-        COALESCE(SUM(le.unit_count), 0) AS count
-      FROM log_entries le
-      JOIN boxes b ON b.id = le.box_id
-      WHERE le.timestamp >= ${startDate}
-      AND le.action IN ('STORE', 'WITHDRAW')
-      GROUP BY 1, 2, 3
+      SELECT day, action, blood, COUNT(*) AS count FROM (
+        SELECT
+          DATE((u.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Bangkok') AS day,
+          'STORE' AS action,
+          b.blood::text AS blood
+        FROM units u
+        JOIN boxes b ON u.box_id = b.id
+        WHERE u.created_at >= ${startDate}
+        UNION ALL
+        SELECT
+          DATE((u.withdrawn_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Bangkok') AS day,
+          'WITHDRAW' AS action,
+          b.blood::text AS blood
+        FROM units u
+        JOIN boxes b ON u.box_id = b.id
+        WHERE u.status = 'WITHDRAWN'
+          AND u.withdrawn_at >= ${startDate}
+      ) t
+      GROUP BY day, action, blood
     `;
 
     const result = Array.from({ length: days }, (_, i) => {
