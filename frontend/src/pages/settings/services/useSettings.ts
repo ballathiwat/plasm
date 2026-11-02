@@ -4,12 +4,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import settingsService from "./SettingsService";
-import type {
-  MinimumStock,
-  UserItem,
-  UserFormData,
-  ToastState,
-} from "./SettingsType";
+import type { MinimumStock, UserItem, UserFormData } from "./SettingsType";
+import type { ToastState } from "../../../components/common/Toast";
 import { validatePassword } from "../../../helpers/passwordValidation";
 
 const DEFAULT_MIN: MinimumStock = {};
@@ -37,14 +33,6 @@ export default function useSettings() {
   const [activeTab, setActiveTab] = useState<
     "stock" | "users" | "plasma" | "blood" | "zones" | "removal"
   >("stock");
-
-  // Auto-hide toast
-  useEffect(() => {
-    if (toast) {
-      const t = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(t);
-    }
-  }, [toast]);
 
   // ── Load settings ──
   useEffect(() => {

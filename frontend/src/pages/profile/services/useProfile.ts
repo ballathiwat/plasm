@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import profileService from './ProfileService'
 import type { ChangePasswordForm } from './ProfileType'
+import type { ToastState } from '../../../components/common/Toast'
 import { validatePassword } from '../../../helpers/passwordValidation'
 
 const DEFAULT_FORM: ChangePasswordForm = {
@@ -16,7 +17,7 @@ const DEFAULT_FORM: ChangePasswordForm = {
 export default function useProfile() {
   const [form, setForm] = useState<ChangePasswordForm>(DEFAULT_FORM)
   const [saving, setSaving] = useState(false)
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [toast, setToast] = useState<ToastState | null>(null)
   const [errors, setErrors] = useState<Partial<Record<keyof ChangePasswordForm, string>>>({})
 
   const handleChange = (field: keyof ChangePasswordForm, value: string) => {

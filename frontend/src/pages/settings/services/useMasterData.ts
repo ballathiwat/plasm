@@ -4,7 +4,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import masterService, { type CodeKind } from './MasterService'
-import type { CodeItem, ZoneItem, ShelfItem, ToastState, RemovalReasonItem } from './SettingsType'
+import type { CodeItem, ZoneItem, ShelfItem, RemovalReasonItem } from './SettingsType'
+import type { ToastState } from '../../../components/common/Toast'
 import { registerMasterColors } from '../../../helpers/blood'
 
 

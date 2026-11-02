@@ -2,9 +2,9 @@
 //  src/pages/profile/index.tsx
 // ============================================================
 
-import { useEffect } from 'react'
-import { CheckCircle2, AlertCircle, X, User } from 'lucide-react'
+import { User } from 'lucide-react'
 import { useAuth } from '../../Routes/AuthProtected'
+import Toast from '../../components/common/Toast'
 import useProfile from './services/useProfile'
 import ChangePasswordForm from './components/ChangePasswordForm'
 
@@ -15,37 +15,9 @@ export default function ProfilePage() {
     handleChange, handleSubmit, dismissToast,
   } = useProfile()
 
-  // Auto-hide toast
-  useEffect(() => {
-    if (toast) {
-      const t = setTimeout(dismissToast, 4000)
-      return () => clearTimeout(t)
-    }
-  }, [toast, dismissToast])
-
   return (
     <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position: 'fixed', top: 16, right: 16, zIndex: 1000,
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '12px 20px',
-          borderRadius: 'var(--radius-md, 8px)',
-          background: toast.type === 'success' ? '#F0FDF4' : '#FEF2F2',
-          border: `1px solid ${toast.type === 'success' ? '#BBF7D0' : '#FECACA'}`,
-          color: toast.type === 'success' ? '#166534' : '#991B1B',
-          fontSize: 13, fontWeight: 500,
-          boxShadow: 'var(--shadow-md)',
-          animation: 'plasm-fade-in 0.2s ease',
-        }}>
-          {toast.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-          {toast.msg}
-          <button onClick={dismissToast} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginLeft: 8 }}>
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      <Toast toast={toast} onDismiss={dismissToast} />
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>

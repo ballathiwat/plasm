@@ -7,9 +7,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, CircleCheck, Info, Layers } from 'lucide-react'
 import { ConfirmModal } from '../../components/common/Modal'
-import StorageToast from '../storage/components/StorageToast'
+import Toast from '../../components/common/Toast'
+import type { ToastState } from '../../components/common/Toast'
 import BarcodeLabel, { type BarcodeLabelData } from '../storage/components/BarcodeLabel'
-import type { ToastState } from '../storage/services/StorageType'
 import { BOX_CAPACITY, RACK_LEVELS, RACK_POSITIONS, positionLabel, rackUrl } from '../../helpers/rack'
 import useRack from './services/useRack'
 import RackSearch from './components/RackSearch'
@@ -58,12 +58,6 @@ export default function RackPage() {
     const t = setTimeout(() => setNotice(null), NOTICE_MS)
     return () => clearTimeout(t)
   }, [notice])
-
-  useEffect(() => {
-    if (!toast) return
-    const t = setTimeout(() => setToast(null), 4000)
-    return () => clearTimeout(t)
-  }, [toast])
 
   // ── เข้าหน้า / สลับ rack: ไม่เลือกช่องอัตโนมัติ เว้นแต่มาจากผลค้นหาหรือการย้าย ──
   useEffect(() => {
@@ -170,7 +164,7 @@ export default function RackPage() {
       setBoxOpen(true)
     } else if (lockedBy) {
       setBoxOpen(false)
-      setToast({ type: 'error', msg: `${lockedBy} กำลังใช้ช่อง ${p} อยู่` })
+      setToast({ type: 'info', msg: `${lockedBy} กำลังใช้ช่อง ${p} อยู่` })
     } else {
       // ช่องว่าง → modal เพิ่มกล่อง
       setBoxOpen(false)
@@ -250,7 +244,7 @@ export default function RackPage() {
 
   return (
     <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
-      <StorageToast toast={toast} onDismiss={() => setToast(null)} />
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
       {printData && <BarcodeLabel data={printData} onClose={() => setPrintData(null)} />}
 
       {/* ── Header ── */}
