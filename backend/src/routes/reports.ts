@@ -21,6 +21,10 @@ const GROUPS_ORDER = ["A", "B", "O", "AB"];
 const sortGroup = (a: string, b: string) =>
   (GROUPS_ORDER.indexOf(a) === -1 ? 99 : GROUPS_ORDER.indexOf(a)) -
   (GROUPS_ORDER.indexOf(b) === -1 ? 99 : GROUPS_ORDER.indexOf(b));
+// เพิ่มตรงนี้
+const baseGroup = (blood: string) =>
+  /^AB/i.test(blood) ? "AB" : /^[ABO]/i.test(blood) ? blood[0].toUpperCase() : blood;
+
 
 // ===== GET /api/v1/reports/movements =====
 router.get("/movements", async (req, res) => {
@@ -98,14 +102,16 @@ router.get("/movements", async (req, res) => {
 
     // type filter
     if (filterTypes.length < masterCodes.length) {
-      const placeholders = filterTypes.map((_, i) => `$${params.length + i + 1}`);
+      const placeholders = filterTypes.map(
+        (_, i) => `$${params.length + i + 1}`,
+      );
       params.push(...filterTypes);
       conditions.push(`AND b.type IN (${placeholders.join(",")})`);
     }
     // group filter
     if (filterGroup) {
-      params.push(`${filterGroup}%`);
-      conditions.push(`AND b.blood LIKE $${params.length}`);
+      params.push(filterGroup);
+      conditions.push(`AND b.blood = $${params.length}`);
     }
 
     const extra = conditions.join(" ");
@@ -165,13 +171,17 @@ router.get("/movements", async (req, res) => {
     for (const r of rows) activeGroupsSet.add(r.blood_group);
     if (activeGroupsSet.size === 0) {
       for (const g of GROUPS_ORDER) {
-        if (!filterGroup || g === filterGroup) activeGroupsSet.add(g);
+        if (!filterGroup || g === baseGroup(filterGroup))
+          activeGroupsSet.add(g);
       }
     }
     const groups = Array.from(activeGroupsSet).sort(sortGroup);
 
     // --- Build buckets ---
-    interface BucketDef { start: string; end: string }
+    interface BucketDef {
+      start: string;
+      end: string;
+    }
     const bucketDefs: BucketDef[] = [];
 
     if (granularity === "day") {
@@ -186,7 +196,9 @@ router.get("/movements", async (req, res) => {
         const weekEnd = new Date(cursor.getTime() + 6 * 86400000);
         const end = weekEnd > toDate ? toDate : weekEnd;
         bucketDefs.push({
-          start: cursor.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" }),
+          start: cursor.toLocaleDateString("en-CA", {
+            timeZone: "Asia/Bangkok",
+          }),
           end: end.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" }),
         });
         cursor = new Date(weekEnd.getTime() + 86400000);
@@ -199,7 +211,9 @@ router.get("/movements", async (req, res) => {
         const monthEnd = new Date(y, m + 1, 0);
         const end = monthEnd > toDate ? toDate : monthEnd;
         bucketDefs.push({
-          start: cursor.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" }),
+          start: cursor.toLocaleDateString("en-CA", {
+            timeZone: "Asia/Bangkok",
+          }),
           end: end.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" }),
         });
         cursor = new Date(y, m + 1, 1);
@@ -244,7 +258,12 @@ router.get("/movements", async (req, res) => {
 
     // --- Build summary arrays ---
     const buildSummary = (map: Record<string, number>) => {
-      const result: { type: string; blood: string; group: string; qty: number }[] = [];
+      const result: {
+        type: string;
+        blood: string;
+        group: string;
+        qty: number;
+      }[] = [];
       for (const [key, qty] of Object.entries(map)) {
         const [pType, blood, grp] = key.split("|");
         result.push({ type: pType, blood, group: grp, qty });
