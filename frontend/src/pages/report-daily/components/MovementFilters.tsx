@@ -55,16 +55,16 @@ function TypeToggle({ code, on, last, onToggle }: {
         fontFamily: 'inherit',
         cursor: last ? 'not-allowed' : 'pointer',
         transition: 'background .15s, border-color .15s',
-        // on vs off border/background
+        // on vs off border/background — use each type's own color
         border: on
-          ? '2px solid var(--primary, #2563EB)'
+          ? `2px solid ${typeColor}`
           : '1px dashed var(--border-strong, #A1A1AA)',
         margin: on ? 0 : 1,
         background: on
-          ? 'var(--primary-surface, #EFF6FF)'
+          ? `color-mix(in srgb, ${typeColor} 12%, var(--surface, #fff))`
           : 'transparent',
         color: on
-          ? 'var(--primary-ink, #1D4ED8)'
+          ? typeColor
           : 'var(--text-secondary, #71717A)',
       }}
     >
@@ -79,7 +79,7 @@ function TypeToggle({ code, on, last, onToggle }: {
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: on ? 'var(--primary, #2563EB)' : 'var(--surface, #fff)',
+          background: on ? typeColor : 'var(--surface, #fff)',
           border: on ? 'none' : '1.5px solid var(--text-disabled, #A1A1AA)',
         }}
       >
