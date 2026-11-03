@@ -1,6 +1,6 @@
 // frontend/src/pages/report-daily/components/MovementFilters.tsx
 
-import { Search, Info } from 'lucide-react'
+import { Search, Info, Check } from 'lucide-react'
 import DateInput from '../../../components/common/DateInput'
 import SelectDropdown, { type OptionType } from '../../../components/common/SelectDropdown'
 import Button from '../../../components/common/Button'
@@ -29,6 +29,88 @@ const GROUP_OPTS: OptionType[] = [
 const findOpt = (opts: OptionType[], v: string) => opts.find((o) => o.value === v) ?? null
 const bkkToday = (): string => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' })
 
+// ── TypeToggle button ──
+function TypeToggle({ code, on, last, onToggle }: {
+  code: string; on: boolean; last: boolean; onToggle: () => void
+}) {
+  const typeColor = plasmaChartColor(code)
+
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={on}
+      aria-disabled={last || undefined}
+      title={last ? 'ต้องเลือกอย่างน้อย 1 ชนิด' : undefined}
+      onClick={onToggle}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '6px 14px 6px 10px',
+        minHeight: 36,
+        borderRadius: 'var(--radius-full, 99px)',
+        fontSize: 13,
+        fontWeight: on ? 600 : 500,
+        fontFamily: 'inherit',
+        cursor: last ? 'not-allowed' : 'pointer',
+        transition: 'background .15s, border-color .15s',
+        // on vs off border/background
+        border: on
+          ? '2px solid var(--primary, #2563EB)'
+          : '1px dashed var(--border-strong, #A1A1AA)',
+        margin: on ? 0 : 1,
+        background: on
+          ? 'var(--primary-surface, #EFF6FF)'
+          : 'transparent',
+        color: on
+          ? 'var(--primary-ink, #1D4ED8)'
+          : 'var(--text-secondary, #71717A)',
+      }}
+    >
+      {/* Checkbox indicator */}
+      <span
+        aria-hidden="true"
+        style={{
+          width: 18,
+          height: 18,
+          borderRadius: 4,
+          flexShrink: 0,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: on ? 'var(--primary, #2563EB)' : 'var(--surface, #fff)',
+          border: on ? 'none' : '1.5px solid var(--text-disabled, #A1A1AA)',
+        }}
+      >
+        {on && <Check size={13} strokeWidth={3} color="#fff" />}
+      </span>
+
+      {/* Type color square */}
+      <span
+        aria-hidden="true"
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: 2,
+          background: typeColor || 'var(--text-disabled)',
+          opacity: on ? 1 : 0.45,
+          flexShrink: 0,
+        }}
+      />
+
+      {/* Label */}
+      <span style={{
+        textDecoration: on ? 'none' : 'line-through',
+        textDecorationColor: on ? undefined : 'var(--text-disabled, #A1A1AA)',
+      }}>
+        {code}
+      </span>
+    </button>
+  )
+}
+
+// ── Main ──
 interface Props {
   draft: FilterDraft
   masterTypes: string[]
@@ -40,16 +122,19 @@ interface Props {
   onToChange: (v: string) => void
   onGroupChange: (v: string) => void
   onToggleType: (code: string) => void
+  onSelectAllTypes: () => void
   onSearch: () => void
 }
 
 export default function MovementFilters({
   draft, masterTypes, loading, isDirty, validationError,
-  onPreset, onFromChange, onToChange, onGroupChange, onToggleType, onSearch,
+  onPreset, onFromChange, onToChange, onGroupChange,
+  onToggleType, onSelectAllTypes, onSearch,
 }: Props) {
   const today = bkkToday()
   const hasError = !!validationError
-  const isAllTypes = draft.types.length === 0
+  const selectedCount = draft.types.length
+  const allCount = masterTypes.length
 
   return (
     <div style={{
@@ -100,46 +185,57 @@ export default function MovementFilters({
         </Button>
       </div>
 
-      {/* Type pills row */}
+      {/* Type toggles row */}
       {masterTypes.length > 0 && (
-        <div role="group" aria-label="ชนิด"
-          style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>ชนิด</span>
-          {/* "ทั้งหมด" button */}
-          <button type="button" aria-pressed={isAllTypes} onClick={() => onToggleType('all')}
-            style={{
-              minHeight: 32, padding: '4px 12px', borderRadius: 'var(--radius-full, 99px)',
-              border: isAllTypes ? 'none' : '1px solid var(--border, #E4E4E7)',
-              background: isAllTypes ? 'var(--primary, #2563EB)' : 'var(--surface, #fff)',
-              color: isAllTypes ? '#fff' : 'var(--text-primary, #18181B)',
-              fontWeight: isAllTypes ? 600 : 400, fontSize: 13,
-              cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
-            }}>
-            ทั้งหมด
-          </button>
+        <div
+          role="group"
+          aria-label="ชนิด"
+          style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 12 }}
+        >
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginRight: 4 }}>
+            ชนิด
+          </span>
+
           {masterTypes.map((code) => {
-            const active = !isAllTypes && draft.types.includes(code)
-            const typeColor = plasmaChartColor(code)
+            const on = draft.types.includes(code)
+            const last = on && selectedCount === 1
             return (
-              <button key={code} type="button" aria-pressed={active}
-                onClick={() => onToggleType(code)}
-                style={{
-                  minHeight: 32, padding: '4px 12px', borderRadius: 'var(--radius-full, 99px)',
-                  border: active ? 'none' : '1px solid var(--border, #E4E4E7)',
-                  background: active ? 'var(--primary, #2563EB)' : 'var(--surface, #fff)',
-                  color: active ? '#fff' : 'var(--text-primary, #18181B)',
-                  fontWeight: active ? 600 : 400, fontSize: 13,
-                  cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                }}>
-                <span style={{
-                  width: 8, height: 8, borderRadius: 2, flexShrink: 0,
-                  background: active ? '#fff' : (typeColor || 'var(--text-disabled)'),
-                }} />
-                {code}
-              </button>
+              <TypeToggle
+                key={code}
+                code={code}
+                on={on}
+                last={last}
+                onToggle={() => onToggleType(code)}
+              />
             )
           })}
+
+          <span aria-live="polite" style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 4 }}>
+            {selectedCount === allCount
+              ? 'เลือกครบทุกชนิด'
+              : `เลือก ${selectedCount} จาก ${allCount} ชนิด`}
+          </span>
+
+          {selectedCount !== allCount && (
+            <button
+              type="button"
+              onClick={onSelectAllTypes}
+              style={{
+                minHeight: 36,
+                padding: '0 4px',
+                border: 'none',
+                background: 'none',
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--primary, #2563EB)',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              เลือกทั้งหมด
+            </button>
+          )}
         </div>
       )}
 

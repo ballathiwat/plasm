@@ -12,7 +12,8 @@ export default function DailyReportPage() {
   const {
     masterTypes, draft, data, loading, toast, setToast,
     isDirty, validationError, effectiveTypesLabel,
-    search, setPreset, setFrom, setTo, setGroup, toggleType, jumpTo30Days,
+    search, setPreset, setFrom, setTo, setGroup,
+    toggleType, selectAllTypes, jumpTo30Days,
   } = useDailyReport()
 
   const isEmpty = data && data.buckets.every(
@@ -34,7 +35,8 @@ export default function DailyReportPage() {
         draft={draft} masterTypes={masterTypes} loading={loading}
         isDirty={isDirty} validationError={validationError}
         onPreset={setPreset} onFromChange={setFrom} onToChange={setTo}
-        onGroupChange={setGroup} onToggleType={toggleType} onSearch={search}
+        onGroupChange={setGroup} onToggleType={toggleType}
+        onSelectAllTypes={selectAllTypes} onSearch={search}
       />
 
       {loading && (
