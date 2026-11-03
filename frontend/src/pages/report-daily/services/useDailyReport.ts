@@ -81,9 +81,14 @@ export default function useDailyReport() {
   const [toast, setToast] = useState<ToastState | null>(null)
   const initialFetch = useRef(false)
 
-  // Load master types
+  // Load master types → set default types = all
   useEffect(() => {
-    dailyReportService.getPlasmaTypes().then(setMasterTypes).catch(() => {})
+    dailyReportService.getPlasmaTypes().then((codes) => {
+      setMasterTypes(codes)
+      // Set initial types = all master types
+      setDraft((prev) => ({ ...prev, types: codes }))
+      setApplied((prev) => ({ ...prev, types: codes }))
+    }).catch(() => {})
   }, [])
 
   // Fetch
@@ -91,9 +96,9 @@ export default function useDailyReport() {
     setLoading(true); setToast(null)
     try {
       const params: Record<string, string> = { from: filters.from, to: filters.to }
-      const effectiveTypes = filters.types.length === 0 ? allTypes : filters.types
-      if (effectiveTypes.length > 0 && effectiveTypes.length < allTypes.length) {
-        params.types = effectiveTypes.join(',')
+      // Only send types param if not all selected
+      if (filters.types.length > 0 && filters.types.length < allTypes.length) {
+        params.types = filters.types.join(',')
       }
       if (filters.group !== 'all') params.group = filters.group
       const res = await dailyReportService.getMovements(params)
@@ -128,30 +133,29 @@ export default function useDailyReport() {
   const setTo = useCallback((v: string) => setDraft((p) => ({ ...p, to: v, preset: null })), [])
   const setGroup = useCallback((v: string) => setDraft((p) => ({ ...p, group: v })), [])
 
-  // Type toggle logic
+  // Type toggle: can't deselect the last one, maintain master order
   const toggleType = useCallback((code: string) => {
     setDraft((prev) => {
-      const isAll = prev.types.length === 0
-      if (code === 'all') return { ...prev, types: [] }
-      if (isAll) return { ...prev, types: [code] }
-      const has = prev.types.includes(code)
-      let next: string[]
-      if (has) {
-        next = prev.types.filter((c) => c !== code)
-        if (next.length === 0) return { ...prev, types: [] } // back to all
+      if (prev.types.includes(code)) {
+        // Can't remove the last one
+        if (prev.types.length === 1) return prev
+        return { ...prev, types: prev.types.filter((x) => x !== code) }
       } else {
-        next = [...prev.types, code].sort((a, b) => {
-          const ai = masterTypes.indexOf(a), bi = masterTypes.indexOf(b)
-          return ai - bi
-        })
+        // Add and maintain master order
+        const next = masterTypes.filter((x) => prev.types.includes(x) || x === code)
+        return { ...prev, types: next }
       }
-      return { ...prev, types: next }
     })
+  }, [masterTypes])
+
+  // Select all types
+  const selectAllTypes = useCallback(() => {
+    setDraft((prev) => ({ ...prev, types: [...masterTypes] }))
   }, [masterTypes])
 
   const jumpTo30Days = useCallback(() => {
     const range = presetRange('30d')
-    const f: FilterDraft = { ...range, preset: '30d', types: [], group: 'all' }
+    const f: FilterDraft = { ...range, preset: '30d', types: [...masterTypes], group: 'all' }
     setDraft(f); setApplied(f); fetchData(f, masterTypes)
   }, [masterTypes, fetchData])
 
@@ -163,15 +167,16 @@ export default function useDailyReport() {
 
   const validationError = useMemo(() => validateFilters(draft), [draft])
 
-  // Effective types label for display
+  // Effective types label for chart title
   const effectiveTypesLabel = useMemo(() => {
-    if (draft.types.length === 0) return 'ทุกชนิด'
+    if (draft.types.length === masterTypes.length || draft.types.length === 0) return 'ทุกชนิด'
     return draft.types.join(', ')
-  }, [draft.types])
+  }, [draft.types, masterTypes.length])
 
   return {
     masterTypes, draft, applied, data, loading, toast, setToast,
     isDirty, validationError, effectiveTypesLabel,
-    search, setPreset, setFrom, setTo, setGroup, toggleType, jumpTo30Days,
+    search, setPreset, setFrom, setTo, setGroup,
+    toggleType, selectAllTypes, jumpTo30Days,
   }
 }
