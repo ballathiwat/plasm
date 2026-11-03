@@ -1,7 +1,7 @@
 // frontend/src/pages/report-daily/components/DailyTable.tsx
 
 import type { MovementResponse, MovementBucket } from '../services/DailyReportType'
-import { sumBucketAction, groupColor } from '../services/DailyReportType'
+import { groupColor } from '../services/DailyReportType'
 
 const bucketLabel = (b: MovementBucket, gran: string): string => {
   const fmt = (iso: string, opts: Intl.DateTimeFormatOptions) =>
@@ -41,9 +41,9 @@ export default function DailyTable({ data }: Props) {
   const WITHDRAW_COLOR = '#DC2626'
 
   const bucketStoreTotal = (b: MovementBucket) =>
-    groups.reduce((s, g) => s + sumBucketAction(b.store, g), 0)
+    groups.reduce((s, g) => s + (b.store[g] || 0), 0)
   const bucketWithdrawTotal = (b: MovementBucket) =>
-    groups.reduce((s, g) => s + sumBucketAction(b.withdraw, g), 0)
+    groups.reduce((s, g) => s + (b.withdraw[g] || 0), 0)
 
   const grandStore = Object.values(totals.store).reduce((s, v) => s + v, 0)
   const grandWithdraw = Object.values(totals.withdraw).reduce((s, v) => s + v, 0)
@@ -83,9 +83,9 @@ export default function DailyTable({ data }: Props) {
             return (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: cols, gap: 4, padding: '9px 0', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
                 <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{bucketLabel(b, granularity)}</span>
-                {groups.map((g) => <Cell key={`s-${g}`} v={sumBucketAction(b.store, g)} />)}
+                {groups.map((g) => <Cell key={`s-${g}`} v={b.store[g] || 0} />)}
                 <span style={{ textAlign: 'center', fontWeight: 700, color: st ? STORE_COLOR : 'var(--text-disabled)' }}>{st || '-'}</span>
-                {groups.map((g) => <Cell key={`w-${g}`} v={sumBucketAction(b.withdraw, g)} />)}
+                {groups.map((g) => <Cell key={`w-${g}`} v={b.withdraw[g] || 0} />)}
                 <span style={{ textAlign: 'center', fontWeight: 700, color: wd ? WITHDRAW_COLOR : 'var(--text-disabled)' }}>{wd || '-'}</span>
               </div>
             )

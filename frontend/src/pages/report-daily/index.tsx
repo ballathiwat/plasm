@@ -6,17 +6,17 @@ import MovementSummaryCard from './components/MovementSummaryCard'
 import DailyChart from './components/DailyChart'
 import DailyTable from './components/DailyTable'
 import Toast from '../../components/common/Toast'
-import { sumBucketAll } from './services/DailyReportType'
+import { sumRecord } from './services/DailyReportType'
 
 export default function DailyReportPage() {
   const {
-    draft, data, loading, toast, setToast,
-    isDirty, validationError,
-    search, setPreset, setFrom, setTo, setType, setGroup, jumpTo30Days,
+    masterTypes, draft, data, loading, toast, setToast,
+    isDirty, validationError, effectiveTypesLabel,
+    search, setPreset, setFrom, setTo, setGroup, toggleType, jumpTo30Days,
   } = useDailyReport()
 
   const isEmpty = data && data.buckets.every(
-    (b) => sumBucketAll(b.store) === 0 && sumBucketAll(b.withdraw) === 0,
+    (b) => sumRecord(b.store) === 0 && sumRecord(b.withdraw) === 0,
   )
 
   const formatRange = () => {
@@ -31,13 +31,14 @@ export default function DailyReportPage() {
       <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       <MovementFilters
-        draft={draft} loading={loading} isDirty={isDirty} validationError={validationError}
+        draft={draft} masterTypes={masterTypes} loading={loading}
+        isDirty={isDirty} validationError={validationError}
         onPreset={setPreset} onFromChange={setFrom} onToChange={setTo}
-        onTypeChange={setType} onGroupChange={setGroup} onSearch={search}
+        onGroupChange={setGroup} onToggleType={toggleType} onSearch={search}
       />
 
       {loading && (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-secondary)', fontSize: 14 }}>
+        <div role="status" style={{ padding: 40, textAlign: 'center', color: 'var(--text-secondary)', fontSize: 14 }}>
           กำลังโหลดข้อมูล...
         </div>
       )}
@@ -68,7 +69,7 @@ export default function DailyReportPage() {
       {!loading && data && !isEmpty && (
         <>
           <MovementSummaryCard data={data} />
-          <DailyChart data={data} />
+          <DailyChart data={data} typesLabel={effectiveTypesLabel} />
           <DailyTable data={data} />
         </>
       )}
