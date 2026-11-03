@@ -5,9 +5,7 @@ import { groupSurface, groupInk, plasmaChartColor } from '../services/DailyRepor
 
 const formatRange = (from: string, to: string, days: number): string => {
   const fmt = (iso: string) =>
-    new Date(`${iso}T00:00:00+07:00`).toLocaleDateString('th-TH', {
-      day: 'numeric', month: 'short', year: 'numeric',
-    })
+    new Date(`${iso}T00:00:00+07:00`).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
   if (from === to) return `${fmt(from)} · 1 วัน`
   return `${fmt(from)} – ${fmt(to)} · ${days} วัน`
 }
@@ -22,8 +20,7 @@ const groupByType = (items: SummaryItem[]) => {
   return map
 }
 
-const sumItems = (items: SummaryItem[]): number =>
-  items.reduce((s, i) => s + i.qty, 0)
+const sumItems = (items: SummaryItem[]): number => items.reduce((s, i) => s + i.qty, 0)
 
 function TypeRow({ type, items }: { type: string; items: SummaryItem[] }) {
   const total = sumItems(items)
@@ -38,21 +35,15 @@ function TypeRow({ type, items }: { type: string; items: SummaryItem[] }) {
         {items.map((item) => (
           <div key={`${item.type}-${item.blood}`} style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '3px 10px',
-            borderRadius: 'var(--radius-full, 99px)',
-            background: 'var(--surface-raised, #F4F4F5)',
-            fontSize: 13,
+            padding: '3px 10px', borderRadius: 'var(--radius-full, 99px)',
+            background: 'var(--surface-raised, #F4F4F5)', fontSize: 13,
           }}>
-            <span
-              className="blood-badge"
-              data-blood={item.group}
-              style={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                padding: '1px 7px', borderRadius: 'var(--radius-full, 99px)',
-                fontSize: 12, fontWeight: 700,
-                background: groupSurface(item.group), color: groupInk(item.group),
-              }}
-            >
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              padding: '1px 7px', borderRadius: 'var(--radius-full, 99px)',
+              fontSize: 12, fontWeight: 700,
+              background: groupSurface(item.group), color: groupInk(item.group),
+            }}>
               {item.blood}
             </span>
             <span style={{ fontWeight: 500 }}>{item.qty}</span>
@@ -64,9 +55,7 @@ function TypeRow({ type, items }: { type: string; items: SummaryItem[] }) {
   )
 }
 
-function ActionColumn({
-  label, items, bgColor, textColor, emptyText,
-}: {
+function ActionColumn({ label, items, bgColor, textColor, emptyText }: {
   label: string; items: SummaryItem[]; bgColor: string; textColor: string; emptyText: string
 }) {
   const byType = groupByType(items)
@@ -79,15 +68,10 @@ function ActionColumn({
       }}>
         {label} · {total} ถุง
       </div>
-      {byType.size === 0 ? (
-        <div style={{ padding: '20px 16px', color: 'var(--text-disabled)', fontSize: 13 }}>
-          {emptyText}
-        </div>
-      ) : (
-        Array.from(byType.entries()).map(([type, itms]) => (
-          <TypeRow key={type} type={type} items={itms} />
-        ))
-      )}
+      {byType.size === 0
+        ? <div style={{ padding: '20px 16px', color: 'var(--text-disabled)', fontSize: 13 }}>{emptyText}</div>
+        : Array.from(byType.entries()).map(([type, itms]) => <TypeRow key={type} type={type} items={itms} />)
+      }
     </div>
   )
 }
@@ -97,32 +81,21 @@ interface Props { data: MovementResponse }
 export default function MovementSummaryCard({ data }: Props) {
   return (
     <div style={{
-      background: 'var(--surface, #fff)',
-      border: '1px solid var(--border, #E4E4E7)',
-      borderRadius: 'var(--radius-lg, 10px)',
-      boxShadow: 'var(--shadow-sm)',
+      background: 'var(--surface, #fff)', border: '1px solid var(--border, #E4E4E7)',
+      borderRadius: 'var(--radius-lg, 10px)', boxShadow: 'var(--shadow-sm)',
       padding: 20, marginBottom: 16,
     }}>
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        flexWrap: 'wrap', gap: 8, marginBottom: 16,
-      }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
         <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>สรุปตามชนิด · หมู่เลือด</h3>
-        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-          {formatRange(data.from, data.to, data.days)}
-        </span>
+        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{formatRange(data.from, data.to, data.days)}</span>
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
-        <ActionColumn
-          label="นำเข้า" items={data.summary.store}
+        <ActionColumn label="นำเข้า" items={data.summary.store}
           bgColor="var(--success-surface, #F0FDF4)" textColor="var(--success-ink, #166534)"
-          emptyText="ไม่มีรายการนำเข้าในช่วงนี้"
-        />
-        <ActionColumn
-          label="นำออก" items={data.summary.withdraw}
+          emptyText="ไม่มีรายการนำเข้าในช่วงนี้" />
+        <ActionColumn label="นำออก" items={data.summary.withdraw}
           bgColor="var(--danger-surface, #FEF2F2)" textColor="var(--danger-ink, #991B1B)"
-          emptyText="ไม่มีรายการนำออกในช่วงนี้"
-        />
+          emptyText="ไม่มีรายการนำออกในช่วงนี้" />
       </div>
     </div>
   )
