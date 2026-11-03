@@ -76,29 +76,36 @@ router.get("/movements", async (req, res) => {
     const granularity: "day" | "week" | "month" =
       days <= 14 ? "day" : days <= 90 ? "week" : "month";
 
-    // --- Query ---
+        // --- Query ---
     const startTs = new Date(`${fromStr}T00:00:00+07:00`);
     const endTs = new Date(`${toStr}T23:59:59.999+07:00`);
     const params: unknown[] = [startTs, endTs];
     const conds: string[] = [];
+    let outerWhere = "";
 
     if (filterTypes.length < masterCodes.length) {
-      const ph = filterTypes.map((_, i) => `$${params.length + i + 1}`);
+      const ph = filterTypes.map((_, i) => `${params.length + i + 1}`);
       params.push(...filterTypes);
       conds.push(`AND b.type IN (${ph.join(",")})`);
     }
     if (filterBlood) {
       params.push(filterBlood);
-      conds.push(`AND bkey = $${params.length}`);
+      outerWhere = `WHERE bkey = ${params.length}`; // กรองที่ชั้นนอก
     }
     const extra = conds.join(" ");
 
     // bkey: exact blood code. A = no Rh, A+ = Rh+, A- = Rh-
+
     const bkeyExpr = `
+
       CASE
+
         WHEN b.blood LIKE '%+' THEN REPLACE(b.blood::text, '+', '') || '+'
+
         WHEN b.blood LIKE '%-' THEN REPLACE(b.blood::text, '-', '') || '-'
+
         ELSE b.blood::text
+
       END`;
 
     const rows = await prisma.$queryRawUnsafe<{
@@ -121,7 +128,8 @@ router.get("/movements", async (req, res) => {
         FROM units u JOIN boxes b ON u.box_id = b.id
         WHERE u.status = 'WITHDRAWN'
           AND u.withdrawn_at >= $1 AND u.withdrawn_at <= $2 ${extra}
-      ) t GROUP BY day, action, plasma_type, bkey
+            ) t ${outerWhere}
+      GROUP BY day, action, plasma_type, bkey
     `, ...params);
 
     // --- Determine active keys ---
@@ -154,17 +162,16 @@ router.get("/movements", async (req, res) => {
         c = new Date(we.getTime() + 86400000);
       }
     } else {
-      let c = new Date(fromDate);
-      while (c <= toDate) {
-        const y = c.getFullYear(), m = c.getMonth();
-        const me = new Date(y, m + 1, 0);
-        const e = me > toDate ? toDate : me;
-        bds.push({
-          start: c.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" }),
-          end: e.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" }),
-        });
-        c = new Date(y, m + 1, 1);
+      let [y, m] = fromStr.split("-").map(Number); // m เริ่มที่ 1
+      let start = fromStr;
+      while (start <= toStr) {
+        const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+        const monthEnd = `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+        bds.push({ start, end: monthEnd > toStr ? toStr : monthEnd });
+        m++; if (m > 12) { m = 1; y++; }
+        start = `${y}-${String(m).padStart(2, "0")}-01`;
       }
+    }
     }
 
     const emptyK = (): Record<string, number> => {
