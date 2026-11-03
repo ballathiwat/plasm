@@ -13,9 +13,6 @@
   --primary-hover: #1D4ED8;
   --primary-pressed: #1E40AF;
 
-  --primary-surface: #EFF6FF;
-  --primary-ink: #1D4ED8;
-  --border-strong: #A1A1AA;
   --background: #FAFAFA;
   --surface: #FFFFFF;
   --surface-raised: #F4F4F5;
@@ -46,11 +43,14 @@
   --group-other-surface: #F4F4F5;
   --group-other-ink: #3F3F46;
 
-  /* Plasma type identity */
+  /* Plasma type + report tokens */
   --type-ffp: #1E3A8A;
   --type-iffp: #0F766E;
   --type-ldrc: #92400E;
   --type-lprc: #334155;
+  --primary-surface: #EFF6FF;
+  --primary-ink: #1D4ED8;
+  --border-strong: #A1A1AA;
   /* Stock status */
   --stock-normal: #10B981;
   --stock-warning: #F59E0B;
@@ -123,11 +123,14 @@ a:hover { color: var(--primary-hover); }
   border-radius: 99px; font-weight: 700;
   background: var(--group-other-surface); color: var(--group-other-ink);
 
-  /* Plasma type identity */
+  /* Plasma type + report tokens */
   --type-ffp: #1E3A8A;
   --type-iffp: #0F766E;
   --type-ldrc: #92400E;
-  --type-lprc: #334155;}
+  --type-lprc: #334155;
+  --primary-surface: #EFF6FF;
+  --primary-ink: #1D4ED8;
+  --border-strong: #A1A1AA;
 .blood-badge[data-blood="A"]  { background: var(--group-a-surface);  color: var(--group-a-ink); }
 .blood-badge[data-blood="B"]  { background: var(--group-b-surface);  color: var(--group-b-ink); }
 .blood-badge[data-blood="O"]  { background: var(--group-o-surface);  color: var(--group-o-ink); }
@@ -170,6 +173,13 @@ a:hover { color: var(--primary-hover); }
   --toast-info-icon: #5296D5;
 }
 /* ── Dark mode: type toggle tokens ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  }
+}
+[data-theme="dark"] {
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --primary-surface: #172554;
