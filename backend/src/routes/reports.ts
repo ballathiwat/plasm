@@ -23,8 +23,11 @@ const sortGroup = (a: string, b: string) =>
   (GROUPS_ORDER.indexOf(b) === -1 ? 99 : GROUPS_ORDER.indexOf(b));
 // เพิ่มตรงนี้
 const baseGroup = (blood: string) =>
-  /^AB/i.test(blood) ? "AB" : /^[ABO]/i.test(blood) ? blood[0].toUpperCase() : blood;
-
+  /^AB/i.test(blood)
+    ? "AB"
+    : /^[ABO]/i.test(blood)
+      ? blood[0].toUpperCase()
+      : blood;
 
 // ===== GET /api/v1/reports/movements =====
 router.get("/movements", async (req, res) => {
@@ -122,12 +125,12 @@ router.get("/movements", async (req, res) => {
         action: string;
         plasma_type: string;
         blood_group: string;
-        rh: string;
+        blood_full: string; // เดิมคือ rh: string
         count: bigint;
       }[]
     >(
       `
-      SELECT day, action, plasma_type, blood_group, rh, COUNT(*) AS count FROM (
+SELECT day, action, plasma_type, blood_group, blood_full, COUNT(*) AS count FROM (
         SELECT
           DATE((u.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Bangkok') AS day,
           'STORE' AS action,
@@ -138,8 +141,8 @@ router.get("/movements", async (req, res) => {
             WHEN b.blood LIKE 'B%' THEN 'B'
             WHEN b.blood LIKE 'O%' THEN 'O'
             ELSE b.blood::text
-          END AS blood_group,
-          CASE WHEN b.blood LIKE '%-' THEN '-' ELSE '+' END AS rh
+           END AS blood_group,
+          b.blood::text AS blood_full
         FROM units u
         JOIN boxes b ON u.box_id = b.id
         WHERE u.created_at >= $1 AND u.created_at <= $2 ${extra}
@@ -155,14 +158,12 @@ router.get("/movements", async (req, res) => {
             WHEN b.blood LIKE 'O%' THEN 'O'
             ELSE b.blood::text
           END AS blood_group,
-          CASE WHEN b.blood LIKE '%-' THEN '-' ELSE '+' END AS rh
-        FROM units u
+          b.blood::text AS blood_full        FROM units u
         JOIN boxes b ON u.box_id = b.id
         WHERE u.status = 'WITHDRAWN'
           AND u.withdrawn_at >= $1 AND u.withdrawn_at <= $2 ${extra}
       ) t
-      GROUP BY day, action, plasma_type, blood_group, rh
-      `,
+      GROUP BY day, action, plasma_type, blood_group, blood_full`,
       ...params,
     );
 
@@ -250,7 +251,7 @@ router.get("/movements", async (req, res) => {
         }
       }
 
-      const bloodFull = `${r.blood_group}${r.rh}`;
+      const bloodFull = r.blood_full;
       const key = `${r.plasma_type}|${bloodFull}|${r.blood_group}`;
       const sMap = r.action === "STORE" ? summaryStore : summaryWithdraw;
       sMap[key] = (sMap[key] || 0) + count;
