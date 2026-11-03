@@ -76,12 +76,12 @@ router.get("/movements", async (req, res) => {
     const granularity: "day" | "week" | "month" =
       days <= 14 ? "day" : days <= 90 ? "week" : "month";
 
-        // --- Query ---
+    // --- Query ---
     const startTs = new Date(`${fromStr}T00:00:00+07:00`);
     const endTs = new Date(`${toStr}T23:59:59.999+07:00`);
     const params: unknown[] = [startTs, endTs];
     const conds: string[] = [];
-    let outerWhere = "";
+    let outerWhere = ""; // FIX 1: เงื่อนไขหมู่เลือดไปอยู่ชั้นนอก
 
     if (filterTypes.length < masterCodes.length) {
       const ph = filterTypes.map((_, i) => `${params.length + i + 1}`);
@@ -90,23 +90,12 @@ router.get("/movements", async (req, res) => {
     }
     if (filterBlood) {
       params.push(filterBlood);
-      outerWhere = `WHERE bkey = ${params.length}`; // กรองที่ชั้นนอก
+      outerWhere = `WHERE bkey = ${params.length}`; // FIX 1
     }
     const extra = conds.join(" ");
 
     // bkey: exact blood code. A = no Rh, A+ = Rh+, A- = Rh-
-
-    const bkeyExpr = `
-
-      CASE
-
-        WHEN b.blood LIKE '%+' THEN REPLACE(b.blood::text, '+', '') || '+'
-
-        WHEN b.blood LIKE '%-' THEN REPLACE(b.blood::text, '-', '') || '-'
-
-        ELSE b.blood::text
-
-      END`;
+    const bkeyExpr = `b.blood::text`; // FIX 2
 
     const rows = await prisma.$queryRawUnsafe<{
       day: Date; action: string; plasma_type: string; bkey: string; count: bigint;
@@ -128,7 +117,7 @@ router.get("/movements", async (req, res) => {
         FROM units u JOIN boxes b ON u.box_id = b.id
         WHERE u.status = 'WITHDRAWN'
           AND u.withdrawn_at >= $1 AND u.withdrawn_at <= $2 ${extra}
-            ) t ${outerWhere}
+      ) t ${outerWhere}
       GROUP BY day, action, plasma_type, bkey
     `, ...params);
 
@@ -162,6 +151,7 @@ router.get("/movements", async (req, res) => {
         c = new Date(we.getTime() + 86400000);
       }
     } else {
+      // FIX 3: คำนวณจาก string วันที่ ไม่ขึ้นกับ timezone ของ server
       let [y, m] = fromStr.split("-").map(Number); // m เริ่มที่ 1
       let start = fromStr;
       while (start <= toStr) {
@@ -171,7 +161,6 @@ router.get("/movements", async (req, res) => {
         m++; if (m > 12) { m = 1; y++; }
         start = `${y}-${String(m).padStart(2, "0")}-01`;
       }
-    }
     }
 
     const emptyK = (): Record<string, number> => {
