@@ -122,20 +122,11 @@ a:hover { color: var(--primary-hover); }
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: 99px; font-weight: 700;
   background: var(--group-other-surface); color: var(--group-other-ink);
-
-  /* Plasma type + report tokens */
-  --type-ffp: #1E3A8A;
-  --type-iffp: #0F766E;
-  --type-ldrc: #92400E;
-  --type-lprc: #334155;
-  --primary-surface: #EFF6FF;
-  --primary-ink: #1D4ED8;
-  --border-strong: #A1A1AA;
+}
 .blood-badge[data-blood="A"]  { background: var(--group-a-surface);  color: var(--group-a-ink); }
 .blood-badge[data-blood="B"]  { background: var(--group-b-surface);  color: var(--group-b-ink); }
 .blood-badge[data-blood="O"]  { background: var(--group-o-surface);  color: var(--group-o-ink); }
 .blood-badge[data-blood="AB"] { background: var(--group-ab-surface); color: var(--group-ab-ink); }
-
 /* ── Dark mode toast tokens ── */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
