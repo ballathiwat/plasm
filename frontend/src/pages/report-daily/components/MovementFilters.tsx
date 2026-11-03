@@ -294,7 +294,7 @@ export default function MovementFilters({
         </div>
         <div style={{ minWidth: 140 }}>
           <BloodGroupSelect
-            value={draft.group}
+            value={draft.blood}
             onChange={(v) => onBloodChange(v || "all")}
             allLabel="ทั้งหมด"
           />
