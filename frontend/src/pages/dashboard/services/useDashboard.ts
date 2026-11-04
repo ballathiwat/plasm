@@ -2,7 +2,7 @@
 //  src/pages/dashboard/services/useDashboard.ts
 // ============================================================
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import dashboardService from './DashboardService'
 import type { StockSummary, DailyData, LogEntryItem } from './DashboardType'
 import { levelOf, sumBlood } from './DashboardType'
