@@ -2,6 +2,9 @@
 //  src/pages/map/services/MapType.ts
 // ============================================================
 
+import { ROOM_LEGACY_KEY } from '../../../helpers/rack'
+export { ROOM_LEGACY_KEY }
+
 // ── ข้อมูลดิบจาก backend ──
 export interface MapBoxRaw {
   id: string
@@ -63,4 +66,3 @@ export interface BloodGroupAgeInfo {
   newest: { boxLabel: string; zoneName: string; shelf: string; collectionDate: string } | null
 }
 
-export const ROOM_LEGACY_KEY = 'ROOM'

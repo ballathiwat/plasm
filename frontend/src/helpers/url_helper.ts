@@ -21,7 +21,6 @@ export const GET_BOX_SEARCH = `${API}/boxes/search` // ?q= (กล่อง + un
 export const POST_BOX_WITHDRAW_UNITS = `${API}/boxes` // + /:id/withdraw  { units: string[] }
 
 // ===== Units =====
-export const GET_UNITS = `${API}/units`
 export const GET_UNIT_SEARCH = `${API}/units/search` // ?q=
 export const GET_UNIT_CHECK = `${API}/units/check`   // ?unit=
 export const PATCH_UNIT_WITHDRAW = `${API}/units`    // + /:id/withdraw

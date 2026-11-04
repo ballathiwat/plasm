@@ -30,16 +30,6 @@ export default function useDashboard() {
 
   const groups = stockData?.groups ?? []
 
-  // หมู่ที่ใช้ในตารางรายวัน = หมู่ในสต็อก + หมู่อื่นที่มีความเคลื่อนไหวในช่วงนี้
-  const dailyGroups = useMemo(() => {
-    const list = [...groups]
-    for (const d of dailyData) {
-      for (const g of [...Object.keys(d.store), ...Object.keys(d.withdraw)]) {
-        if (!list.includes(g)) list.push(g)
-      }
-    }
-    return list
-  }, [groups, dailyData])
 
   const total = stockData ? sumBlood(stockData.stocks) : 0
 
@@ -58,6 +48,6 @@ export default function useDashboard() {
 
   return {
     stockData, dailyData, logEntries, loading,
-    groups, dailyGroups, total, lowGroups, warnGroups, maxDailyValue,
+    groups, total, lowGroups, warnGroups, maxDailyValue,
   }
 }
