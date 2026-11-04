@@ -2,7 +2,8 @@
 //  src/pages/dashboard/services/DashboardType.ts
 // ============================================================
 
-export { groupColor, groupSurface, groupInk } from '../../../helpers/blood'
+import type { LogEntryItem } from '../../log/services/LogType'
+export type { LogEntryItem }
 
 export interface StockSummary {
   groups: string[]                       // หมู่เลือดที่แสดง (เรียงตาม master)
@@ -16,18 +17,6 @@ export interface DailyData {
   label: string
   store: Record<string, number>
   withdraw: Record<string, number>
-}
-
-export interface LogEntryItem {
-  id: string
-  action: 'store' | 'withdraw'
-  boxLabel: string
-  type: string
-  blood: string
-  units: string[]
-  timestamp: string
-  detail: string
-  unitCount?: number
 }
 
 export type StockLevel = 'danger' | 'warning' | 'normal' | 'none'

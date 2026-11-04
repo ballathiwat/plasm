@@ -2,6 +2,9 @@
 //  src/pages/rack/services/RackType.ts
 // ============================================================
 
+import type { ApiError } from '../../../helpers/http/types'
+export type { ApiError }
+
 export interface RackBox {
   id: string
   boxLabel: string
@@ -92,7 +95,3 @@ export interface SlotRef {
   position: number
 }
 
-export interface ApiError {
-  message?: string
-  statusCode?: number
-}
