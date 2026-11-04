@@ -15,10 +15,22 @@ const diffDays = (a: Date, b: Date) =>
   Math.round((b.getTime() - a.getTime()) / 86400000) + 1;
 
 const ALL_KEYS = [
-  "A","A+","A-","B","B+","B-","O","O+","O-","AB","AB+","AB-",
+  "A",
+  "A+",
+  "A-",
+  "B",
+  "B+",
+  "B-",
+  "O",
+  "O+",
+  "O-",
+  "AB",
+  "AB+",
+  "AB-",
 ];
-const GROUPS_ORDER = ["A","B","O","AB"];
-const sortKey = (a: string, b: string) => ALL_KEYS.indexOf(a) - ALL_KEYS.indexOf(b);
+const GROUPS_ORDER = ["A", "B", "O", "AB"];
+const sortKey = (a: string, b: string) =>
+  ALL_KEYS.indexOf(a) - ALL_KEYS.indexOf(b);
 
 const baseGroup = (k: string) =>
   /^AB/i.test(k) ? "AB" : /^[ABO]/i.test(k) ? k[0].toUpperCase() : k;
@@ -26,40 +38,56 @@ const baseGroup = (k: string) =>
 // ===== GET /api/v1/reports/movements =====
 router.get("/movements", async (req, res) => {
   try {
-    const { from: fromStr, to: toStr, types: typesStr, blood } =
-      req.query as Record<string, string | undefined>;
+    const {
+      from: fromStr,
+      to: toStr,
+      types: typesStr,
+      blood,
+    } = req.query as Record<string, string | undefined>;
 
     // --- Validate dates ---
     if (!fromStr || !toStr) {
-      res.status(400).json({ message: "กรุณาเลือกวันที่ให้ครบ" }); return;
+      res.status(400).json({ message: "กรุณาเลือกวันที่ให้ครบ" });
+      return;
     }
     const fromDate = parseDate(fromStr);
     const toDate = parseDate(toStr);
     if (!fromDate || !toDate) {
-      res.status(400).json({ message: "กรุณาเลือกวันที่ให้ครบ" }); return;
+      res.status(400).json({ message: "กรุณาเลือกวันที่ให้ครบ" });
+      return;
     }
     if (toDate < fromDate) {
-      res.status(400).json({ message: "วันสิ้นสุดต้องไม่ก่อนวันเริ่ม" }); return;
+      res.status(400).json({ message: "วันสิ้นสุดต้องไม่ก่อนวันเริ่ม" });
+      return;
     }
     if (toDate > parseDate(bkkToday())!) {
-      res.status(400).json({ message: "เลือกวันในอนาคตไม่ได้" }); return;
+      res.status(400).json({ message: "เลือกวันในอนาคตไม่ได้" });
+      return;
     }
     const days = diffDays(fromDate, toDate);
     if (days > 366) {
-      res.status(400).json({ message: "เลือกช่วงได้ไม่เกิน 1 ปี — ลองแบ่งดูทีละช่วง" }); return;
+      res
+        .status(400)
+        .json({ message: "เลือกช่วงได้ไม่เกิน 1 ปี — ลองแบ่งดูทีละช่วง" });
+      return;
     }
 
     // --- Resolve types ---
     const masterTypes = await prisma.masterPlasmaType.findMany({
-      where: { active: true }, orderBy: [{ sort: "asc" }, { code: "asc" }],
+      where: { active: true },
+      orderBy: [{ sort: "asc" }, { code: "asc" }],
     });
     const masterCodes = masterTypes.map((t) => t.code);
     let filterTypes: string[];
     if (typesStr && typesStr.trim()) {
-      filterTypes = typesStr.split(",").map((s) => s.trim()).filter(Boolean);
+      filterTypes = typesStr
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       for (const code of filterTypes) {
         if (!masterCodes.includes(code)) {
-          res.status(400).json({ message: `ไม่พบชนิด ${code}` }); return;
+          res.status(400).json({ message: `ไม่พบชนิด ${code}` });
+          return;
         }
       }
     } else {
@@ -69,7 +97,8 @@ router.get("/movements", async (req, res) => {
     // --- Validate blood ---
     const filterBlood = blood && blood !== "all" ? blood : null;
     if (filterBlood && !ALL_KEYS.includes(filterBlood)) {
-      res.status(400).json({ message: "หมู่เลือดไม่ถูกต้อง" }); return;
+      res.status(400).json({ message: "หมู่เลือดไม่ถูกต้อง" });
+      return;
     }
 
     // --- Granularity ---
@@ -90,16 +119,23 @@ router.get("/movements", async (req, res) => {
     }
     if (filterBlood) {
       params.push(filterBlood);
-      outerWhere = `WHERE bkey = ${params.length}`; // FIX 1
+      outerWhere = `WHERE bkey = $${params.length}`;
     }
     const extra = conds.join(" ");
 
     // bkey: exact blood code. A = no Rh, A+ = Rh+, A- = Rh-
     const bkeyExpr = `b.blood::text`; // FIX 2
 
-    const rows = await prisma.$queryRawUnsafe<{
-      day: Date; action: string; plasma_type: string; bkey: string; count: bigint;
-    }[]>(`
+    const rows = await prisma.$queryRawUnsafe<
+      {
+        day: Date;
+        action: string;
+        plasma_type: string;
+        bkey: string;
+        count: bigint;
+      }[]
+    >(
+      `
       SELECT day, action, plasma_type, bkey, COUNT(*) AS count FROM (
         SELECT
           DATE((u.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Bangkok') AS day,
@@ -119,7 +155,9 @@ router.get("/movements", async (req, res) => {
           AND u.withdrawn_at >= $1 AND u.withdrawn_at <= $2 ${extra}
       ) t ${outerWhere}
       GROUP BY day, action, plasma_type, bkey
-    `, ...params);
+    `,
+      ...params,
+    );
 
     // --- Determine active keys ---
     const activeKeys = new Set<string>();
@@ -131,7 +169,10 @@ router.get("/movements", async (req, res) => {
     const keys = ALL_KEYS.filter((k) => activeKeys.has(k));
 
     // --- Build buckets ---
-    interface BD { start: string; end: string }
+    interface BD {
+      start: string;
+      end: string;
+    }
     const bds: BD[] = [];
     if (granularity === "day") {
       for (let i = 0; i < days; i++) {
@@ -158,7 +199,11 @@ router.get("/movements", async (req, res) => {
         const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
         const monthEnd = `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
         bds.push({ start, end: monthEnd > toStr ? toStr : monthEnd });
-        m++; if (m > 12) { m = 1; y++; }
+        m++;
+        if (m > 12) {
+          m = 1;
+          y++;
+        }
         start = `${y}-${String(m).padStart(2, "0")}-01`;
       }
     }
@@ -169,12 +214,16 @@ router.get("/movements", async (req, res) => {
       return r;
     };
     const buckets = bds.map((b) => ({
-      start: b.start, end: b.end, store: emptyK(), withdraw: emptyK(),
+      start: b.start,
+      end: b.end,
+      store: emptyK(),
+      withdraw: emptyK(),
     }));
 
     // --- Matrix accumulators ---
     const mat: Record<string, { in: number; out: number }> = {};
-    let totalIn = 0, totalOut = 0;
+    let totalIn = 0,
+      totalOut = 0;
 
     for (const r of rows) {
       const dayStr = new Date(r.day).toISOString().split("T")[0];
@@ -187,8 +236,13 @@ router.get("/movements", async (req, res) => {
       // matrix
       const mk = `${r.plasma_type}|${r.bkey}`;
       if (!mat[mk]) mat[mk] = { in: 0, out: 0 };
-      if (r.action === "STORE") { mat[mk].in += cnt; totalIn += cnt; }
-      else { mat[mk].out += cnt; totalOut += cnt; }
+      if (r.action === "STORE") {
+        mat[mk].in += cnt;
+        totalIn += cnt;
+      } else {
+        mat[mk].out += cnt;
+        totalOut += cnt;
+      }
     }
 
     // Build matrix array (only non-zero)
@@ -205,8 +259,14 @@ router.get("/movements", async (req, res) => {
       });
 
     res.json({
-      from: fromStr, to: toStr, days, granularity,
-      types: filterTypes, keys, buckets, matrix,
+      from: fromStr,
+      to: toStr,
+      days,
+      granularity,
+      types: filterTypes,
+      keys,
+      buckets,
+      matrix,
       totals: { in: totalIn, out: totalOut },
     });
   } catch (error) {
