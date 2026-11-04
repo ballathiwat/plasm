@@ -113,7 +113,7 @@ router.get("/movements", async (req, res) => {
     let outerWhere = ""; // FIX 1: เงื่อนไขหมู่เลือดไปอยู่ชั้นนอก
 
     if (filterTypes.length < masterCodes.length) {
-      const ph = filterTypes.map((_, i) => `${params.length + i + 1}`);
+      const ph = filterTypes.map((_, i) => `$${params.length + i + 1}`);
       params.push(...filterTypes);
       conds.push(`AND b.type IN (${ph.join(",")})`);
     }
