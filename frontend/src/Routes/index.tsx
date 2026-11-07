@@ -20,6 +20,10 @@ const PATH_TO_MODULE: Record<string, string> = {
   "/report/daily": "report-daily",
   "/profile": "profile",
   "/settings": "settings",
+  "/ext-blood": "ext-blood-list",
+  "/ext-blood/create": "ext-blood-create",
+  "/ext-blood/report": "ext-blood-report",
+  "/ext-blood/settings": "ext-blood-settings",
 };
 
 const MODULE_TO_PATH: Record<string, string> = {
@@ -32,6 +36,10 @@ const MODULE_TO_PATH: Record<string, string> = {
   "report-summary": "/report",
   "report-daily": "/report/daily",
   profile: "/profile",
+  "ext-blood-list": "/ext-blood",
+  "ext-blood-create": "/ext-blood/create",
+  "ext-blood-report": "/ext-blood/report",
+  "ext-blood-settings": "/ext-blood/settings",
   settings: "/settings",
 };
 

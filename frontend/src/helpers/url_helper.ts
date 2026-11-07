@@ -54,3 +54,16 @@ export const MASTER_REMOVAL_REASONS = `${API}/master/removal-reasons`
 // ===== Rack (ห้อง -30°C) =====
 export const GET_RACK = `${API}/master/zones`       // + /:zoneId/racks/:shelf
 export const SLOT_LOCKS = `${API}/locks`            // POST · PUT /:id (heartbeat) · DELETE /:id
+
+// ===== External Blood Receiving (รอรับเลือดจากภายนอก) =====
+export const EXT_BASE = `${API}/ext`
+export const EXT_DOCUMENTS = `${EXT_BASE}/documents`
+export const EXT_SUMMARY = `${EXT_BASE}/summary`
+export const EXT_REPORT = `${EXT_BASE}/report`
+export const EXT_SOURCES = `${EXT_BASE}/sources`
+export const EXT_STORAGES = `${EXT_BASE}/storages`
+export const EXT_BLOOD_PRODUCTS = `${EXT_BASE}/blood-products`
+export const EXT_EXPORT_REASONS = `${EXT_BASE}/export-reasons`
+export const EXT_ATTACHMENTS = `${EXT_BASE}/attachments`
+export const EXT_PIN_SETUP = `${EXT_BASE}/pin/setup`
+export const EXT_PIN_VERIFY = `${EXT_BASE}/pin/verify`
