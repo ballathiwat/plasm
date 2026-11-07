@@ -14,6 +14,7 @@ import {
   BarChart3,
   FileText,
   CalendarDays,
+  Droplets, ClipboardCheck, SlidersHorizontal,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -50,6 +51,17 @@ export const MENU_ITEMS: MenuItem[] = [
   { key: 'search', label: 'ค้นหา', icon: Search, roles: ['ADMIN', 'STAFF'] },
   { key: 'map', label: 'แผนผัง', icon: Map, roles: ['ADMIN', 'STAFF'] },
   { key: 'log', label: 'ประวัติ', icon: ClipboardList, roles: ['ADMIN', 'STAFF'] },
+  {
+    key: 'ext-blood',
+    label: 'รอรับเลือดจากภายนอก',
+    icon: Droplets,
+    roles: ['ADMIN', 'STAFF'],
+    children: [
+      { key: 'ext-blood-list', label: 'รายการ', icon: ClipboardCheck, roles: ['ADMIN', 'STAFF'] },
+      { key: 'ext-blood-report', label: 'รายงาน', icon: FileText, roles: ['ADMIN', 'STAFF'] },
+      { key: 'ext-blood-settings', label: 'ตั้งค่า', icon: SlidersHorizontal, roles: ['ADMIN'] },
+    ],
+  },
   { key: 'settings', label: 'ตั้งค่า', icon: Settings, roles: ['ADMIN'] },
 ]
 
@@ -71,5 +83,9 @@ export const PAGE_TITLES: Record<string, string> = {
   'report-summary': 'รายงานสรุป',
   'report-daily': 'รายงาน นำเข้า/นำออก',
   profile: 'โปรไฟล์',
+  'ext-blood-list': 'รอรับเลือดจากภายนอก',
+  'ext-blood-create': 'บันทึกรับเลือด',
+  'ext-blood-report': 'รายงานรับเลือดจากภายนอก',
+  'ext-blood-settings': 'ตั้งค่า — รับเลือดจากภายนอก',
   settings: 'ตั้งค่า',
 }
