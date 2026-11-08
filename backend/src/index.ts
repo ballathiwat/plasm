@@ -18,6 +18,7 @@ import usersRoutes from './routes/users'
 import masterRoutes from './routes/master'
 import lockRoutes from './routes/locks'
 import reportRoutes from './routes/reports'
+import extRoutes from './routes/ext'
 
 const app = express()
 app.set('trust proxy', 1)
@@ -49,6 +50,8 @@ app.use('/api/v1/users', authGuard, usersRoutes)
 app.use('/api/v1/master', authGuard, masterRoutes)
 app.use('/api/v1/locks', authGuard, lockRoutes)
 app.use('/api/v1/reports', authGuard, reportRoutes)
+app.use('/api/v1/ext', authGuard, extRoutes)
+app.use('/uploads', express.static('uploads'))
 
 // ===== Start =====
 app.listen(PORT, () => {

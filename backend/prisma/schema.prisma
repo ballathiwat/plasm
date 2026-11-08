@@ -21,6 +21,16 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  pinHash        String?   @map("pin_hash")
+  pinFailCount   Int       @default(0) @map("pin_fail_count")
+  pinLockedUntil DateTime? @map("pin_locked_until")
+
+  extVerified    ExtDocument[] @relation("ExtVerifier")
+  extStored      ExtDocument[] @relation("ExtStorer")
+  extApproved    ExtDocument[] @relation("ExtApprover")
+  extCreated     ExtDocument[] @relation("ExtCreatedBy")
+  extExports     ExtExport[]
+  extTimeline    ExtTimeline[]
   logs         LogEntry[]
   unitRemovals UnitRemoval[]
   slotLocks    SlotLock[]
@@ -236,4 +246,169 @@ model SlotLock {
   @@unique([zoneId, shelf, level, position])
   @@index([expiresAt])
   @@map("slot_locks")
+}
+
+// ═════════════════════════════════════════════════════════════
+//  External Blood Receiving (รอรับเลือดจากภายนอก)
+// ═════════════════════════════════════════════════════════════
+
+enum ExtDocStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  EXPORTED
+  CANCELLED
+}
+
+enum ExtBagStatus {
+  IN_STOCK
+  EXPORTED
+}
+
+model ExtSource {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  locked    Boolean       @default(false)
+  active    Boolean       @default(true)
+  sort      Int           @default(0)
+  documents ExtDocument[]
+  @@map("ext_sources")
+}
+
+model ExtStorage {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  active    Boolean       @default(true)
+  sort      Int           @default(0)
+  documents ExtDocument[]
+  @@map("ext_storages")
+}
+
+model ExtBloodProduct {
+  id        String        @id @default(cuid())
+  code      String        @unique
+  name      String?
+  active    Boolean       @default(true)
+  sort      Int           @default(0)
+  documents ExtDocument[]
+  @@map("ext_blood_products")
+}
+
+model ExtExportReason {
+  id      String      @id @default(cuid())
+  name    String      @unique
+  active  Boolean     @default(true)
+  sort    Int         @default(0)
+  exports ExtExport[]
+  @@map("ext_export_reasons")
+}
+
+model ExtDocument {
+  id             String       @id @default(cuid())
+  docNumber      String       @unique @map("doc_number")
+  receivedDate   DateTime     @map("received_date") @db.Date
+  sourceId       String       @map("source_id")
+  bloodProductId String       @map("blood_product_id")
+  bloodGroup     String       @map("blood_group")
+  boxLabel       String       @map("box_label")
+  storageId      String       @map("storage_id")
+  status         ExtDocStatus @default(DRAFT)
+  editReason     String?      @map("edit_reason")
+  deferApproval  Boolean      @default(false) @map("defer_approval")
+  verifierId     String?      @map("verifier_id")
+  verifiedAt     DateTime?    @map("verified_at")
+  verifierPin    Boolean      @default(false) @map("verifier_pin")
+  storerId       String?      @map("storer_id")
+  storedAt       DateTime?    @map("stored_at")
+  storerPin      Boolean      @default(false) @map("storer_pin")
+  approverId     String?      @map("approver_id")
+  approvedAt     DateTime?    @map("approved_at")
+  approverPin    Boolean      @default(false) @map("approver_pin")
+  rejectReason   String?      @map("reject_reason")
+  createdById    String?      @map("created_by_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  source       ExtSource       @relation(fields: [sourceId], references: [id])
+  bloodProduct ExtBloodProduct @relation(fields: [bloodProductId], references: [id])
+  storage      ExtStorage      @relation(fields: [storageId], references: [id])
+  verifier     User?           @relation("ExtVerifier", fields: [verifierId], references: [id])
+  storer       User?           @relation("ExtStorer", fields: [storerId], references: [id])
+  approver     User?           @relation("ExtApprover", fields: [approverId], references: [id])
+  createdBy    User?           @relation("ExtCreatedBy", fields: [createdById], references: [id])
+  bags         ExtBag[]
+  attachments  ExtAttachment[]
+  timeline     ExtTimeline[]
+  exports      ExtExport[]
+
+  @@map("ext_documents")
+}
+
+model ExtBag {
+  id         String       @id @default(cuid())
+  documentId String       @map("document_id")
+  bagNumber  String       @map("bag_number")
+  status     ExtBagStatus @default(IN_STOCK)
+  exportedAt DateTime?    @map("exported_at")
+  exportId   String?      @map("export_id")
+
+  document ExtDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  export   ExtExport?  @relation(fields: [exportId], references: [id])
+
+  @@index([bagNumber])
+  @@map("ext_bags")
+}
+
+model ExtAttachment {
+  id         String      @id @default(cuid())
+  documentId String      @map("document_id")
+  fileName   String      @map("file_name")
+  fileType   String      @map("file_type")
+  fileSize   Int         @map("file_size")
+  filePath   String      @map("file_path")
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  document ExtDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("ext_attachments")
+}
+
+model ExtExport {
+  id         String          @id @default(cuid())
+  documentId String          @map("document_id")
+  reasonId   String          @map("reason_id")
+  exportDate DateTime        @map("export_date") @db.Date
+  note       String?
+  userId     String?         @map("user_id")
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  document ExtDocument     @relation(fields: [documentId], references: [id])
+  reason   ExtExportReason @relation(fields: [reasonId], references: [id])
+  user     User?           @relation(fields: [userId], references: [id])
+  bags     ExtBag[]
+
+  @@map("ext_exports")
+}
+
+model ExtTimeline {
+  id         String      @id @default(cuid())
+  documentId String      @map("document_id")
+  action     String
+  detail     String
+  userId     String?     @map("user_id")
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  document ExtDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User?       @relation(fields: [userId], references: [id])
+
+  @@map("ext_timeline")
+}
+
+model ExtDocCounter {
+  year   Int
+  lastNo Int @default(0) @map("last_no")
+
+  @@id([year])
+  @@map("ext_doc_counters")
 }
