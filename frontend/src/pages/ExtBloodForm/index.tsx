@@ -24,7 +24,7 @@ export default function ExtBloodFormPage() {
       <ExtFormStepBar step={h.step} onStepClick={h.setStep} />
       {h.error && <div className="ext-form-error" style={{ marginBottom: 16 }}><AlertTriangle size={14} /> {h.error}</div>}
       <div className="ext-form-content">
-        {h.step === 1 && <ExtFormReceiveInfo form={h.form} setField={h.setField} sources={h.sources} storages={h.storages} bloodProducts={h.bloodProducts} />}
+        {h.step === 1 && <ExtFormReceiveInfo form={h.form} setField={h.setField} sources={h.sources} storages={h.storages}  />}
         {h.step === 2 && <ExtFormBagInput bags={h.form.bags} bagInput={h.bagInput} setBagInput={h.setBagInput} addBag={h.addBag} removeBag={h.removeBag} bagError={h.bagError} />}
         {h.step === 3 && <ExtFormAttachments attachments={h.attachments} onAdd={h.addAttachments} onRemove={h.removeAttachment} />}
         {h.step === 4 && <ExtFormSigning signs={h.signs} users={h.users} deferApproval={h.form.deferApproval} onDeferChange={v => h.setField('deferApproval', v)} onSign={h.handleSign} onUnsign={h.handleUnsign} />}
