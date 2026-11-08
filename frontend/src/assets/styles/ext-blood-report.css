@@ -1,0 +1,10 @@
+/* frontend/src/assets/styles/ext-blood-report.css */
+.ext-report-page{max-width:1000px;} .ext-report-filter{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.ext-report-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;margin-bottom:16px;}
+.ext-report-card-title{font-size:14px;font-weight:700;margin:0 0 14px;}
+.ext-report-legend{display:flex;gap:16px;margin-top:10px;} .ext-report-legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);}
+.ext-report-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.ext-matrix-table{width:100%;border-collapse:collapse;font-size:13px;}
+.ext-matrix-table th{padding:8px 10px;text-align:center;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--surface-raised);border-bottom:1px solid var(--border);}
+.ext-matrix-table td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);}
+.ext-matrix-product{text-align:left!important;font-weight:600;} .ext-matrix-total{font-weight:700;} .ext-matrix-cell{font-variant-numeric:tabular-nums;}

@@ -7,6 +7,7 @@ import { useAuth } from '../../Routes/AuthProtected'
 import Toast from '../../components/common/Toast'
 import useProfile from './services/useProfile'
 import ChangePasswordForm from './components/ChangePasswordForm'
+import ProfilePinSection from './components/ProfilePinSection'
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -60,6 +61,7 @@ export default function ProfilePage() {
         onChange={handleChange}
         onSubmit={handleSubmit}
       />
+       <ProfilePinSection /> 
     </div>
   )
 }
