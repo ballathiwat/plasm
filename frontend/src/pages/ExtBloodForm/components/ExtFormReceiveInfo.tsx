@@ -1,17 +1,121 @@
 // frontend/src/pages/ExtBloodForm/components/ExtFormReceiveInfo.tsx
+
+import { useMemo } from 'react'
+import FormInput from '../../../components/common/FormInput'
+import SelectDropdown, { type OptionType } from '../../../components/common/SelectDropdown'
+import DateInput from '../../../components/common/DateInput'
 import type { ExtFormData } from '../services/ExtFormType'
 import type { ExtSource, ExtStorage, ExtBloodProduct } from '../../ExtBlood/services/ExtBloodType'
 import { BLOOD_GROUPS } from '../services/useExtForm'
-interface Props { form: ExtFormData; setField: <K extends keyof ExtFormData>(k: K, v: ExtFormData[K]) => void; sources: ExtSource[]; storages: ExtStorage[]; bloodProducts: ExtBloodProduct[] }
+
+const toOption = (value: string, label: string): OptionType => ({ value, label })
+const findOption = (opts: OptionType[], val: string) =>
+  opts.find(o => o.value === val) ?? null
+
+interface Props {
+  form: ExtFormData
+  setField: <K extends keyof ExtFormData>(k: K, v: ExtFormData[K]) => void
+  sources: ExtSource[]
+  storages: ExtStorage[]
+  bloodProducts: ExtBloodProduct[]
+}
+
 export default function ExtFormReceiveInfo({ form, setField, sources, storages, bloodProducts }: Props) {
+  const sourceOpts = useMemo<OptionType[]>(
+    () => sources.map(s => toOption(s.id, s.name)),
+    [sources],
+  )
+  const productOpts = useMemo<OptionType[]>(
+    () => bloodProducts.map(b => toOption(b.id, `${b.code}${b.name ? ` — ${b.name}` : ''}`)),
+    [bloodProducts],
+  )
+  const bloodOpts = useMemo<OptionType[]>(
+    () => BLOOD_GROUPS.map(g => toOption(g, g)),
+    [],
+  )
+  const storageOpts = useMemo<OptionType[]>(
+    () => storages.map(s => toOption(s.id, s.name)),
+    [storages],
+  )
+
   return (
-    <div className="ext-form-section"><h3 className="ext-form-section-title">ข้อมูลการรับเลือด</h3><div className="ext-form-grid">
-      <div className="ext-form-group"><label className="ext-form-label">วันที่รับ <span className="ext-required">*</span></label><input type="date" className="ext-form-input" value={form.receivedDate} onChange={e => setField('receivedDate', e.target.value)} /></div>
-      <div className="ext-form-group"><label className="ext-form-label">สถานที่ส่งเลือด <span className="ext-required">*</span></label><select className="ext-form-select" value={form.sourceId} onChange={e => setField('sourceId', e.target.value)}><option value="">เลือก...</option>{sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-      <div className="ext-form-group"><label className="ext-form-label">ชนิดเลือด <span className="ext-required">*</span></label><select className="ext-form-select" value={form.bloodProductId} onChange={e => setField('bloodProductId', e.target.value)}><option value="">เลือก...</option>{bloodProducts.map(b => <option key={b.id} value={b.id}>{b.code}{b.name ? ` — ${b.name}` : ''}</option>)}</select></div>
-      <div className="ext-form-group"><label className="ext-form-label">หมู่เลือด <span className="ext-required">*</span></label><select className="ext-form-select" value={form.bloodGroup} onChange={e => setField('bloodGroup', e.target.value)}><option value="">เลือก...</option>{BLOOD_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
-      <div className="ext-form-group"><label className="ext-form-label">เลข Box Label <span className="ext-required">*</span></label><input type="text" className="ext-form-input" value={form.boxLabel} onChange={e => setField('boxLabel', e.target.value)} placeholder="เช่น B+ 2026 0001" /></div>
-      <div className="ext-form-group"><label className="ext-form-label">ตำแหน่งจัดเก็บ <span className="ext-required">*</span></label><select className="ext-form-select" value={form.storageId} onChange={e => setField('storageId', e.target.value)}><option value="">เลือก...</option>{storages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
-    </div></div>
+    <div className="ext-form-section">
+      <h3 className="ext-form-section-title">ข้อมูลการรับเลือด</h3>
+      <div className="ext-form-grid">
+        {/* วันที่รับ */}
+        <div className="ext-form-group">
+          <DateInput
+            label="วันที่รับ"
+            required
+            value={form.receivedDate}
+            onChange={iso => setField('receivedDate', iso)}
+          />
+        </div>
+
+        {/* สถานที่ส่งเลือด */}
+        <div className="ext-form-group">
+          <SelectDropdown
+            label="สถานที่ส่งเลือด"
+            required
+            placeholder="เลือก..."
+            options={sourceOpts}
+            value={findOption(sourceOpts, form.sourceId)}
+            onChange={opt => setField('sourceId', opt?.value ?? '')}
+            isClearable={false}
+          />
+        </div>
+
+        {/* ชนิดเลือด */}
+        <div className="ext-form-group">
+          <SelectDropdown
+            label="ชนิดเลือด"
+            required
+            placeholder="เลือก..."
+            options={productOpts}
+            value={findOption(productOpts, form.bloodProductId)}
+            onChange={opt => setField('bloodProductId', opt?.value ?? '')}
+            isClearable={false}
+          />
+        </div>
+
+        {/* หมู่เลือด */}
+        <div className="ext-form-group">
+          <SelectDropdown
+            label="หมู่เลือด"
+            required
+            placeholder="เลือก..."
+            options={bloodOpts}
+            value={findOption(bloodOpts, form.bloodGroup)}
+            onChange={opt => setField('bloodGroup', opt?.value ?? '')}
+            isClearable={false}
+            isSearchable={false}
+          />
+        </div>
+
+        {/* เลข Box Label */}
+        <div className="ext-form-group">
+          <FormInput
+            label="เลข Box Label"
+            required
+            placeholder="เช่น B+ 2026 0001"
+            value={form.boxLabel}
+            onChange={val => setField('boxLabel', val)}
+          />
+        </div>
+
+        {/* ตำแหน่งจัดเก็บ */}
+        <div className="ext-form-group">
+          <SelectDropdown
+            label="ตำแหน่งจัดเก็บ"
+            required
+            placeholder="เลือก..."
+            options={storageOpts}
+            value={findOption(storageOpts, form.storageId)}
+            onChange={opt => setField('storageId', opt?.value ?? '')}
+            isClearable={false}
+          />
+        </div>
+      </div>
+    </div>
   )
 }
