@@ -80,7 +80,10 @@ export interface ExtDocument {
   bagCount: number
   bagRemaining: number
   createdBy?: UserSummary
+  createdById?: string
   createdAt: string
+  submittedAt?: string | null
+  committee?: ExtCommitteeMember[]
 }
 
 export interface ExtListFilter {
@@ -101,3 +104,19 @@ export interface ExtSummary {
   pendingApproval: number
   exportedThisMonth: number
 }
+
+export type ExtCommitteeRole = 'VERIFIER' | 'STORER' | 'APPROVER'
+export type ExtCommitteeStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export interface ExtCommitteeMember {
+  id: string
+  userId: string
+  role: ExtCommitteeRole
+  status: ExtCommitteeStatus
+  reason?: string | null
+  actedAt?: string | null
+  user: UserSummary
+}
+
+export interface ExtCounts { mine: number; byStatus: Record<string, number> }
+export type ExtRoleRules = Record<string, ExtCommitteeRole[]>

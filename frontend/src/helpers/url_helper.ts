@@ -67,3 +67,5 @@ export const EXT_EXPORT_REASONS = `${EXT_BASE}/export-reasons`
 export const EXT_ATTACHMENTS = `${EXT_BASE}/attachments`
 export const EXT_PIN_SETUP = `${EXT_BASE}/pin/setup`
 export const EXT_PIN_VERIFY = `${EXT_BASE}/pin/verify`
+export const EXT_COMMITTEE = `${EXT_BASE}/committee`
+export const EXT_USERS = `${EXT_BASE}/users`

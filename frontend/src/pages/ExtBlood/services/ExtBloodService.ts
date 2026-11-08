@@ -4,10 +4,10 @@ import apiAdapter from '../../../helpers/http/apiAdapter'
 import {
   EXT_DOCUMENTS, EXT_SUMMARY, EXT_REPORT,
   EXT_SOURCES, EXT_STORAGES, EXT_BLOOD_PRODUCTS, EXT_EXPORT_REASONS,
-  EXT_ATTACHMENTS, EXT_PIN_SETUP, EXT_PIN_VERIFY,
+  EXT_ATTACHMENTS, EXT_PIN_SETUP, EXT_PIN_VERIFY, EXT_COMMITTEE, EXT_USERS,
 } from '../../../helpers/url_helper'
 import type {
-  ExtDocument, ExtListFilter, ExtSummary,
+  ExtDocument, ExtListFilter, ExtSummary, ExtCounts, ExtRoleRules, ExtCommitteeRole, UserSummary,
   ExtSource, ExtStorage, ExtBloodProduct, ExtExportReason, ExtAttachment,
 } from './ExtBloodType'
 
@@ -30,42 +30,31 @@ const extBloodService = {
   // Documents
   getDocuments: (params: ExtListFilter) =>
     apiAdapter.get<ExtPaginatedResponse>(EXT_DOCUMENTS, params as Record<string, string>),
-  getDocument: (id: string) =>
-    apiAdapter.getById<ExtDocument>(EXT_DOCUMENTS, id),
-  createDocument: (data: FormData) =>
-    apiAdapter.upload<ExtDocument>(EXT_DOCUMENTS, data),
-  updateDocument: (id: string, data: FormData) =>
-    apiAdapter.upload<ExtDocument>(`${EXT_DOCUMENTS}/${id}`, data),
-  deleteDocument: (id: string) =>
-    apiAdapter.delete<{ message: string }>(`${EXT_DOCUMENTS}/${id}`),
+  getDocument: (id: string) => apiAdapter.getById<ExtDocument>(EXT_DOCUMENTS, id),
+  createDocument: (data: FormData) => apiAdapter.upload<ExtDocument>(EXT_DOCUMENTS, data),
+  updateDocument: (id: string, data: FormData) => apiAdapter.upload<ExtDocument>(`${EXT_DOCUMENTS}/${id}`, data),
+  deleteDocument: (id: string) => apiAdapter.delete<{ message: string }>(`${EXT_DOCUMENTS}/${id}`),
 
-  // Signing
-  sign: (id: string, data: { role: string; userId: string; pin: string }) =>
-    apiAdapter.post<typeof data, ExtDocument>(`${EXT_DOCUMENTS}/${id}/sign`, data),
-  unsign: (id: string, data: { role: string }) =>
-    apiAdapter.post<typeof data, ExtDocument>(`${EXT_DOCUMENTS}/${id}/unsign`, data),
-
-  // Approve / Reject
-  approve: (id: string, pin: string) =>
-    apiAdapter.post<{ pin: string }, ExtDocument>(`${EXT_DOCUMENTS}/${id}/approve`, { pin }),
-  reject: (id: string, data: { reason: string; pin: string }) =>
-    apiAdapter.post<typeof data, ExtDocument>(`${EXT_DOCUMENTS}/${id}/reject`, data),
-  batchApprove: (ids: string[], pin: string) =>
-    apiAdapter.post<{ ids: string[]; pin: string }, { count: number }>(`${EXT_DOCUMENTS}/batch-approve`, { ids, pin }),
-  batchReject: (ids: string[], data: { reason: string; pin: string }) =>
-    apiAdapter.post<{ ids: string[]; reason: string; pin: string }, { count: number }>(`${EXT_DOCUMENTS}/batch-reject`, { ids, ...data }),
+  // Committee (คณะกรรมการอนุมัติ)
+  getCounts: () => apiAdapter.get<ExtCounts>(`${EXT_COMMITTEE}/counts`),
+  getInbox: (params: ExtListFilter) => apiAdapter.get<ExtPaginatedResponse>(`${EXT_COMMITTEE}/inbox`, params as Record<string, string>),
+  getRoleRules: () => apiAdapter.get<ExtRoleRules>(`${EXT_COMMITTEE}/rules`),
+  getUsers: () => apiAdapter.get<UserSummary[]>(EXT_USERS),
+  setCommittee: (id: string, members: { userId: string; role: ExtCommitteeRole }[]) =>
+    apiAdapter.put<{ members: typeof members }, ExtDocument>(`${EXT_DOCUMENTS}/${id}/committee`, { members }),
+  submit: (id: string) => apiAdapter.post<Record<string, never>, ExtDocument>(`${EXT_DOCUMENTS}/${id}/submit`, {}),
+  recall: (id: string) => apiAdapter.post<Record<string, never>, ExtDocument>(`${EXT_DOCUMENTS}/${id}/recall`, {}),
+  decide: (id: string, data: { decision: 'approve' | 'reject'; reason?: string; pin: string }) =>
+    apiAdapter.post<typeof data, ExtDocument>(`${EXT_DOCUMENTS}/${id}/committee/decide`, data),
+  batchApproveMine: (ids: string[], pin: string) =>
+    apiAdapter.post<{ ids: string[]; pin: string }, { count: number }>(`${EXT_COMMITTEE}/batch-approve`, { ids, pin }),
 
   // Export
   exportBags: (id: string, data: { bagIds: string[]; reasonId: string; date: string; note?: string; pin: string }) =>
     apiAdapter.post<typeof data, ExtDocument>(`${EXT_DOCUMENTS}/${id}/export`, data),
 
   // Attachments
-  getAttachments: (id: string) =>
-    apiAdapter.get<ExtAttachment[]>(`${EXT_DOCUMENTS}/${id}/attachments`),
-  uploadAttachments: (id: string, files: FormData) =>
-    apiAdapter.upload<ExtAttachment[]>(`${EXT_DOCUMENTS}/${id}/attachments`, files),
-  deleteAttachment: (id: string) =>
-    apiAdapter.delete<{ message: string }>(`${EXT_ATTACHMENTS}/${id}`),
+  deleteAttachment: (id: string) => apiAdapter.delete<{ message: string }>(`${EXT_ATTACHMENTS}/${id}`),
 
   // Summary & Report
   getSummary: () => apiAdapter.get<ExtSummary>(EXT_SUMMARY),
@@ -80,8 +69,8 @@ const extBloodService = {
   // PIN
   setupPin: (data: { password: string; pin: string }) =>
     apiAdapter.post<typeof data, { message: string }>(EXT_PIN_SETUP, data),
-  verifyPin: (pin: string) =>
-    apiAdapter.post<{ pin: string }, PinVerifyResult>(EXT_PIN_VERIFY, { pin }),
+  verifyPin: (pin: string) => apiAdapter.post<{ pin: string }, PinVerifyResult>(EXT_PIN_VERIFY, { pin }),
 }
 
+export type { ExtAttachment }
 export default extBloodService

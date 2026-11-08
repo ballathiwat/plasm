@@ -31,6 +31,7 @@ model User {
   extCreated     ExtDocument[] @relation("ExtCreatedBy")
   extExports     ExtExport[]
   extTimeline    ExtTimeline[]
+  extCommittee   ExtCommittee[]
   logs         LogEntry[]
   unitRemovals UnitRemoval[]
   slotLocks    SlotLock[]
@@ -326,6 +327,7 @@ model ExtDocument {
   approvedAt     DateTime?    @map("approved_at")
   approverPin    Boolean      @default(false) @map("approver_pin")
   rejectReason   String?      @map("reject_reason")
+  submittedAt    DateTime?    @map("submitted_at")
   createdById    String?      @map("created_by_id")
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
@@ -341,6 +343,7 @@ model ExtDocument {
   attachments  ExtAttachment[]
   timeline     ExtTimeline[]
   exports      ExtExport[]
+  committee    ExtCommittee[]
 
   @@map("ext_documents")
 }
@@ -411,4 +414,36 @@ model ExtDocCounter {
 
   @@id([year])
   @@map("ext_doc_counters")
+}
+
+// ===== คณะกรรมการอนุมัติ (1 คน 1 หน้าที่ต่อเอกสาร, อนุมัติพร้อมกันได้) =====
+enum ExtCommitteeRole {
+  VERIFIER
+  STORER
+  APPROVER
+}
+
+enum ExtCommitteeStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ExtCommittee {
+  id         String             @id @default(cuid())
+  documentId String             @map("document_id")
+  userId     String             @map("user_id")
+  role       ExtCommitteeRole
+  status     ExtCommitteeStatus @default(DRAFT)
+  reason     String?
+  actedAt    DateTime?          @map("acted_at")
+  createdAt  DateTime           @default(now()) @map("created_at")
+
+  document ExtDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User        @relation(fields: [userId], references: [id])
+
+  @@unique([documentId, userId])
+  @@index([userId, status])
+  @@map("ext_committee")
 }

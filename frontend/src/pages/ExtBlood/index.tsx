@@ -3,6 +3,8 @@
 import { useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import Button from '../../components/common/Button'
+import Toast from '../../components/common/Toast'
+import { ConfirmModal } from '../../components/common/Modal'
 import useExtBlood from './services/useExtBlood'
 import type { TabKey } from './services/useExtBlood'
 import ExtSummaryCards from './components/ExtSummaryCards'
@@ -17,8 +19,10 @@ import ExtDetailModal from './components/ExtDetailModal'
 import ExtApproveModal from './components/ExtApproveModal'
 import ExtExportModal from './components/ExtExportModal'
 import '../../assets/styles/ext-blood.css'
+import '../../assets/styles/ext-committee.css'
 
 const TABS: { key: TabKey; label: string }[] = [
+  { key: 'MINE', label: 'รอฉันอนุมัติ' },
   { key: 'ALL', label: 'ทั้งหมด' },
   { key: 'DRAFT', label: 'ร่าง' },
   { key: 'PENDING', label: 'รออนุมัติ' },
@@ -30,111 +34,62 @@ const TABS: { key: TabKey; label: string }[] = [
 export default function ExtBloodPage() {
   const navigate = useNavigate()
   const h = useExtBlood()
+  const count = (k: TabKey) => (k === 'MINE' ? h.counts.mine : h.counts.byStatus[k] ?? 0)
+  const rowProps = {
+    documents: h.documents, userId: h.user.id, isAdmin: h.user.role === 'ADMIN',
+    onViewDetail: h.openDetail, onApprove: h.openApprove, onExport: h.openExport,
+    onEdit: (id: string) => navigate(`/ext-blood/${id}/edit`), onDelete: h.setDeleteDoc, onRecall: h.handleRecall,
+  }
 
   return (
-    <div className="ext-blood-page" style={{ animation: 'plasm-fade-in 0.2s ease' }}>
-      {/* Header */}
+    <div className="ext-blood-page" style={{ animation: 'plasm-fade-in 0.2s ease', paddingBottom: h.selectedIds.length ? 72 : 0 }}>
+      <Toast toast={h.toast} onDismiss={h.dismissToast} />
+
       <div className="ext-header">
-        <div>
-          <h2 className="ext-title">รอรับเลือดจากภายนอก</h2>
-          <p className="ext-subtitle">บันทึก ตรวจสอบ อนุมัติ และนำออกถุงเลือดจากศูนย์บริการโลหิตภายนอก</p>
-        </div>
-        <Button variant="primary" icon={<Plus size={18} />} onClick={() => navigate('/ext-blood/create')}>
-          บันทึกรับเลือด
-        </Button>
+        <p className="ext-subtitle" style={{ margin: 0, alignSelf: 'center' }}>บันทึก ตรวจสอบ อนุมัติ และนำออกถุงเลือดจากศูนย์บริการโลหิตภายนอก</p>
+        <Button variant="primary" icon={<Plus size={18} />} onClick={() => navigate('/ext-blood/create')}>บันทึกรับเลือด</Button>
       </div>
 
-      {/* Summary Cards */}
-      {h.summary && <ExtSummaryCards summary={h.summary} />}
+      {h.summary && <ExtSummaryCards summary={h.summary} activeTab={h.activeTab} onSelect={h.setActiveTab} />}
 
-      {/* Tabs */}
-      <div className="ext-tabs">
-        {TABS.map(t => (
-          <button
-            key={t.key}
-            className={`ext-tab ${h.activeTab === t.key ? 'ext-tab--active' : ''}`}
-            onClick={() => h.setActiveTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="ext-tabs" role="tablist">
+        {TABS.map((t) => {
+          const n = count(t.key), on = h.activeTab === t.key
+          return (
+            <button key={t.key} role="tab" aria-selected={on} className={`ext-tab ${on ? 'ext-tab--active' : ''}`} onClick={() => h.setActiveTab(t.key)}>
+              {t.label}
+              <span className={`ext-tab-count ${t.key === 'MINE' && n > 0 ? 'ext-tab-count--alert' : ''}`}>{n}</span>
+            </button>
+          )
+        })}
       </div>
 
-      {/* Filter */}
-      <ExtFilterBar
-        filter={h.filter}
-        sources={h.sources}
-        bloodProducts={h.bloodProducts}
-        onFilter={h.setFilter}
-      />
+      <ExtFilterBar filter={h.filter} sources={h.sources} bloodProducts={h.bloodProducts} onFilter={h.setFilter} />
 
-      {/* Content */}
-      {h.loading ? (
-        <ExtLoadingSkeleton />
-      ) : h.documents.length === 0 ? (
-        <ExtEmptyState />
+      {h.loading ? <ExtLoadingSkeleton /> : h.documents.length === 0 ? (
+        h.activeTab === 'MINE'
+          ? <div className="ext-empty"><p className="ext-empty-text">ไม่มีเอกสารรอคุณอนุมัติ</p><p className="ext-empty-hint">เมื่อมีคนเพิ่มคุณเป็นคณะกรรมการ เอกสารจะแสดงที่นี่</p></div>
+          : <ExtEmptyState />
       ) : (
         <>
           <div className="ext-desktop-only">
-            <ExtTable
-              documents={h.documents}
-              selectedIds={h.selectedIds}
-              onToggleSelect={h.toggleSelect}
-              onToggleSelectAll={h.toggleSelectAll}
-              onViewDetail={h.openDetail}
-              onApprove={h.openApprove}
-              onExport={h.openExport}
-              onDelete={h.handleDelete}
-              onEdit={id => navigate(`/ext-blood/${id}/edit`)}
-              activeTab={h.activeTab}
-            />
+            <ExtTable {...rowProps} selectedIds={h.selectedIds} onToggleSelect={h.toggleSelect} onToggleSelectAll={h.toggleSelectAll} isMine={h.isMine} />
           </div>
-          <div className="ext-mobile-only">
-            <ExtMobileCards
-              documents={h.documents}
-              onViewDetail={h.openDetail}
-              onApprove={h.openApprove}
-              onExport={h.openExport}
-              onEdit={id => navigate(`/ext-blood/${id}/edit`)}
-            />
-          </div>
-          <ExtPagination
-            page={h.filter.page || 1}
-            totalPages={h.totalPages}
-            totalItems={h.totalItems}
-            onPageChange={h.setPage}
-          />
+          <div className="ext-mobile-only"><ExtMobileCards {...rowProps} /></div>
+          <ExtPagination page={h.filter.page || 1} totalPages={h.totalPages} totalItems={h.totalItems} onPageChange={h.setPage} />
         </>
       )}
 
-      {/* Batch Bar */}
-      {h.selectedIds.length > 0 && (
-        <ExtBatchBar count={h.selectedIds.length} onApprove={h.openApprove} onClear={h.clearSelection} />
-      )}
+      {h.selectedIds.length > 0 && <ExtBatchBar count={h.selectedIds.length} onApprove={() => h.openApprove()} onClear={h.clearSelection} />}
 
-      {/* Modals */}
-      {h.showDetailModal && h.detailDoc && (
-        <ExtDetailModal doc={h.detailDoc} onClose={h.closeDetail} />
-      )}
+      {h.showDetailModal && h.detailDoc && <ExtDetailModal doc={h.detailDoc} onClose={h.closeDetail} />}
       {h.showApproveModal && (
-        <ExtApproveModal
-          doc={h.detailDoc}
-          selectedIds={h.selectedIds}
-          onApprove={h.handleApprove}
-          onReject={h.handleReject}
-          onBatchApprove={h.handleBatchApprove}
-          onBatchReject={h.handleBatchReject}
-          onClose={h.closeApprove}
-        />
+        <ExtApproveModal doc={h.detailDoc} userId={h.user.id} selectedCount={h.selectedIds.length}
+          onDecide={h.handleDecide} onBatchApprove={h.handleBatchApprove} onClose={h.closeApprove} />
       )}
-      {h.showExportModal && h.detailDoc && (
-        <ExtExportModal
-          doc={h.detailDoc}
-          exportReasons={h.exportReasons}
-          onExport={h.handleExportBags}
-          onClose={h.closeExport}
-        />
-      )}
+      {h.showExportModal && h.detailDoc && <ExtExportModal doc={h.detailDoc} exportReasons={h.exportReasons} onExport={h.handleExportBags} onClose={h.closeExport} />}
+      <ConfirmModal open={!!h.deleteDoc} onClose={() => h.setDeleteDoc(null)} onConfirm={h.handleDelete} type="danger"
+        title="ลบเอกสารร่าง?" message={h.deleteDoc ? `ลบ ${h.deleteDoc.docNumber} (${h.deleteDoc.bagCount} ถุง) — ลบแล้วกู้คืนไม่ได้` : ''} confirmText="ลบเอกสาร" />
     </div>
   )
 }
