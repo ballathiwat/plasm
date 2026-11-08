@@ -1,6 +1,6 @@
 // frontend/src/pages/ExtBlood/components/ExtDetailModal.tsx
 
-import { FileText, Paperclip, Clock, CheckCircle, XCircle, User } from 'lucide-react'
+import { FileText, Paperclip, Clock, User } from 'lucide-react'
 import Modal from '../../../components/common/Modal'
 import { formatThaiDate, formatThaiDateTime, statusLabel, statusClass, bloodGroupClass } from '../services/extHelpers'
 import type { ExtDocument } from '../services/ExtBloodType'

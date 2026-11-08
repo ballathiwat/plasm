@@ -65,7 +65,7 @@ router.get('/documents/:id', async (req, res) => {
 // POST /documents — create
 router.post('/documents', extUpload.array('files', 10), async (req, res) => {
   try {
-    const { receivedDate, sourceId, bloodProductId, bloodGroup, boxLabel, storageId, status, deferApproval, editReason } = req.body
+    const { receivedDate, sourceId, bloodProductId, bloodGroup, boxLabel, storageId, status, deferApproval, editReason } = req.body as Record<string, string | undefined>
     const bags: string[] = Array.isArray(req.body['bags[]']) ? req.body['bags[]'] : req.body['bags[]'] ? [req.body['bags[]']] : []
 
     if (!receivedDate || !sourceId || !bloodProductId || !bloodGroup || !boxLabel || !storageId) {
@@ -108,7 +108,7 @@ router.post('/documents/:id', extUpload.array('files', 10), async (req, res) => 
     const existing = await prisma.extDocument.findUnique({ where: { id: req.params.id }, include: { bags: true } })
     if (!existing) { res.status(404).json({ message: 'ไม่พบเอกสาร' }); return }
 
-    const { receivedDate, sourceId, bloodProductId, bloodGroup, boxLabel, storageId, status, deferApproval, editReason } = req.body
+    const { receivedDate, sourceId, bloodProductId, bloodGroup, boxLabel, storageId, status, deferApproval, editReason } = req.body as Record<string, string | undefined>
     const bags: string[] = Array.isArray(req.body['bags[]']) ? req.body['bags[]'] : req.body['bags[]'] ? [req.body['bags[]']] : []
     const files = (req.files as Express.Multer.File[]) || []
 
