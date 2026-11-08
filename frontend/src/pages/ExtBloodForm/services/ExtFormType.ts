@@ -1,8 +1,9 @@
 // frontend/src/pages/ExtBloodForm/services/ExtFormType.ts
 
+
 export interface ExtFormData {
   receivedDate: string; sourceId: string; bloodProductId: string
-  bloodGroup: string; boxLabel: string; storageId: string
+  plasmaType: string; bloodGroup: string; boxLabel: string; storageId: string
   bags: string[]; deferApproval: boolean; editReason?: string
 }
 
