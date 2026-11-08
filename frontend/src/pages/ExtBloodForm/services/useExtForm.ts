@@ -45,7 +45,7 @@ export default function useExtForm() {
     Promise.all([extBloodService.getSources(), extBloodService.getStorages(), extBloodService.getBloodProducts()])
       .then(([s, st, b]) => { setSources(s.filter(x => x.active)); setStorages(st.filter(x => x.active)); setBloodProducts(b.filter(x => x.active)) })
     import('../../../helpers/http/apiAdapter').then(({ default: api }) => {
-      api.get<UserSummary[]>('/api/v1/users').then(setUsers).catch(() => {})
+      api.get<UserSummary[]>('/api/v1/ext/users').then(setUsers).catch(() => {})
     })
   }, [])
 

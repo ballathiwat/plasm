@@ -103,7 +103,7 @@ router.post('/documents', extUpload.array('files', 10), async (req, res) => {
 })
 
 // PUT /documents/:id — update
-router.put('/documents/:id', extUpload.array('files', 10), async (req, res) => {
+router.post('/documents/:id', extUpload.array('files', 10), async (req, res) => {
   try {
     const existing = await prisma.extDocument.findUnique({ where: { id: req.params.id }, include: { bags: true } })
     if (!existing) { res.status(404).json({ message: 'ไม่พบเอกสาร' }); return }
@@ -469,4 +469,19 @@ router.post('/pin/verify', async (req, res) => {
   } catch (e) { fail(res, e, 'POST /ext/pin/verify') }
 })
 
+
+// ═════════════════════════════════════════════
+//  Users list (สำหรับ dropdown ลงนาม — ทุก role เข้าถึงได้)
+// ═════════════════════════════════════════════
+
+router.get("/users", async (_req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { active: true },
+      select: { id: true, name: true, username: true },
+      orderBy: { name: "asc" },
+    })
+    res.json(users)
+  } catch (e) { fail(res, e, "GET /ext/users") }
+})
 export default router
