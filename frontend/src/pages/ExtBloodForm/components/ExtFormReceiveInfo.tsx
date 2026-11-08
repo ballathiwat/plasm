@@ -11,7 +11,6 @@ import type { ExtFormData } from "../services/ExtFormType";
 import type {
   ExtSource,
   ExtStorage,
-  ExtBloodProduct,
 } from "../../ExtBlood/services/ExtBloodType";
 import { BLOOD_GROUPS } from "../services/useExtForm";
 
