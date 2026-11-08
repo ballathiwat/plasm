@@ -28,7 +28,7 @@ export default function ExtFormFooter({
             onClick={() => setStep((step - 1) as FormStep)}
             disabled={saving}
           >
-            <ChevronLeft size={16} /> ย้อนกลับ
+            ย้อนกลับ
           </Button>
         )}
       </div>
@@ -39,7 +39,7 @@ export default function ExtFormFooter({
             iconRight={<ChevronRight size={16} />}
             onClick={() => setStep((step + 1) as FormStep)}
           >
-            ถัดไป <ChevronRight size={16} />
+            ถัดไป
           </Button>
         )}
         <Button
@@ -48,11 +48,6 @@ export default function ExtFormFooter({
           onClick={onSaveDraft}
           disabled={saving}
         >
-          {saving ? (
-            <Loader2 size={16} className="ext-spin" />
-          ) : (
-            <Save size={16} />
-          )}{" "}
           บันทึกร่าง
         </Button>
         {step === 4 && (
