@@ -35,7 +35,7 @@ const extBloodService = {
   createDocument: (data: FormData) =>
     apiAdapter.upload<ExtDocument>(EXT_DOCUMENTS, data),
   updateDocument: (id: string, data: FormData) =>
-    apiAdapter.put<FormData, ExtDocument>(`${EXT_DOCUMENTS}/${id}`, data),
+    apiAdapter.upload<ExtDocument>(`${EXT_DOCUMENTS}/${id}`, data),
   deleteDocument: (id: string) =>
     apiAdapter.delete<{ message: string }>(`${EXT_DOCUMENTS}/${id}`),
 
