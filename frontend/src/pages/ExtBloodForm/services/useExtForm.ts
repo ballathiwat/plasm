@@ -30,6 +30,7 @@ export default function useExtForm() {
     receivedDate: new Date().toISOString().slice(0, 10),
     sourceId: '', bloodProductId: '', bloodGroup: '',
     boxLabel: '', storageId: '', bags: [], deferApproval: false,
+      plasmaType: '',   
   })
   const [bagInput, setBagInput] = useState('')
   const [bagError, setBagError] = useState('')
@@ -57,7 +58,7 @@ export default function useExtForm() {
       setExistingDoc(doc)
       setForm({ receivedDate: doc.receivedDate.slice(0, 10), sourceId: doc.source.id, bloodProductId: doc.bloodProduct.id,
         bloodGroup: doc.bloodGroup, boxLabel: doc.boxLabel, storageId: doc.storage.id,
-        bags: doc.bags.map(b => b.bagNumber), deferApproval: doc.deferApproval })
+        bags: doc.bags.map(b => b.bagNumber), deferApproval: doc.deferApproval, plasmaType: (doc as any).plasmaType || '' })
       setAttachments(doc.attachments.map(a => ({ id: a.id, fileName: a.fileName, fileSize: a.fileSize, fileType: a.fileType })))
       setSigns([
         { role: 'verifier', userId: doc.verifier?.id || '', userName: doc.verifier?.name || '', status: doc.verifierPin ? 'signed' : 'unsigned', signedAt: doc.verifiedAt || undefined },

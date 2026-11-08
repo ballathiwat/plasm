@@ -43,13 +43,7 @@ export default function ExtFormReceiveInfo({
     () => sources.map((s) => toOption(s.id, s.name)),
     [sources],
   );
-  const productOpts = useMemo<OptionType[]>(
-    () =>
-      bloodProducts.map((b) =>
-        toOption(b.id, `${b.code}${b.name ? ` — ${b.name}` : ""}`),
-      ),
-    [bloodProducts],
-  );
+
   const bloodOpts = useMemo<OptionType[]>(
     () => BLOOD_GROUPS.map((g) => toOption(g, g)),
     [],
