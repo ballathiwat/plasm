@@ -254,7 +254,6 @@ router.post(
           sourceId,
           bloodProductId,
           bloodGroup,
-          boxLabel,
           storageId,
           status: status === "PENDING" ? "PENDING" : existing.status,
           deferApproval: deferApproval === "true",

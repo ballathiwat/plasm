@@ -304,7 +304,6 @@ export default function useExtForm() {
     };
   }, [form.plasmaType, form.bloodGroup, isEdit, existingDoc]);
 
-
   return {
     isEdit,
     docId,
