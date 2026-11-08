@@ -46,7 +46,6 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
         <div className="ext-form-group">
           <DateInput
             label="วันที่รับ"
-            required
             value={form.receivedDate}
             onChange={iso => setField('receivedDate', iso)}
           />
@@ -56,7 +55,6 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
         <div className="ext-form-group">
           <SelectDropdown
             label="สถานที่ส่งเลือด"
-            required
             placeholder="เลือก..."
             options={sourceOpts}
             value={findOption(sourceOpts, form.sourceId)}
@@ -69,7 +67,6 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
         <div className="ext-form-group">
           <SelectDropdown
             label="ชนิดเลือด"
-            required
             placeholder="เลือก..."
             options={productOpts}
             value={findOption(productOpts, form.bloodProductId)}
@@ -82,7 +79,6 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
         <div className="ext-form-group">
           <SelectDropdown
             label="หมู่เลือด"
-            required
             placeholder="เลือก..."
             options={bloodOpts}
             value={findOption(bloodOpts, form.bloodGroup)}
@@ -107,7 +103,6 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
         <div className="ext-form-group">
           <SelectDropdown
             label="ตำแหน่งจัดเก็บ"
-            required
             placeholder="เลือก..."
             options={storageOpts}
             value={findOption(storageOpts, form.storageId)}
