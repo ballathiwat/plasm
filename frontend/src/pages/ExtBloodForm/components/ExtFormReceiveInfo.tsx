@@ -1,42 +1,63 @@
 // frontend/src/pages/ExtBloodForm/components/ExtFormReceiveInfo.tsx
 
-import { useMemo } from 'react'
-import FormInput from '../../../components/common/FormInput'
-import SelectDropdown, { type OptionType } from '../../../components/common/SelectDropdown'
-import DateInput from '../../../components/common/DateInput'
-import type { ExtFormData } from '../services/ExtFormType'
-import type { ExtSource, ExtStorage, ExtBloodProduct } from '../../ExtBlood/services/ExtBloodType'
-import { BLOOD_GROUPS } from '../services/useExtForm'
+import { useMemo } from "react";
+import FormInput from "../../../components/common/FormInput";
+import SelectDropdown, {
+  type OptionType,
+} from "../../../components/common/SelectDropdown";
+import DateInput from "../../../components/common/DateInput";
+import PlasmaTypeSelect from "../../../components/common/PlasmaTypeSelect";
+import type { ExtFormData } from "../services/ExtFormType";
+import type {
+  ExtSource,
+  ExtStorage,
+  ExtBloodProduct,
+} from "../../ExtBlood/services/ExtBloodType";
+import { BLOOD_GROUPS } from "../services/useExtForm";
 
-const toOption = (value: string, label: string): OptionType => ({ value, label })
+const toOption = (value: string, label: string): OptionType => ({
+  value,
+  label,
+});
 const findOption = (opts: OptionType[], val: string) =>
-  opts.find(o => o.value === val) ?? null
+  opts.find((o) => o.value === val) ?? null;
 
 interface Props {
-  form: ExtFormData
-  setField: <K extends keyof ExtFormData>(k: K, v: ExtFormData[K]) => void
-  sources: ExtSource[]
-  storages: ExtStorage[]
-  bloodProducts: ExtBloodProduct[]
+  form: ExtFormData;
+  setField: <K extends keyof ExtFormData>(k: K, v: ExtFormData[K]) => void;
+  sources: ExtSource[];
+  storages: ExtStorage[];
+  bloodProducts: ExtBloodProduct[];
+  errors?: Partial<Record<keyof ExtFormData, string>>;
 }
 
-export default function ExtFormReceiveInfo({ form, setField, sources, storages, bloodProducts }: Props) {
+export default function ExtFormReceiveInfo({
+  form,
+  setField,
+  sources,
+  storages,
+  bloodProducts,
+  errors = {},
+}: Props) {
   const sourceOpts = useMemo<OptionType[]>(
-    () => sources.map(s => toOption(s.id, s.name)),
+    () => sources.map((s) => toOption(s.id, s.name)),
     [sources],
-  )
+  );
   const productOpts = useMemo<OptionType[]>(
-    () => bloodProducts.map(b => toOption(b.id, `${b.code}${b.name ? ` — ${b.name}` : ''}`)),
+    () =>
+      bloodProducts.map((b) =>
+        toOption(b.id, `${b.code}${b.name ? ` — ${b.name}` : ""}`),
+      ),
     [bloodProducts],
-  )
+  );
   const bloodOpts = useMemo<OptionType[]>(
-    () => BLOOD_GROUPS.map(g => toOption(g, g)),
+    () => BLOOD_GROUPS.map((g) => toOption(g, g)),
     [],
-  )
+  );
   const storageOpts = useMemo<OptionType[]>(
-    () => storages.map(s => toOption(s.id, s.name)),
+    () => storages.map((s) => toOption(s.id, s.name)),
     [storages],
-  )
+  );
 
   return (
     <div className="ext-form-section">
@@ -47,7 +68,7 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
           <DateInput
             label="วันที่รับ"
             value={form.receivedDate}
-            onChange={iso => setField('receivedDate', iso)}
+            onChange={(iso) => setField("receivedDate", iso)}
           />
         </div>
 
@@ -58,20 +79,21 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
             placeholder="เลือก..."
             options={sourceOpts}
             value={findOption(sourceOpts, form.sourceId)}
-            onChange={opt => setField('sourceId', opt?.value ?? '')}
+            onChange={(opt) => setField("sourceId", opt?.value ?? "")}
             isClearable={false}
           />
         </div>
 
-        {/* ชนิดเลือด */}
+
+        {/* ชนิดพลาสมา (จาก master) — แบบ form: ไม่มี "ทุกชนิด" และบังคับเลือก */}
         <div className="ext-form-group">
-          <SelectDropdown
-            label="ชนิดเลือด"
-            placeholder="เลือก..."
-            options={productOpts}
-            value={findOption(productOpts, form.bloodProductId)}
-            onChange={opt => setField('bloodProductId', opt?.value ?? '')}
-            isClearable={false}
+          <PlasmaTypeSelect
+            label="ชนิดพลาสมา"
+            placeholder="เลือกชนิดพลาสมา..."
+            value={form.plasmaType}
+            onChange={(v) => setField("plasmaType", v)}
+            showAll={false}
+            error={errors.plasmaType}
           />
         </div>
 
@@ -82,7 +104,7 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
             placeholder="เลือก..."
             options={bloodOpts}
             value={findOption(bloodOpts, form.bloodGroup)}
-            onChange={opt => setField('bloodGroup', opt?.value ?? '')}
+            onChange={(opt) => setField("bloodGroup", opt?.value ?? "")}
             isClearable={false}
             isSearchable={false}
           />
@@ -95,7 +117,7 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
             required
             placeholder="เช่น B+ 2026 0001"
             value={form.boxLabel}
-            onChange={val => setField('boxLabel', val)}
+            onChange={(val) => setField("boxLabel", val)}
           />
         </div>
 
@@ -106,11 +128,11 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
             placeholder="เลือก..."
             options={storageOpts}
             value={findOption(storageOpts, form.storageId)}
-            onChange={opt => setField('storageId', opt?.value ?? '')}
+            onChange={(opt) => setField("storageId", opt?.value ?? "")}
             isClearable={false}
           />
         </div>
       </div>
     </div>
-  )
+  );
 }
