@@ -73,6 +73,52 @@ router.get("/documents", async (req, res) => {
   }
 });
 
+// ===== GET /api/v1/ext/next-box-label?plasmaType=&bloodGroup= =====
+router.get("/next-box-label", async (req, res) => {
+  try {
+    const plasmaType = String(req.query.plasmaType ?? "").trim();
+    if (!plasmaType) {
+      res.status(400).json({ message: "กรุณาเลือกชนิดพลาสมา" });
+      return;
+    }
+    const bloodGroup = String(req.query.bloodGroup ?? "").trim();
+
+    if (!plasmaType || !bloodGroup) {
+      res.status(400).json({ message: "กรุณาระบุชนิดพลาสมาและหมู่เลือด" });
+      return;
+    }
+
+    // --- auto-generate boxLabel ---
+    const year = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" }),
+    ).getFullYear();
+
+    const maxDoc = await prisma.extDocument.findFirst({
+      where: {
+        boxLabel: { startsWith: `EX_${plasmaType}_${bloodGroup}_${year}_` },
+      },
+      orderBy: { boxLabel: "desc" },
+      select: { boxLabel: true },
+    });
+    const maxNo = maxDoc
+      ? parseInt(maxDoc.boxLabel.split("_").pop() ?? "0", 10) || 0
+      : 0;
+    const boxLabel = `EX_${plasmaType}_${bloodGroup}_${year}_${String(maxNo + 1).padStart(5, "0")}`;
+
+    const maxExisting = maxDoc
+      ? parseInt(maxDoc.boxLabel.split("_").pop() ?? "0", 10) || 0
+      : 0;
+
+    const nextNo = maxExisting + 1;
+    const label = `EX_${plasmaType}_${bloodGroup}_${year}_${String(nextNo).padStart(5, "0")}`;
+
+    res.json({ label, year });
+  } catch (e) {
+    console.error("GET /ext/next-box-label error:", e);
+    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+  }
+});
+
 // GET /documents/:id
 router.get("/documents/:id", async (req, res) => {
   try {
@@ -184,7 +230,6 @@ router.post(
         sourceId,
         bloodProductId,
         bloodGroup,
-        boxLabel,
         storageId,
         status,
         deferApproval,
