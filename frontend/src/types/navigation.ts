@@ -14,7 +14,7 @@ import {
   BarChart3,
   FileText,
   CalendarDays,
-  Droplets, ClipboardCheck, SlidersHorizontal,
+  Droplets, SlidersHorizontal,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -44,6 +44,7 @@ export const MENU_ITEMS: MenuItem[] = [
     children: [
       { key: 'report-summary', label: 'รายงานสรุป', icon: FileText, roles: ['ADMIN', 'STAFF'] },
       { key: 'report-daily', label: 'นำเข้า/นำออก', icon: CalendarDays, roles: ['ADMIN', 'STAFF'] },
+      { key: 'ext-blood-report', label: 'รายงานรอรับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN', 'STAFF'] },
     ],
   },
   { key: 'storage', label: 'จัดเก็บ', icon: Package, roles: ['ADMIN', 'STAFF'] },
@@ -51,18 +52,17 @@ export const MENU_ITEMS: MenuItem[] = [
   { key: 'search', label: 'ค้นหา', icon: Search, roles: ['ADMIN', 'STAFF'] },
   { key: 'map', label: 'แผนผัง', icon: Map, roles: ['ADMIN', 'STAFF'] },
   { key: 'log', label: 'ประวัติ', icon: ClipboardList, roles: ['ADMIN', 'STAFF'] },
+  { key: 'ext-blood-list', label: 'รอรับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN', 'STAFF'] },
   {
-    key: 'ext-blood',
-    label: 'รอรับเลือดจากภายนอก',
-    icon: Droplets,
-    roles: ['ADMIN', 'STAFF'],
+    key: 'settings-group',
+    label: 'ตั้งค่า',
+    icon: Settings,
+    roles: ['ADMIN'],
     children: [
-      { key: 'ext-blood-list', label: 'รายการ', icon: ClipboardCheck, roles: ['ADMIN', 'STAFF'] },
-      { key: 'ext-blood-report', label: 'รายงาน', icon: FileText, roles: ['ADMIN', 'STAFF'] },
-      { key: 'ext-blood-settings', label: 'ตั้งค่า', icon: SlidersHorizontal, roles: ['ADMIN'] },
+      { key: 'settings', label: 'ตั้งค่าระบบ', icon: SlidersHorizontal, roles: ['ADMIN'] },
+      { key: 'ext-blood-settings', label: 'ตั้งค่ารอรับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN'] },
     ],
   },
-  { key: 'settings', label: 'ตั้งค่า', icon: Settings, roles: ['ADMIN'] },
 ]
 
 export const MOBILE_NAV_ITEMS: MobileNavItem[] = [
