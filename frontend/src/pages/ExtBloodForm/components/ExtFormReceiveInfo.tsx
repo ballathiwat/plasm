@@ -12,7 +12,7 @@ import type {
   ExtSource,
   ExtStorage,
 } from "../../ExtBlood/services/ExtBloodType";
-import { BLOOD_GROUPS } from "../services/useExtForm";
+import BloodGroupSelect from "../../../components/common/BloodGroupSelect";
 
 const toOption = (value: string, label: string): OptionType => ({
   value,
@@ -41,10 +41,6 @@ export default function ExtFormReceiveInfo({
     [sources],
   );
 
-  const bloodOpts = useMemo<OptionType[]>(
-    () => BLOOD_GROUPS.map((g) => toOption(g, g)),
-    [],
-  );
   const storageOpts = useMemo<OptionType[]>(
     () => storages.map((s) => toOption(s.id, s.name)),
     [storages],
@@ -75,7 +71,6 @@ export default function ExtFormReceiveInfo({
           />
         </div>
 
-
         {/* ชนิดพลาสมา (จาก master) — แบบ form: ไม่มี "ทุกชนิด" และบังคับเลือก */}
         <div className="ext-form-group">
           <PlasmaTypeSelect
@@ -90,14 +85,11 @@ export default function ExtFormReceiveInfo({
 
         {/* หมู่เลือด */}
         <div className="ext-form-group">
-          <SelectDropdown
-            label="หมู่เลือด"
-            placeholder="เลือก..."
-            options={bloodOpts}
-            value={findOption(bloodOpts, form.bloodGroup)}
-            onChange={(opt) => setField("bloodGroup", opt?.value ?? "")}
-            isClearable={false}
-            isSearchable={false}
+          <BloodGroupSelect
+            value={form.bloodGroup}
+            onChange={(v) => setField("bloodGroup", v)}
+            showAll={false}
+            error={errors.bloodGroup}
           />
         </div>
 
