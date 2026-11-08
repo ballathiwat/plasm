@@ -27,6 +27,7 @@ interface Props {
   sources: ExtSource[];
   storages: ExtStorage[];
   errors?: Partial<Record<keyof ExtFormData, string>>;
+  nextLabel: string;
 }
 
 export default function ExtFormReceiveInfo({
@@ -35,6 +36,7 @@ export default function ExtFormReceiveInfo({
   sources,
   storages,
   errors = {},
+  nextLabel,
 }: Props) {
   const sourceOpts = useMemo<OptionType[]>(
     () => sources.map((s) => toOption(s.id, s.name)),
@@ -93,15 +95,24 @@ export default function ExtFormReceiveInfo({
           />
         </div>
 
-        {/* เลข Box Label */}
+        {/* หมายเลขกล่อง (อัตโนมัติ) */}
         <div className="ext-form-group">
-          <FormInput
-            label="เลข Box Label"
-            required
-            placeholder="เช่น B+ 2026 0001"
-            value={form.boxLabel}
-            onChange={(val) => setField("boxLabel", val)}
+          <label className="ext-form-label">หมายเลขกล่อง (อัตโนมัติ)</label>
+          <input
+            type="text"
+            value={nextLabel || "-"}
+            readOnly
+            className="ext-form-input"
+            style={{
+              background: "var(--surface-raised, #F4F4F5)",
+              fontFamily: "var(--font-mono)",
+              fontWeight: 600,
+              cursor: "default",
+            }}
           />
+          {!form.plasmaType || !form.bloodGroup ? (
+            <p className="ext-form-hint">เลือกชนิดพลาสมาและหมู่เลือดก่อน</p>
+          ) : null}
         </div>
 
         {/* ตำแหน่งจัดเก็บ */}
