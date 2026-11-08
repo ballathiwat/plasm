@@ -16,57 +16,65 @@ import {
   type CSSProperties,
   type InputHTMLAttributes,
   type TextareaHTMLAttributes,
-} from 'react'
-import { Eye, EyeOff } from 'lucide-react'
-import '../../assets/styles/components/form-input.css'
+} from "react";
+import { Eye, EyeOff } from "lucide-react";
+import "../../assets/styles/components/form-input.css";
 
 /* ----------------------------------------------------------
    Types
 ---------------------------------------------------------- */
-export type InputSize = 'sm' | 'md' | 'lg'
+export type InputSize = "sm" | "md" | "lg";
 
 type SharedProps = {
   /** Field label */
-  label?: string
+  label?: string;
   /** Mark as required (shows * after label) */
-  required?: boolean
+  required?: boolean;
   /** Left icon */
-  icon?: ReactNode
+  icon?: ReactNode;
   /** Right icon (not available on password — toggle takes priority) */
-  iconRight?: ReactNode
+  iconRight?: ReactNode;
   /** Error message — shows red border + message */
-  error?: string
+  error?: string;
   /** Helper text (shown below input when no error) */
-  helper?: string
+  helper?: string;
   /** Size preset */
-  size?: InputSize
+  size?: InputSize;
   /** Monospace font */
-  mono?: boolean
+  mono?: boolean;
   /** Container className */
-  className?: string
+  className?: string;
   /** Container style */
-  style?: CSSProperties
-}
+  style?: CSSProperties;
+  /** Read-only mode (disables input) */
+  readOnly?: boolean;
+};
 
 // ── Input (text, password, number, email, search, tel, url) ──
 type InputFieldProps = SharedProps &
-  Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type' | 'style' | 'className' | 'onChange' | 'value'>& {
-    type?: 'text' | 'password' | 'number' | 'email' | 'search' | 'tel' | 'url'
-    value: string | number
-    onChange: (value: string) => void
-  }
+  Omit<
+    InputHTMLAttributes<HTMLInputElement>,
+    "size" | "type" | "style" | "className" | "onChange" | "value"
+  > & {
+    type?: "text" | "password" | "number" | "email" | "search" | "tel" | "url";
+    value: string | number;
+    onChange: (value: string) => void;
+  };
 
 // ── Textarea ──
 type TextareaFieldProps = SharedProps &
-  Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'style' | 'className' | 'onChange' | 'value'>& {
-    type: 'textarea'
-    value: string
-    onChange: (value: string) => void
+  Omit<
+    TextareaHTMLAttributes<HTMLTextAreaElement>,
+    "style" | "className" | "onChange" | "value"
+  > & {
+    type: "textarea";
+    value: string;
+    onChange: (value: string) => void;
     /** Number of visible rows */
-    rows?: number
-  }
+    rows?: number;
+  };
 
-export type FormInputProps = InputFieldProps | TextareaFieldProps
+export type FormInputProps = InputFieldProps | TextareaFieldProps;
 
 /* ----------------------------------------------------------
    Component
@@ -79,44 +87,47 @@ export default function FormInput(props: FormInputProps) {
     iconRight,
     error,
     helper,
-    size = 'md',
+    size = "md",
     mono = false,
-    className = '',
+    className = "",
     style,
-    type = 'text',
+    type = "text",
     value,
     onChange,
+     readOnly, 
     ...rest
-  } = props
+  } = props;
 
   // Password toggle
-  const [showPwd, setShowPwd] = useState(false)
-  const isPassword = type === 'password'
-  const isTextarea = type === 'textarea'
+  const [showPwd, setShowPwd] = useState(false);
+  const isPassword = type === "password";
+  const isTextarea = type === "textarea";
 
-  const togglePwd = useCallback(() => setShowPwd((s) => !s), [])
+  const togglePwd = useCallback(() => setShowPwd((s) => !s), []);
 
   // Build field class
   const fieldCls = [
-    'plasm-input__field',
-    isTextarea && 'plasm-input__field--textarea',
-    size !== 'md' && `plasm-input__field--${size}`,
-    mono && 'plasm-input__field--mono',
-    icon && 'plasm-input__field--icon-left',
-    (iconRight || isPassword) && 'plasm-input__field--icon-right',
-  ].filter(Boolean).join(' ')
+    "plasm-input__field",
+    isTextarea && "plasm-input__field--textarea",
+    size !== "md" && `plasm-input__field--${size}`,
+    mono && "plasm-input__field--mono",
+    icon && "plasm-input__field--icon-left",
+    (iconRight || isPassword) && "plasm-input__field--icon-right",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  const wrapperCls = [
-    'plasm-input',
-    error && 'plasm-input--error',
-    className,
-  ].filter(Boolean).join(' ')
+  const wrapperCls = ["plasm-input", error && "plasm-input--error", className]
+    .filter(Boolean)
+    .join(" ");
 
   // Label class
   const labelCls = [
-    'plasm-input__label',
-    required && 'plasm-input__label--required',
-  ].filter(Boolean).join(' ')
+    "plasm-input__label",
+    required && "plasm-input__label--required",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className={wrapperCls} style={style}>
@@ -124,7 +135,11 @@ export default function FormInput(props: FormInputProps) {
 
       <div className="plasm-input__wrap">
         {/* Left icon */}
-        {icon && <span className="plasm-input__icon plasm-input__icon--left">{icon}</span>}
+        {icon && (
+          <span className="plasm-input__icon plasm-input__icon--left">
+            {icon}
+          </span>
+        )}
 
         {/* Field */}
         {isTextarea ? (
@@ -133,15 +148,39 @@ export default function FormInput(props: FormInputProps) {
             value={value as string}
             onChange={(e) => onChange(e.target.value)}
             rows={(rest as TextareaFieldProps).rows ?? 3}
-            {...(rest as Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'style' | 'className'>)}
+            {...(rest as Omit<
+              TextareaHTMLAttributes<HTMLTextAreaElement>,
+              "style" | "className"
+            >)}
+            readOnly={readOnly}
+            style={
+              readOnly
+                ? {
+                    background: "var(--surface-raised, #F4F4F5)",
+                    cursor: "default",
+                  }
+                : undefined
+            }
           />
         ) : (
           <input
             className={fieldCls}
-            type={isPassword ? (showPwd ? 'text' : 'password') : type}
+            type={isPassword ? (showPwd ? "text" : "password") : type}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            {...(rest as Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type' | 'style' | 'className'>)}
+            {...(rest as Omit<
+              InputHTMLAttributes<HTMLInputElement>,
+              "size" | "type" | "style" | "className"
+            >)}
+            readOnly={readOnly}
+            style={
+              readOnly
+                ? {
+                    background: "var(--surface-raised, #F4F4F5)",
+                    cursor: "default",
+                  }
+                : undefined
+            }
           />
         )}
 
@@ -159,7 +198,9 @@ export default function FormInput(props: FormInputProps) {
 
         {/* Right icon (non-password) */}
         {!isPassword && iconRight && (
-          <span className="plasm-input__icon plasm-input__icon--right">{iconRight}</span>
+          <span className="plasm-input__icon plasm-input__icon--right">
+            {iconRight}
+          </span>
         )}
       </div>
 
@@ -167,5 +208,5 @@ export default function FormInput(props: FormInputProps) {
       {error && <p className="plasm-input__error">{error}</p>}
       {!error && helper && <p className="plasm-input__helper">{helper}</p>}
     </div>
-  )
+  );
 }

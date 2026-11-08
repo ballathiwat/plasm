@@ -97,18 +97,12 @@ export default function ExtFormReceiveInfo({
 
         {/* หมายเลขกล่อง (อัตโนมัติ) */}
         <div className="ext-form-group">
-          <label className="ext-form-label">หมายเลขกล่อง (อัตโนมัติ)</label>
-          <input
-            type="text"
+          <FormInput
+            label="หมายเลขกล่อง (อัตโนมัติ)"
             value={nextLabel || "-"}
+            onChange={() => {}}
             readOnly
-            className="ext-form-input"
-            style={{
-              background: "var(--surface-raised, #F4F4F5)",
-              fontFamily: "var(--font-mono)",
-              fontWeight: 600,
-              cursor: "default",
-            }}
+            mono
           />
           {!form.plasmaType || !form.bloodGroup ? (
             <p className="ext-form-hint">เลือกชนิดพลาสมาและหมู่เลือดก่อน</p>
@@ -124,6 +118,7 @@ export default function ExtFormReceiveInfo({
             value={findOption(storageOpts, form.storageId)}
             onChange={(opt) => setField("storageId", opt?.value ?? "")}
             isClearable={false}
+            
           />
         </div>
       </div>
