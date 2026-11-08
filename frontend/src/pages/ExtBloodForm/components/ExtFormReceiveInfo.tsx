@@ -27,7 +27,6 @@ interface Props {
   setField: <K extends keyof ExtFormData>(k: K, v: ExtFormData[K]) => void;
   sources: ExtSource[];
   storages: ExtStorage[];
-  bloodProducts: ExtBloodProduct[];
   errors?: Partial<Record<keyof ExtFormData, string>>;
 }
 
@@ -36,7 +35,6 @@ export default function ExtFormReceiveInfo({
   setField,
   sources,
   storages,
-  bloodProducts,
   errors = {},
 }: Props) {
   const sourceOpts = useMemo<OptionType[]>(
