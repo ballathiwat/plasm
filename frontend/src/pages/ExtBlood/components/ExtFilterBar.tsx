@@ -1,41 +1,126 @@
 // frontend/src/pages/ExtBlood/components/ExtFilterBar.tsx
+
+import { useMemo } from 'react'
 import { Search, X } from 'lucide-react'
+import FormInput from '../../../components/common/FormInput'
+import SelectDropdown, { type OptionType } from '../../../components/common/SelectDropdown'
+import DateInput from '../../../components/common/DateInput'
+import Button from '../../../components/common/Button'
 import type { ExtListFilter, ExtSource, ExtBloodProduct } from '../services/ExtBloodType'
 
 const BLOOD_GROUPS = ['A+','A-','B+','B-','O+','O-','AB+','AB-']
 
+const toOption = (value: string, label: string): OptionType => ({ value, label })
+const findOption = (opts: OptionType[], val?: string) =>
+  opts.find(o => o.value === val) ?? null
+
 interface Props {
-  filter: ExtListFilter; sources: ExtSource[]; bloodProducts: ExtBloodProduct[]
+  filter: ExtListFilter
+  sources: ExtSource[]
+  bloodProducts: ExtBloodProduct[]
   onFilter: (f: Partial<ExtListFilter>) => void
 }
 
 export default function ExtFilterBar({ filter, sources, bloodProducts, onFilter }: Props) {
-  const has = filter.dateFrom || filter.dateTo || filter.sourceId || filter.bloodProductId || filter.bloodGroup || filter.search
+  const sourceOpts = useMemo<OptionType[]>(
+    () => [
+      { value: '', label: 'สถานที่ทั้งหมด' },
+      ...sources.map(s => toOption(s.id, s.name)),
+    ],
+    [sources],
+  )
+  const productOpts = useMemo<OptionType[]>(
+    () => [
+      { value: '', label: 'ชนิดเลือดทั้งหมด' },
+      ...bloodProducts.map(b => toOption(b.id, `${b.code}${b.name ? ` (${b.name})` : ''}`)),
+    ],
+    [bloodProducts],
+  )
+  const bloodOpts = useMemo<OptionType[]>(
+    () => [
+      { value: '', label: 'หมู่เลือดทั้งหมด' },
+      ...BLOOD_GROUPS.map(g => toOption(g, g)),
+    ],
+    [],
+  )
+
+  const hasFilter = filter.dateFrom || filter.dateTo || filter.sourceId || filter.bloodProductId || filter.bloodGroup || filter.search
+
   return (
     <div className="ext-filter-bar">
-      <div className="ext-filter-search">
-        <Search size={16} className="ext-filter-search-icon" />
-        <input type="text" placeholder="ค้นหาเลขเอกสาร, เลขถุงเลือด..." value={filter.search || ''}
-          onChange={e => onFilter({ search: e.target.value })} className="ext-filter-search-input" />
+      <div className="ext-filter-search" style={{ minWidth: 220 }}>
+        <FormInput
+          placeholder="ค้นหาเลขเอกสาร, เลขถุงเลือด..."
+          value={filter.search || ''}
+          onChange={val => onFilter({ search: val })}
+          icon={<Search size={14} />}
+          size="sm"
+        />
       </div>
-      <div className="ext-filter-group">
-        <input type="date" value={filter.dateFrom || ''} onChange={e => onFilter({ dateFrom: e.target.value })} className="ext-filter-input" />
-        <span className="ext-filter-dash">–</span>
-        <input type="date" value={filter.dateTo || ''} onChange={e => onFilter({ dateTo: e.target.value })} className="ext-filter-input" />
+
+      <div style={{ minWidth: 140 }}>
+        <DateInput
+          value={filter.dateFrom || ''}
+          onChange={iso => onFilter({ dateFrom: iso || undefined })}
+          max={filter.dateTo}
+        />
       </div>
-      <select value={filter.sourceId || ''} onChange={e => onFilter({ sourceId: e.target.value || undefined })} className="ext-filter-select">
-        <option value="">สถานที่ทั้งหมด</option>
-        {sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-      </select>
-      <select value={filter.bloodProductId || ''} onChange={e => onFilter({ bloodProductId: e.target.value || undefined })} className="ext-filter-select">
-        <option value="">ชนิดเลือดทั้งหมด</option>
-        {bloodProducts.map(b => <option key={b.id} value={b.id}>{b.code}{b.name ? ` (${b.name})` : ''}</option>)}
-      </select>
-      <select value={filter.bloodGroup || ''} onChange={e => onFilter({ bloodGroup: e.target.value || undefined })} className="ext-filter-select">
-        <option value="">หมู่เลือดทั้งหมด</option>
-        {BLOOD_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
-      </select>
-      {has && <button className="ext-filter-clear" onClick={() => onFilter({ dateFrom: undefined, dateTo: undefined, sourceId: undefined, bloodProductId: undefined, bloodGroup: undefined, search: undefined })}><X size={14} /> ล้าง</button>}
+      <span className="ext-filter-dash">–</span>
+      <div style={{ minWidth: 140 }}>
+        <DateInput
+          value={filter.dateTo || ''}
+          onChange={iso => onFilter({ dateTo: iso || undefined })}
+          min={filter.dateFrom}
+        />
+      </div>
+
+      <div style={{ minWidth: 160 }}>
+        <SelectDropdown
+          placeholder="สถานที่ทั้งหมด"
+          options={sourceOpts}
+          value={findOption(sourceOpts, filter.sourceId || '')}
+          onChange={opt => onFilter({ sourceId: opt?.value || undefined })}
+          isClearable={false}
+          isSearchable={false}
+        />
+      </div>
+
+      <div style={{ minWidth: 160 }}>
+        <SelectDropdown
+          placeholder="ชนิดเลือดทั้งหมด"
+          options={productOpts}
+          value={findOption(productOpts, filter.bloodProductId || '')}
+          onChange={opt => onFilter({ bloodProductId: opt?.value || undefined })}
+          isClearable={false}
+          isSearchable={false}
+        />
+      </div>
+
+      <div style={{ minWidth: 140 }}>
+        <SelectDropdown
+          placeholder="หมู่เลือดทั้งหมด"
+          options={bloodOpts}
+          value={findOption(bloodOpts, filter.bloodGroup || '')}
+          onChange={opt => onFilter({ bloodGroup: opt?.value || undefined })}
+          isClearable={false}
+          isSearchable={false}
+        />
+      </div>
+
+      {hasFilter && (
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={<X size={14} />}
+          onClick={() => onFilter({
+            dateFrom: undefined, dateTo: undefined,
+            sourceId: undefined, bloodProductId: undefined,
+            bloodGroup: undefined, search: undefined,
+          })}
+        >
+          ล้าง
+        </Button>
+      )}
     </div>
   )
 }
