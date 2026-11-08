@@ -1,474 +1,808 @@
 // src/routes/ext.ts — External Blood Receiving (รอรับเลือดจากภายนอก)
 
-import { Router } from 'express'
-import bcrypt from 'bcryptjs'
-import { prisma } from '../lib/prisma'
-import { adminOnly } from '../middleware/auth'
-import { hashPin, verifyPin } from '../lib/extPin'
-import { nextExtDocNumber, extDocInclude, formatExtDoc } from '../lib/extHelpers'
-import { extUpload } from '../lib/extUpload'
+import { Router } from "express";
+import bcrypt from "bcryptjs";
+import { prisma } from "../lib/prisma";
+import { adminOnly } from "../middleware/auth";
+import { hashPin, verifyPin } from "../lib/extPin";
+import {
+  nextExtDocNumber,
+  extDocInclude,
+  formatExtDoc,
+} from "../lib/extHelpers";
+import { extUpload } from "../lib/extUpload";
 
-const router = Router()
-const fail = (res: any, e: unknown, tag: string) => { console.error(tag, e); res.status(500).json({ message: 'เกิดข้อผิดพลาด' }) }
+const router = Router();
+const fail = (res: any, e: unknown, tag: string) => {
+  console.error(tag, e);
+  res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+};
 
 // ═════════════════════════════════════════════
 //  Documents CRUD
 // ═════════════════════════════════════════════
 
 // GET /documents — list with pagination + filter
-router.get('/documents', async (req, res) => {
+router.get("/documents", async (req, res) => {
   try {
-    const page = Math.max(1, Number(req.query.page) || 1)
-    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20))
-    const skip = (page - 1) * limit
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
 
-    const where: any = {}
-    if (req.query.status) where.status = String(req.query.status)
-    if (req.query.sourceId) where.sourceId = String(req.query.sourceId)
-    if (req.query.bloodProductId) where.bloodProductId = String(req.query.bloodProductId)
-    if (req.query.bloodGroup) where.bloodGroup = String(req.query.bloodGroup)
+    const where: any = {};
+    if (req.query.status) where.status = String(req.query.status);
+    if (req.query.sourceId) where.sourceId = String(req.query.sourceId);
+    if (req.query.bloodProductId)
+      where.bloodProductId = String(req.query.bloodProductId);
+    if (req.query.bloodGroup) where.bloodGroup = String(req.query.bloodGroup);
     if (req.query.dateFrom || req.query.dateTo) {
-      where.receivedDate = {}
-      if (req.query.dateFrom) where.receivedDate.gte = new Date(String(req.query.dateFrom))
-      if (req.query.dateTo) where.receivedDate.lte = new Date(String(req.query.dateTo))
+      where.receivedDate = {};
+      if (req.query.dateFrom)
+        where.receivedDate.gte = new Date(String(req.query.dateFrom));
+      if (req.query.dateTo)
+        where.receivedDate.lte = new Date(String(req.query.dateTo));
     }
     if (req.query.search) {
-      const s = String(req.query.search)
+      const s = String(req.query.search);
       where.OR = [
-        { docNumber: { contains: s, mode: 'insensitive' } },
-        { bags: { some: { bagNumber: { contains: s, mode: 'insensitive' } } } },
-      ]
+        { docNumber: { contains: s, mode: "insensitive" } },
+        { bags: { some: { bagNumber: { contains: s, mode: "insensitive" } } } },
+      ];
     }
 
     const [data, total] = await Promise.all([
       prisma.extDocument.findMany({
-        where, skip, take: limit,
+        where,
+        skip,
+        take: limit,
         include: extDocInclude,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       prisma.extDocument.count({ where }),
-    ])
+    ]);
 
-    res.json({ data: data.map(formatExtDoc), total, page, limit, totalPages: Math.ceil(total / limit) })
-  } catch (e) { fail(res, e, 'GET /ext/documents') }
-})
+    res.json({
+      data: data.map(formatExtDoc),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (e) {
+    fail(res, e, "GET /ext/documents");
+  }
+});
 
 // GET /documents/:id
-router.get('/documents/:id', async (req, res) => {
+router.get("/documents/:id", async (req, res) => {
   try {
-    const doc = await prisma.extDocument.findUnique({ where: { id: req.params.id }, include: extDocInclude })
-    if (!doc) { res.status(404).json({ message: 'ไม่พบเอกสาร' }); return }
-    res.json(formatExtDoc(doc))
-  } catch (e) { fail(res, e, 'GET /ext/documents/:id') }
-})
+    const doc = await prisma.extDocument.findUnique({
+      where: { id: req.params.id },
+      include: extDocInclude,
+    });
+    if (!doc) {
+      res.status(404).json({ message: "ไม่พบเอกสาร" });
+      return;
+    }
+    res.json(formatExtDoc(doc));
+  } catch (e) {
+    fail(res, e, "GET /ext/documents/:id");
+  }
+});
 
 // POST /documents — create
-router.post('/documents', extUpload.array('files', 10), async (req, res) => {
+router.post("/documents", extUpload.array("files", 10), async (req, res) => {
   try {
-    const { receivedDate, sourceId, bloodProductId, bloodGroup, boxLabel, storageId, status, deferApproval, editReason } = req.body as Record<string, string | undefined>
-    const bags: string[] = Array.isArray(req.body['bags[]']) ? req.body['bags[]'] : req.body['bags[]'] ? [req.body['bags[]']] : []
+    const {
+      receivedDate,
+      sourceId,
+      bloodProductId,
+      bloodGroup,
+      boxLabel,
+      storageId,
+      status,
+      deferApproval,
+      editReason,
+    } = req.body as Record<string, string | undefined>;
+    const bags: string[] = Array.isArray(req.body["bags[]"])
+      ? req.body["bags[]"]
+      : req.body["bags[]"]
+        ? [req.body["bags[]"]]
+        : [];
 
-    if (!receivedDate || !sourceId || !bloodProductId || !bloodGroup || !boxLabel || !storageId) {
-      res.status(400).json({ message: 'กรุณากรอกข้อมูลให้ครบ' }); return
+    if (
+      !receivedDate ||
+      !sourceId ||
+      !bloodProductId ||
+      !bloodGroup ||
+      !boxLabel ||
+      !storageId
+    ) {
+      res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบ" });
+      return;
     }
 
-    const docNumber = await nextExtDocNumber()
-    const files = (req.files as Express.Multer.File[]) || []
+    const docNumber = await nextExtDocNumber();
+    const files = (req.files as Express.Multer.File[]) || [];
 
     const doc = await prisma.extDocument.create({
       data: {
         docNumber,
         receivedDate: new Date(receivedDate),
-        sourceId, bloodProductId, bloodGroup, boxLabel, storageId,
-        status: status === 'PENDING' ? 'PENDING' : 'DRAFT',
-        deferApproval: deferApproval === 'true',
+        sourceId,
+        bloodProductId,
+        bloodGroup,
+        boxLabel,
+        storageId,
+        status: status === "PENDING" ? "PENDING" : "DRAFT",
+        deferApproval: deferApproval === "true",
         editReason: editReason || null,
         createdById: req.user!.id,
-        bags: { create: bags.map(n => ({ bagNumber: n })) },
+        bags: { create: bags.map((n) => ({ bagNumber: n })) },
         attachments: {
-          create: files.map(f => ({
-            fileName: f.originalname, fileType: f.mimetype,
-            fileSize: f.size, filePath: `uploads/ext/${f.filename}`,
+          create: files.map((f) => ({
+            fileName: f.originalname,
+            fileType: f.mimetype,
+            fileSize: f.size,
+            filePath: `uploads/ext/${f.filename}`,
           })),
         },
         timeline: {
-          create: { action: 'สร้าง', detail: `สร้างเอกสาร ${docNumber} (${bags.length} ถุง)`, userId: req.user!.id },
+          create: {
+            action: "สร้าง",
+            detail: `สร้างเอกสาร ${docNumber} (${bags.length} ถุง)`,
+            userId: req.user!.id,
+          },
         },
       },
       include: extDocInclude,
-    })
+    });
 
-    res.status(201).json(formatExtDoc(doc))
-  } catch (e) { fail(res, e, 'POST /ext/documents') }
-})
+    res.status(201).json(formatExtDoc(doc));
+  } catch (e) {
+    fail(res, e, "POST /ext/documents");
+  }
+});
 
 // PUT /documents/:id — update
-router.post('/documents/:id', extUpload.array('files', 10), async (req, res) => {
-  try {
-    const existing = await prisma.extDocument.findUnique({ where: { id: req.params.id }, include: { bags: true } })
-    if (!existing) { res.status(404).json({ message: 'ไม่พบเอกสาร' }); return }
+router.post(
+  "/documents/:id",
+  extUpload.array("files", 10),
+  async (req, res) => {
+    try {
+      const existing = await prisma.extDocument.findUnique({
+        where: { id: req.params.id as string },
+        include: { bags: true },
+      });
+      if (!existing) {
+        res.status(404).json({ message: "ไม่พบเอกสาร" });
+        return;
+      }
 
-    const { receivedDate, sourceId, bloodProductId, bloodGroup, boxLabel, storageId, status, deferApproval, editReason } = req.body as Record<string, string | undefined>
-    const bags: string[] = Array.isArray(req.body['bags[]']) ? req.body['bags[]'] : req.body['bags[]'] ? [req.body['bags[]']] : []
-    const files = (req.files as Express.Multer.File[]) || []
+      const {
+        receivedDate,
+        sourceId,
+        bloodProductId,
+        bloodGroup,
+        boxLabel,
+        storageId,
+        status,
+        deferApproval,
+        editReason,
+      } = req.body as Record<string, string | undefined>;
+      const bags: string[] = Array.isArray(req.body["bags[]"])
+        ? req.body["bags[]"]
+        : req.body["bags[]"]
+          ? [req.body["bags[]"]]
+          : [];
+      const files = (req.files as Express.Multer.File[]) || [];
 
-    // Delete old bags and recreate
-    await prisma.extBag.deleteMany({ where: { documentId: existing.id, status: 'IN_STOCK' } })
+      // Delete old bags and recreate
+      await prisma.extBag.deleteMany({
+        where: { documentId: existing.id, status: "IN_STOCK" },
+      });
 
-    const doc = await prisma.extDocument.update({
-      where: { id: req.params.id },
-      data: {
-        receivedDate: receivedDate ? new Date(receivedDate) : undefined,
-        sourceId, bloodProductId, bloodGroup, boxLabel, storageId,
-        status: status === 'PENDING' ? 'PENDING' : existing.status,
-        deferApproval: deferApproval === 'true',
-        editReason: editReason || null,
-        bags: { create: bags.map(n => ({ bagNumber: n })) },
-        attachments: files.length > 0 ? {
-          create: files.map(f => ({
-            fileName: f.originalname, fileType: f.mimetype,
-            fileSize: f.size, filePath: `uploads/ext/${f.filename}`,
-          })),
-        } : undefined,
-        timeline: {
-          create: { action: 'แก้ไข', detail: `แก้ไขเอกสาร${editReason ? ` — ${editReason}` : ''}`, userId: req.user!.id },
+      const doc = await prisma.extDocument.update({
+        where: { id: req.params.id as string },
+        data: {
+          receivedDate: receivedDate ? new Date(receivedDate) : undefined,
+          sourceId,
+          bloodProductId,
+          bloodGroup,
+          boxLabel,
+          storageId,
+          status: status === "PENDING" ? "PENDING" : existing.status,
+          deferApproval: deferApproval === "true",
+          editReason: editReason || null,
+          bags: { create: bags.map((n) => ({ bagNumber: n })) },
+          attachments:
+            files.length > 0
+              ? {
+                  create: files.map((f) => ({
+                    fileName: f.originalname,
+                    fileType: f.mimetype,
+                    fileSize: f.size,
+                    filePath: `uploads/ext/${f.filename}`,
+                  })),
+                }
+              : undefined,
+          timeline: {
+            create: {
+              action: "แก้ไข",
+              detail: `แก้ไขเอกสาร${editReason ? ` — ${editReason}` : ""}`,
+              userId: req.user!.id,
+            },
+          },
         },
-      },
-      include: extDocInclude,
-    })
+        include: extDocInclude,
+      });
 
-    res.json(formatExtDoc(doc))
-  } catch (e) { fail(res, e, 'PUT /ext/documents/:id') }
-})
+      res.json(formatExtDoc(doc));
+    } catch (e) {
+      fail(res, e, "PUT /ext/documents/:id");
+    }
+  },
+);
 
 // DELETE /documents/:id
-router.delete('/documents/:id', async (req, res) => {
+router.delete("/documents/:id", async (req, res) => {
   try {
-    const doc = await prisma.extDocument.findUnique({ where: { id: req.params.id } })
-    if (!doc) { res.status(404).json({ message: 'ไม่พบเอกสาร' }); return }
-    if (doc.status !== 'DRAFT') { res.status(400).json({ message: 'ลบได้เฉพาะเอกสารร่าง' }); return }
-    await prisma.extDocument.delete({ where: { id: req.params.id } })
-    res.json({ message: 'ลบเอกสารสำเร็จ' })
-  } catch (e) { fail(res, e, 'DELETE /ext/documents/:id') }
-})
+    const doc = await prisma.extDocument.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!doc) {
+      res.status(404).json({ message: "ไม่พบเอกสาร" });
+      return;
+    }
+    if (doc.status !== "DRAFT") {
+      res.status(400).json({ message: "ลบได้เฉพาะเอกสารร่าง" });
+      return;
+    }
+    await prisma.extDocument.delete({ where: { id: req.params.id } });
+    res.json({ message: "ลบเอกสารสำเร็จ" });
+  } catch (e) {
+    fail(res, e, "DELETE /ext/documents/:id");
+  }
+});
 
 // ═════════════════════════════════════════════
 //  Signing
 // ═════════════════════════════════════════════
 
-router.post('/documents/:id/sign', async (req, res) => {
+router.post("/documents/:id/sign", async (req, res) => {
   try {
-    const { role, userId, pin } = req.body
-    if (!['verifier', 'storer', 'approver'].includes(role)) { res.status(400).json({ message: 'role ไม่ถูกต้อง' }); return }
+    const { role, userId, pin } = req.body;
+    if (!["verifier", "storer", "approver"].includes(role)) {
+      res.status(400).json({ message: "role ไม่ถูกต้อง" });
+      return;
+    }
 
-    const result = await verifyPin(userId, pin)
-    if (!result.ok) { res.status(401).json({ message: 'PIN ไม่ถูกต้อง', ...result }); return }
+    const result = await verifyPin(userId, pin);
+    if (!result.ok) {
+      res.status(401).json({ message: "PIN ไม่ถูกต้อง", ...result });
+      return;
+    }
 
-    const data: any = {}
-    if (role === 'verifier') { data.verifierId = userId; data.verifiedAt = new Date(); data.verifierPin = true }
-    if (role === 'storer') { data.storerId = userId; data.storedAt = new Date(); data.storerPin = true }
-    if (role === 'approver') { data.approverId = userId; data.approvedAt = new Date(); data.approverPin = true }
+    const data: any = {};
+    if (role === "verifier") {
+      data.verifierId = userId;
+      data.verifiedAt = new Date();
+      data.verifierPin = true;
+    }
+    if (role === "storer") {
+      data.storerId = userId;
+      data.storedAt = new Date();
+      data.storerPin = true;
+    }
+    if (role === "approver") {
+      data.approverId = userId;
+      data.approvedAt = new Date();
+      data.approverPin = true;
+    }
 
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } })
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    });
     const doc = await prisma.extDocument.update({
       where: { id: req.params.id },
       data: {
         ...data,
-        timeline: { create: { action: 'ลงนาม', detail: `${role === 'verifier' ? 'ผู้ตรวจ' : role === 'storer' ? 'ผู้จัดเก็บ' : 'ผู้อนุมัติ'}: ${user?.name}`, userId } },
+        timeline: {
+          create: {
+            action: "ลงนาม",
+            detail: `${role === "verifier" ? "ผู้ตรวจ" : role === "storer" ? "ผู้จัดเก็บ" : "ผู้อนุมัติ"}: ${user?.name}`,
+            userId,
+          },
+        },
       },
       include: extDocInclude,
-    })
+    });
 
-    res.json(formatExtDoc(doc))
-  } catch (e) { fail(res, e, 'POST /ext/documents/:id/sign') }
-})
+    res.json(formatExtDoc(doc));
+  } catch (e) {
+    fail(res, e, "POST /ext/documents/:id/sign");
+  }
+});
 
-router.post('/documents/:id/unsign', async (req, res) => {
+router.post("/documents/:id/unsign", async (req, res) => {
   try {
-    const { role } = req.body
-    const data: any = {}
-    if (role === 'verifier') { data.verifierId = null; data.verifiedAt = null; data.verifierPin = false }
-    if (role === 'storer') { data.storerId = null; data.storedAt = null; data.storerPin = false }
-    if (role === 'approver') { data.approverId = null; data.approvedAt = null; data.approverPin = false }
+    const { role } = req.body;
+    const data: any = {};
+    if (role === "verifier") {
+      data.verifierId = null;
+      data.verifiedAt = null;
+      data.verifierPin = false;
+    }
+    if (role === "storer") {
+      data.storerId = null;
+      data.storedAt = null;
+      data.storerPin = false;
+    }
+    if (role === "approver") {
+      data.approverId = null;
+      data.approvedAt = null;
+      data.approverPin = false;
+    }
 
     const doc = await prisma.extDocument.update({
-      where: { id: req.params.id }, data, include: extDocInclude,
-    })
-    res.json(formatExtDoc(doc))
-  } catch (e) { fail(res, e, 'POST /ext/documents/:id/unsign') }
-})
+      where: { id: req.params.id },
+      data,
+      include: extDocInclude,
+    });
+    res.json(formatExtDoc(doc));
+  } catch (e) {
+    fail(res, e, "POST /ext/documents/:id/unsign");
+  }
+});
 
 // ═════════════════════════════════════════════
 //  Approve / Reject
 // ═════════════════════════════════════════════
 
-router.post('/documents/:id/approve', async (req, res) => {
+router.post("/documents/:id/approve", async (req, res) => {
   try {
-    const result = await verifyPin(req.user!.id, req.body.pin)
-    if (!result.ok) { res.status(401).json({ message: 'PIN ไม่ถูกต้อง', ...result }); return }
+    const result = await verifyPin(req.user!.id, req.body.pin);
+    if (!result.ok) {
+      res.status(401).json({ message: "PIN ไม่ถูกต้อง", ...result });
+      return;
+    }
 
     const doc = await prisma.extDocument.update({
       where: { id: req.params.id },
       data: {
-        status: 'APPROVED', approverId: req.user!.id, approvedAt: new Date(), approverPin: true,
-        timeline: { create: { action: 'อนุมัติ', detail: 'อนุมัติเอกสาร', userId: req.user!.id } },
+        status: "APPROVED",
+        approverId: req.user!.id,
+        approvedAt: new Date(),
+        approverPin: true,
+        timeline: {
+          create: {
+            action: "อนุมัติ",
+            detail: "อนุมัติเอกสาร",
+            userId: req.user!.id,
+          },
+        },
       },
       include: extDocInclude,
-    })
-    res.json(formatExtDoc(doc))
-  } catch (e) { fail(res, e, 'POST /ext/documents/:id/approve') }
-})
+    });
+    res.json(formatExtDoc(doc));
+  } catch (e) {
+    fail(res, e, "POST /ext/documents/:id/approve");
+  }
+});
 
-router.post('/documents/:id/reject', async (req, res) => {
+router.post("/documents/:id/reject", async (req, res) => {
   try {
-    const { reason, pin } = req.body
-    const result = await verifyPin(req.user!.id, pin)
-    if (!result.ok) { res.status(401).json({ message: 'PIN ไม่ถูกต้อง', ...result }); return }
+    const { reason, pin } = req.body;
+    const result = await verifyPin(req.user!.id, pin);
+    if (!result.ok) {
+      res.status(401).json({ message: "PIN ไม่ถูกต้อง", ...result });
+      return;
+    }
 
     const doc = await prisma.extDocument.update({
       where: { id: req.params.id },
       data: {
-        status: 'REJECTED', rejectReason: reason,
-        timeline: { create: { action: 'ไม่อนุมัติ', detail: `ไม่อนุมัติ: ${reason}`, userId: req.user!.id } },
+        status: "REJECTED",
+        rejectReason: reason,
+        timeline: {
+          create: {
+            action: "ไม่อนุมัติ",
+            detail: `ไม่อนุมัติ: ${reason}`,
+            userId: req.user!.id,
+          },
+        },
       },
       include: extDocInclude,
-    })
-    res.json(formatExtDoc(doc))
-  } catch (e) { fail(res, e, 'POST /ext/documents/:id/reject') }
-})
+    });
+    res.json(formatExtDoc(doc));
+  } catch (e) {
+    fail(res, e, "POST /ext/documents/:id/reject");
+  }
+});
 
 // Batch approve / reject
-router.post('/documents/batch-approve', async (req, res) => {
+router.post("/documents/batch-approve", async (req, res) => {
   try {
-    const { ids, pin } = req.body
-    const result = await verifyPin(req.user!.id, pin)
-    if (!result.ok) { res.status(401).json({ message: 'PIN ไม่ถูกต้อง', ...result }); return }
-
-    let count = 0
-    for (const id of ids) {
-      await prisma.extDocument.updateMany({ where: { id, status: 'PENDING' }, data: { status: 'APPROVED', approverId: req.user!.id, approvedAt: new Date(), approverPin: true } })
-      await prisma.extTimeline.create({ data: { documentId: id, action: 'อนุมัติ', detail: 'อนุมัติเอกสาร (batch)', userId: req.user!.id } })
-      count++
+    const { ids, pin } = req.body;
+    const result = await verifyPin(req.user!.id, pin);
+    if (!result.ok) {
+      res.status(401).json({ message: "PIN ไม่ถูกต้อง", ...result });
+      return;
     }
-    res.json({ count })
-  } catch (e) { fail(res, e, 'POST /ext/documents/batch-approve') }
-})
 
-router.post('/documents/batch-reject', async (req, res) => {
+    let count = 0;
+    for (const id of ids) {
+      await prisma.extDocument.updateMany({
+        where: { id, status: "PENDING" },
+        data: {
+          status: "APPROVED",
+          approverId: req.user!.id,
+          approvedAt: new Date(),
+          approverPin: true,
+        },
+      });
+      await prisma.extTimeline.create({
+        data: {
+          documentId: id,
+          action: "อนุมัติ",
+          detail: "อนุมัติเอกสาร (batch)",
+          userId: req.user!.id,
+        },
+      });
+      count++;
+    }
+    res.json({ count });
+  } catch (e) {
+    fail(res, e, "POST /ext/documents/batch-approve");
+  }
+});
+
+router.post("/documents/batch-reject", async (req, res) => {
   try {
-    const { ids, reason, pin } = req.body
-    const result = await verifyPin(req.user!.id, pin)
-    if (!result.ok) { res.status(401).json({ message: 'PIN ไม่ถูกต้อง', ...result }); return }
-
-    let count = 0
-    for (const id of ids) {
-      await prisma.extDocument.updateMany({ where: { id, status: 'PENDING' }, data: { status: 'REJECTED', rejectReason: reason } })
-      await prisma.extTimeline.create({ data: { documentId: id, action: 'ไม่อนุมัติ', detail: `ไม่อนุมัติ (batch): ${reason}`, userId: req.user!.id } })
-      count++
+    const { ids, reason, pin } = req.body;
+    const result = await verifyPin(req.user!.id, pin);
+    if (!result.ok) {
+      res.status(401).json({ message: "PIN ไม่ถูกต้อง", ...result });
+      return;
     }
-    res.json({ count })
-  } catch (e) { fail(res, e, 'POST /ext/documents/batch-reject') }
-})
+
+    let count = 0;
+    for (const id of ids) {
+      await prisma.extDocument.updateMany({
+        where: { id, status: "PENDING" },
+        data: { status: "REJECTED", rejectReason: reason },
+      });
+      await prisma.extTimeline.create({
+        data: {
+          documentId: id,
+          action: "ไม่อนุมัติ",
+          detail: `ไม่อนุมัติ (batch): ${reason}`,
+          userId: req.user!.id,
+        },
+      });
+      count++;
+    }
+    res.json({ count });
+  } catch (e) {
+    fail(res, e, "POST /ext/documents/batch-reject");
+  }
+});
 
 // ═════════════════════════════════════════════
 //  Export bags
 // ═════════════════════════════════════════════
 
-router.post('/documents/:id/export', async (req, res) => {
+router.post("/documents/:id/export", async (req, res) => {
   try {
-    const { bagIds, reasonId, date, note, pin } = req.body
-    const result = await verifyPin(req.user!.id, pin)
-    if (!result.ok) { res.status(401).json({ message: 'PIN ไม่ถูกต้อง', ...result }); return }
+    const { bagIds, reasonId, date, note, pin } = req.body;
+    const result = await verifyPin(req.user!.id, pin);
+    if (!result.ok) {
+      res.status(401).json({ message: "PIN ไม่ถูกต้อง", ...result });
+      return;
+    }
 
     const exp = await prisma.extExport.create({
-      data: { documentId: req.params.id, reasonId, exportDate: new Date(date), note: note || null, userId: req.user!.id },
-    })
+      data: {
+        documentId: req.params.id,
+        reasonId,
+        exportDate: new Date(date),
+        note: note || null,
+        userId: req.user!.id,
+      },
+    });
 
     await prisma.extBag.updateMany({
       where: { id: { in: bagIds }, documentId: req.params.id },
-      data: { status: 'EXPORTED', exportedAt: new Date(), exportId: exp.id },
-    })
+      data: { status: "EXPORTED", exportedAt: new Date(), exportId: exp.id },
+    });
 
     // Check if all bags exported → mark document EXPORTED
-    const remaining = await prisma.extBag.count({ where: { documentId: req.params.id, status: 'IN_STOCK' } })
+    const remaining = await prisma.extBag.count({
+      where: { documentId: req.params.id, status: "IN_STOCK" },
+    });
     if (remaining === 0) {
-      await prisma.extDocument.update({ where: { id: req.params.id }, data: { status: 'EXPORTED' } })
+      await prisma.extDocument.update({
+        where: { id: req.params.id },
+        data: { status: "EXPORTED" },
+      });
     }
 
     await prisma.extTimeline.create({
-      data: { documentId: req.params.id, action: 'นำออก', detail: `นำออก ${bagIds.length} ถุง`, userId: req.user!.id },
-    })
+      data: {
+        documentId: req.params.id,
+        action: "นำออก",
+        detail: `นำออก ${bagIds.length} ถุง`,
+        userId: req.user!.id,
+      },
+    });
 
-    const doc = await prisma.extDocument.findUnique({ where: { id: req.params.id }, include: extDocInclude })
-    res.json(formatExtDoc(doc))
-  } catch (e) { fail(res, e, 'POST /ext/documents/:id/export') }
-})
+    const doc = await prisma.extDocument.findUnique({
+      where: { id: req.params.id },
+      include: extDocInclude,
+    });
+    res.json(formatExtDoc(doc));
+  } catch (e) {
+    fail(res, e, "POST /ext/documents/:id/export");
+  }
+});
 
 // ═════════════════════════════════════════════
 //  Attachments
 // ═════════════════════════════════════════════
 
-router.delete('/attachments/:id', async (req, res) => {
+router.delete("/attachments/:id", async (req, res) => {
   try {
-    await prisma.extAttachment.delete({ where: { id: req.params.id } })
-    res.json({ message: 'ลบไฟล์แนบสำเร็จ' })
-  } catch (e) { fail(res, e, 'DELETE /ext/attachments/:id') }
-})
+    await prisma.extAttachment.delete({ where: { id: req.params.id } });
+    res.json({ message: "ลบไฟล์แนบสำเร็จ" });
+  } catch (e) {
+    fail(res, e, "DELETE /ext/attachments/:id");
+  }
+});
 
 // ═════════════════════════════════════════════
 //  Summary
 // ═════════════════════════════════════════════
 
-router.get('/summary', async (_req, res) => {
+router.get("/summary", async (_req, res) => {
   try {
-    const now = new Date()
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    const [receivedThisMonth, remaining, pendingApproval, exportedThisMonth] = await Promise.all([
-      prisma.extDocument.count({ where: { receivedDate: { gte: monthStart, lte: monthEnd } } }),
-      prisma.extBag.count({ where: { status: 'IN_STOCK' } }),
-      prisma.extDocument.count({ where: { status: 'PENDING' } }),
-      prisma.extBag.count({ where: { status: 'EXPORTED', exportedAt: { gte: monthStart, lte: monthEnd } } }),
-    ])
+    const [receivedThisMonth, remaining, pendingApproval, exportedThisMonth] =
+      await Promise.all([
+        prisma.extDocument.count({
+          where: { receivedDate: { gte: monthStart, lte: monthEnd } },
+        }),
+        prisma.extBag.count({ where: { status: "IN_STOCK" } }),
+        prisma.extDocument.count({ where: { status: "PENDING" } }),
+        prisma.extBag.count({
+          where: {
+            status: "EXPORTED",
+            exportedAt: { gte: monthStart, lte: monthEnd },
+          },
+        }),
+      ]);
 
-    res.json({ receivedThisMonth, remaining, pendingApproval, exportedThisMonth })
-  } catch (e) { fail(res, e, 'GET /ext/summary') }
-})
+    res.json({
+      receivedThisMonth,
+      remaining,
+      pendingApproval,
+      exportedThisMonth,
+    });
+  } catch (e) {
+    fail(res, e, "GET /ext/summary");
+  }
+});
 
 // ═════════════════════════════════════════════
 //  Report
 // ═════════════════════════════════════════════
 
-router.get('/report', async (req, res) => {
+router.get("/report", async (req, res) => {
   try {
-    const dateFrom = req.query.dateFrom ? new Date(String(req.query.dateFrom)) : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-    const dateTo = req.query.dateTo ? new Date(String(req.query.dateTo)) : new Date()
-    const where: any = { receivedDate: { gte: dateFrom, lte: dateTo } }
-    if (req.query.sourceId) where.sourceId = String(req.query.sourceId)
+    const dateFrom = req.query.dateFrom
+      ? new Date(String(req.query.dateFrom))
+      : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const dateTo = req.query.dateTo
+      ? new Date(String(req.query.dateTo))
+      : new Date();
+    const where: any = { receivedDate: { gte: dateFrom, lte: dateTo } };
+    if (req.query.sourceId) where.sourceId = String(req.query.sourceId);
 
-    const docs = await prisma.extDocument.findMany({ where, include: { bags: true, bloodProduct: true } })
+    const docs = await prisma.extDocument.findMany({
+      where,
+      include: { bags: true, bloodProduct: true },
+    });
 
-    const totalReceived = docs.length
-    const allBags = docs.flatMap(d => d.bags)
-    const totalExported = allBags.filter(b => b.status === 'EXPORTED').length
-    const remaining = allBags.filter(b => b.status === 'IN_STOCK').length
+    const totalReceived = docs.length;
+    const allBags = docs.flatMap((d) => d.bags);
+    const totalExported = allBags.filter((b) => b.status === "EXPORTED").length;
+    const remaining = allBags.filter((b) => b.status === "IN_STOCK").length;
 
     // Avg days to export
-    const exportedBags = allBags.filter(b => b.exportedAt)
-    const avgDays = exportedBags.length > 0
-      ? exportedBags.reduce((sum, b) => {
-          const doc = docs.find(d => d.id === b.documentId)!
-          return sum + (b.exportedAt!.getTime() - doc.receivedDate.getTime()) / (1000 * 60 * 60 * 24)
-        }, 0) / exportedBags.length
-      : 0
+    const exportedBags = allBags.filter((b) => b.exportedAt);
+    const avgDays =
+      exportedBags.length > 0
+        ? exportedBags.reduce((sum, b) => {
+            const doc = docs.find((d) => d.id === b.documentId)!;
+            return (
+              sum +
+              (b.exportedAt!.getTime() - doc.receivedDate.getTime()) /
+                (1000 * 60 * 60 * 24)
+            );
+          }, 0) / exportedBags.length
+        : 0;
 
     // Matrix: product × blood group
-    const matrixMap = new Map<string, { groups: Record<string, number>; total: number; name?: string }>()
+    const matrixMap = new Map<
+      string,
+      { groups: Record<string, number>; total: number; name?: string }
+    >();
     for (const doc of docs) {
-      const key = doc.bloodProduct.code
-      if (!matrixMap.has(key)) matrixMap.set(key, { groups: {}, total: 0, name: doc.bloodProduct.name || undefined })
-      const entry = matrixMap.get(key)!
-      const bagCount = doc.bags.length
-      entry.groups[doc.bloodGroup] = (entry.groups[doc.bloodGroup] || 0) + bagCount
-      entry.total += bagCount
+      const key = doc.bloodProduct.code;
+      if (!matrixMap.has(key))
+        matrixMap.set(key, {
+          groups: {},
+          total: 0,
+          name: doc.bloodProduct.name || undefined,
+        });
+      const entry = matrixMap.get(key)!;
+      const bagCount = doc.bags.length;
+      entry.groups[doc.bloodGroup] =
+        (entry.groups[doc.bloodGroup] || 0) + bagCount;
+      entry.total += bagCount;
     }
 
     res.json({
-      kpi: { totalReceived, totalExported, remaining, avgDaysToExport: Math.round(avgDays * 10) / 10 },
+      kpi: {
+        totalReceived,
+        totalExported,
+        remaining,
+        avgDaysToExport: Math.round(avgDays * 10) / 10,
+      },
       chart: [], // TODO: monthly chart data
-      matrix: Array.from(matrixMap.entries()).map(([code, v]) => ({ productCode: code, productName: v.name, groups: v.groups, total: v.total })),
-    })
-  } catch (e) { fail(res, e, 'GET /ext/report') }
-})
+      matrix: Array.from(matrixMap.entries()).map(([code, v]) => ({
+        productCode: code,
+        productName: v.name,
+        groups: v.groups,
+        total: v.total,
+      })),
+    });
+  } catch (e) {
+    fail(res, e, "GET /ext/report");
+  }
+});
 
 // ═════════════════════════════════════════════
 //  Master data CRUD
 // ═════════════════════════════════════════════
 
-function masterCrud(path: string, model: 'extSource' | 'extStorage' | 'extBloodProduct' | 'extExportReason', nameField = 'name') {
-  const db = (prisma as any)[model]
+function masterCrud(
+  path: string,
+  model: "extSource" | "extStorage" | "extBloodProduct" | "extExportReason",
+  nameField = "name",
+) {
+  const db = (prisma as any)[model];
 
   router.get(path, async (_req, res) => {
-    try { res.json(await db.findMany({ orderBy: [{ sort: 'asc' }, { [nameField]: 'asc' }] })) }
-    catch (e) { fail(res, e, `GET /ext${path}`) }
-  })
+    try {
+      res.json(
+        await db.findMany({
+          orderBy: [{ sort: "asc" }, { [nameField]: "asc" }],
+        }),
+      );
+    } catch (e) {
+      fail(res, e, `GET /ext${path}`);
+    }
+  });
 
   router.post(path, adminOnly, async (req: any, res: any) => {
     try {
-      const name = req.body[nameField]?.toString().trim()
-      if (!name) { res.status(400).json({ message: 'กรุณากรอกชื่อ' }); return }
-      const max = await db.aggregate({ _max: { sort: true } })
-      const created = await db.create({ data: { [nameField]: name, sort: (max._max.sort ?? -1) + 1 } })
-      res.status(201).json(created)
+      const name = req.body[nameField]?.toString().trim();
+      if (!name) {
+        res.status(400).json({ message: "กรุณากรอกชื่อ" });
+        return;
+      }
+      const max = await db.aggregate({ _max: { sort: true } });
+      const created = await db.create({
+        data: { [nameField]: name, sort: (max._max.sort ?? -1) + 1 },
+      });
+      res.status(201).json(created);
     } catch (e: any) {
-      if (e?.code === 'P2002') { res.status(409).json({ message: 'ชื่อนี้มีอยู่แล้ว' }); return }
-      fail(res, e, `POST /ext${path}`)
+      if (e?.code === "P2002") {
+        res.status(409).json({ message: "ชื่อนี้มีอยู่แล้ว" });
+        return;
+      }
+      fail(res, e, `POST /ext${path}`);
     }
-  })
+  });
 
   router.put(`${path}/:id`, adminOnly, async (req: any, res: any) => {
     try {
-      const data: any = {}
-      if (req.body[nameField] !== undefined) data[nameField] = req.body[nameField].toString().trim()
-      if (req.body.active !== undefined) data.active = Boolean(req.body.active)
-      const updated = await db.update({ where: { id: req.params.id }, data })
-      res.json(updated)
-    } catch (e) { fail(res, e, `PUT /ext${path}/:id`) }
-  })
+      const data: any = {};
+      if (req.body[nameField] !== undefined)
+        data[nameField] = req.body[nameField].toString().trim();
+      if (req.body.active !== undefined) data.active = Boolean(req.body.active);
+      const updated = await db.update({ where: { id: req.params.id }, data });
+      res.json(updated);
+    } catch (e) {
+      fail(res, e, `PUT /ext${path}/:id`);
+    }
+  });
 
   router.delete(`${path}/:id`, adminOnly, async (req: any, res: any) => {
     try {
-      await db.delete({ where: { id: req.params.id } })
-      res.json({ message: 'ลบสำเร็จ' })
-    } catch (e) { fail(res, e, `DELETE /ext${path}/:id`) }
-  })
+      await db.delete({ where: { id: req.params.id } });
+      res.json({ message: "ลบสำเร็จ" });
+    } catch (e) {
+      fail(res, e, `DELETE /ext${path}/:id`);
+    }
+  });
 
   router.patch(`${path}/reorder`, adminOnly, async (req: any, res: any) => {
     try {
-      const ids: string[] = req.body.ids
+      const ids: string[] = req.body.ids;
       for (let i = 0; i < ids.length; i++) {
-        await db.update({ where: { id: ids[i] }, data: { sort: i } })
+        await db.update({ where: { id: ids[i] }, data: { sort: i } });
       }
-      res.json({ message: 'เรียงลำดับสำเร็จ' })
-    } catch (e) { fail(res, e, `PATCH /ext${path}/reorder`) }
-  })
+      res.json({ message: "เรียงลำดับสำเร็จ" });
+    } catch (e) {
+      fail(res, e, `PATCH /ext${path}/reorder`);
+    }
+  });
 }
 
-masterCrud('/sources', 'extSource')
-masterCrud('/storages', 'extStorage')
-masterCrud('/blood-products', 'extBloodProduct', 'code')
-masterCrud('/export-reasons', 'extExportReason')
+masterCrud("/sources", "extSource");
+masterCrud("/storages", "extStorage");
+masterCrud("/blood-products", "extBloodProduct", "code");
+masterCrud("/export-reasons", "extExportReason");
 
 // ═════════════════════════════════════════════
 //  PIN setup / verify
 // ═════════════════════════════════════════════
 
-router.post('/pin/setup', async (req, res) => {
+router.post("/pin/setup", async (req, res) => {
   try {
-    const { password, pin } = req.body
-    if (!password || !pin || pin.length !== 6) { res.status(400).json({ message: 'กรุณากรอกรหัสผ่านและ PIN 6 หลัก' }); return }
+    const { password, pin } = req.body;
+    if (!password || !pin || pin.length !== 6) {
+      res.status(400).json({ message: "กรุณากรอกรหัสผ่านและ PIN 6 หลัก" });
+      return;
+    }
 
-    const user = await prisma.user.findUnique({ where: { id: req.user!.id } })
-    if (!user) { res.status(404).json({ message: 'ไม่พบผู้ใช้' }); return }
+    const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+    if (!user) {
+      res.status(404).json({ message: "ไม่พบผู้ใช้" });
+      return;
+    }
 
-    const valid = await bcrypt.compare(password, user.password)
-    if (!valid) { res.status(401).json({ message: 'รหัสผ่านไม่ถูกต้อง' }); return }
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      res.status(401).json({ message: "รหัสผ่านไม่ถูกต้อง" });
+      return;
+    }
 
-    const pinHash = await hashPin(pin)
-    await prisma.user.update({ where: { id: req.user!.id }, data: { pinHash, pinFailCount: 0, pinLockedUntil: null } })
+    const pinHash = await hashPin(pin);
+    await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { pinHash, pinFailCount: 0, pinLockedUntil: null },
+    });
 
-    res.json({ message: 'ตั้ง PIN สำเร็จ' })
-  } catch (e) { fail(res, e, 'POST /ext/pin/setup') }
-})
+    res.json({ message: "ตั้ง PIN สำเร็จ" });
+  } catch (e) {
+    fail(res, e, "POST /ext/pin/setup");
+  }
+});
 
-router.post('/pin/verify', async (req, res) => {
+router.post("/pin/verify", async (req, res) => {
   try {
-    const result = await verifyPin(req.user!.id, req.body.pin)
-    res.json(result)
-  } catch (e) { fail(res, e, 'POST /ext/pin/verify') }
-})
-
+    const result = await verifyPin(req.user!.id, req.body.pin);
+    res.json(result);
+  } catch (e) {
+    fail(res, e, "POST /ext/pin/verify");
+  }
+});
 
 // ═════════════════════════════════════════════
 //  Users list (สำหรับ dropdown ลงนาม — ทุก role เข้าถึงได้)
@@ -480,8 +814,10 @@ router.get("/users", async (_req, res) => {
       where: { active: true },
       select: { id: true, name: true, username: true },
       orderBy: { name: "asc" },
-    })
-    res.json(users)
-  } catch (e) { fail(res, e, "GET /ext/users") }
-})
-export default router
+    });
+    res.json(users);
+  } catch (e) {
+    fail(res, e, "GET /ext/users");
+  }
+});
+export default router;
