@@ -1,6 +1,6 @@
 // frontend/src/pages/ExtBloodForm/components/ExtFormSigning.tsx
 import { useState } from 'react'
-import { CheckCircle, Clock, AlertTriangle, Lock, X, Loader2 } from 'lucide-react'
+import { CheckCircle, AlertTriangle, Lock, X, Loader2 } from 'lucide-react'
 import type { SignState } from '../services/ExtFormType'
 import type { UserSummary } from '../../ExtBlood/services/ExtBloodType'
 import { formatThaiDateTime } from '../../ExtBlood/services/extHelpers'

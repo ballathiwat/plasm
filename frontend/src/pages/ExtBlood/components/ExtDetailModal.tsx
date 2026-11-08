@@ -2,7 +2,7 @@
 
 import { X, FileText, Paperclip, Clock, CheckCircle, XCircle, User } from 'lucide-react'
 import { formatThaiDate, formatThaiDateTime, statusLabel, statusClass, bloodGroupClass } from '../services/extHelpers'
-import type { ExtDocument, ExtBag, ExtAttachment, ExtTimelineEntry } from '../services/ExtBloodType'
+import type { ExtDocument } from '../services/ExtBloodType'
 
 interface Props { doc: ExtDocument; onClose: () => void }
 
