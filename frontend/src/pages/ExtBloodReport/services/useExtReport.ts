@@ -1,5 +1,5 @@
 // frontend/src/pages/ExtBloodReport/services/useExtReport.ts
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import extBloodService from '../../ExtBlood/services/ExtBloodService'
 import type { ExtSource, ExtBloodProduct } from '../../ExtBlood/services/ExtBloodType'
 import type { ExtReportFilter, ExtReportKPI, ExtReportChartItem, ExtReportMatrixRow } from './ExtReportType'
