@@ -87,7 +87,7 @@ const ReportPage = () => {
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>รายงานสรุป</h2>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-          สรุปจำนวนจัดเก็บ / นำออก / คงเหลือ แยกตามชนิดพลาสมาและกรุ๊ปเลือด
+          สรุปจำนวนจัดเก็บ / นำออก / คงเหลือ แยกตามชนิดเลือดและกรุ๊ปเลือด
         </p>
       </div>
 
@@ -113,7 +113,7 @@ const ReportPage = () => {
           padding: 60, textAlign: 'center',
           color: 'var(--text-secondary)', fontSize: 14,
         }}>
-          เลือกชนิดพลาสมา ช่วงวันที่ แล้วกด "ค้นหา" เพื่อดูรายงาน
+          เลือกชนิดเลือด ช่วงวันที่ แล้วกด "ค้นหา" เพื่อดูรายงาน
         </div>
       )}
 

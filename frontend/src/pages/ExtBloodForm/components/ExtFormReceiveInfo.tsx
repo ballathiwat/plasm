@@ -33,7 +33,7 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
           onChange={(opt) => setField('sourceId', opt?.value ?? '')} isClearable={false} error={errors.sourceId} />
       </div>
       <div className="ext-req">
-        <PlasmaTypeSelect label="ชนิดพลาสมา" placeholder="เลือกชนิด..." value={form.plasmaType} onChange={(v) => setField('plasmaType', v)} showAll={false} error={errors.plasmaType} />
+        <PlasmaTypeSelect label="ชนิดเลือด" placeholder="เลือกชนิด..." value={form.plasmaType} onChange={(v) => setField('plasmaType', v)} showAll={false} error={errors.plasmaType} />
       </div>
       <div className="ext-req">
         <BloodGroupSelect value={form.bloodGroup} onChange={(v) => setField('bloodGroup', v)} showAll={false} error={errors.bloodGroup} />

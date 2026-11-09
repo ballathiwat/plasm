@@ -18,6 +18,9 @@ export default function ExtBloodSettingsPage() {
   return (
     <div className="ext-settings-page" style={{ animation: 'plasm-fade-in 0.2s ease' }}>
       <h2 className="ext-title">ตั้งค่า — รับเลือดจากภายนอก</h2>
+      <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '-8px 0 16px' }}>
+        ชนิดเลือดจัดการที่เมนู <strong>ตั้งค่า</strong> &gt; <strong>ชนิดเลือด</strong>
+      </p>
 
       <div className="ext-settings-grid">
         <ExtSettingsList
@@ -37,16 +40,6 @@ export default function ExtBloodSettingsPage() {
           onUpdate={(id, d) => h.updateStorage(id, d)}
           onDelete={h.deleteStorage}
           onReorder={h.reorderStorages}
-        />
-
-        <ExtSettingsList
-          title="ชนิดเลือด"
-          placeholder="รหัสชนิดเลือด เช่น LDRC"
-          items={h.productItems}
-          onAdd={h.addProduct}
-          onUpdate={(id, d) => h.updateProduct(id, d)}
-          onDelete={h.deleteProduct}
-          onReorder={h.reorderProducts}
         />
 
         <ExtSettingsList

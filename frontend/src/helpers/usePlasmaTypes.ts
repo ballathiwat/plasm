@@ -1,6 +1,6 @@
 // frontend/src/helpers/usePlasmaTypes.ts
 //
-// ดึงรายการชนิดพลาสมาจาก master สำหรับตัวกรอง
+// ดึงรายการชนิดเลือดจาก master สำหรับตัวกรอง
 // คืนทุกชนิดรวมที่ปิดใช้งานแล้ว เพราะกล่องเก่ายังอ้างอิงอยู่
 
 import { useEffect, useState } from 'react'

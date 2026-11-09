@@ -14,7 +14,7 @@ import SettingsRemovalReasons from "./components/SettingsRemovalReasons";
 const TABS = [
   { key: "stock" as const, label: "ค่าขั้นต่ำ" },
   { key: "users" as const, label: "จัดการผู้ใช้" },
-  { key: "plasma" as const, label: "ชนิดพลาสมา" },
+  { key: "plasma" as const, label: "ชนิดเลือด" },
   { key: "blood" as const, label: "หมู่เลือด" },
   { key: "zones" as const, label: "สถานที่จัดเก็บ" },
   { key: "removal" as const, label: "หมายเหตุการลบ" },
@@ -126,7 +126,7 @@ const SettingsPage = () => {
 
       {activeTab === "plasma" && (
         <SettingsCodeList
-          title="ชนิดพลาสมา"
+          title="ชนิดเลือด"
           description="เช่น FFP, Cryo, IFFP"
           placeholder="ชื่อชนิดใหม่"
           items={master.plasmaTypes}

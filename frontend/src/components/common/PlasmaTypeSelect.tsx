@@ -1,6 +1,6 @@
 // frontend/src/components/common/PlasmaTypeSelect.tsx
 //
-// Dropdown ชนิดพลาสมา — ดึงข้อมูลจาก API อัตโนมัติ (ผ่าน usePlasmaTypes)
+// Dropdown ชนิดเลือด — ดึงข้อมูลจาก API อัตโนมัติ (ผ่าน usePlasmaTypes)
 //
 // Usage:
 //   <PlasmaTypeSelect value={type} onChange={setType} />
@@ -43,7 +43,7 @@ const findOption = (opts: OptionType[], v: string): OptionType | null =>
 export default function PlasmaTypeSelect({
   value,
   onChange,
-  label = 'ชนิดพลาสมา',
+  label = 'ชนิดเลือด',
   placeholder = 'เลือกชนิด...',
   showAll = true,
   allLabel = 'ทุกชนิด',

@@ -193,10 +193,10 @@ export default function StorageNewBoxForm({
           />
         </div>
 
-        {/* ชนิดพลาสมา */}
+        {/* ชนิดเลือด */}
         <div>
           <SelectDropdown
-            label="ชนิดพลาสมา"
+            label="ชนิดเลือด"
             placeholder="เลือกชนิด..."
             options={plasmaOpts}
             value={findOption(plasmaOpts, form.type)}
