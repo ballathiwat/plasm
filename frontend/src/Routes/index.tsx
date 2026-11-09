@@ -76,6 +76,7 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
       onNavigate={handleNavigate}
       role={user.role}
       userName={user.name}
+      userId={user.id}
       onLogout={handleLogout}
     >
       {children}
