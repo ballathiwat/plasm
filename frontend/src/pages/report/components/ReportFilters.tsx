@@ -49,7 +49,7 @@ export default function ReportFilters({
       alignItems: 'flex-end',
       gap: 12,
     }}>
-      {/* ชนิดพลาสมา */}
+      {/* ชนิดเลือด */}
       <div style={{ minWidth: 160 }}>
         <SelectDropdown
           label="ชนิด"
