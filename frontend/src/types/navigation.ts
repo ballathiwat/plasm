@@ -48,11 +48,11 @@ export const MENU_ITEMS: MenuItem[] = [
     ],
   },
   { key: 'storage', label: 'จัดเก็บ', icon: Package, roles: ['ADMIN', 'STAFF'] },
+  { key: 'ext-blood-list', label: 'รอรับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN', 'STAFF'] },
   { key: 'withdraw', label: 'นำออก', icon: PackageOpen, roles: ['ADMIN', 'STAFF'] },
   { key: 'search', label: 'ค้นหา', icon: Search, roles: ['ADMIN', 'STAFF'] },
   { key: 'map', label: 'แผนผัง', icon: Map, roles: ['ADMIN', 'STAFF'] },
   { key: 'log', label: 'ประวัติ', icon: ClipboardList, roles: ['ADMIN', 'STAFF'] },
-  { key: 'ext-blood-list', label: 'รอรับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN', 'STAFF'] },
   {
     key: 'settings-group',
     label: 'ตั้งค่า',
