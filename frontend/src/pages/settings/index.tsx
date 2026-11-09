@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import Toast from '../../components/common/Toast'
 import { ConfirmModal } from '../../components/common/Modal'
-import SelectDropdown, { type OptionType } from '../../components/common/SelectDropdown'
 import { useAuth } from '../../Routes/AuthProtected'
 import useSettings from './services/useSettings'
 import useMasterData from './services/useMasterData'
@@ -40,7 +39,7 @@ const NAV: NavGroup[] = [
   { key: 'forms', label: 'ตัวเลือกในฟอร์ม', items: [
     { k: 'removal', label: 'หมายเหตุการลบ unit', icon: Eraser },
     { k: 'extSources', label: 'สถานที่ส่งเลือด', icon: Building2 },
-    { k: 'extStorages', label: 'ตำแหน่งจัดเก็บเลือดภายนอก', icon: Archive },
+    { k: 'extStorages', label: 'ตำแหน่งจัดเก็บ (ภายนอก)', icon: Archive },
     { k: 'extReasons', label: 'เหตุผลการนำออก', icon: LogOut },
   ] },
 ]
@@ -52,23 +51,14 @@ const sameStock = (a: MinimumStock, b: MinimumStock) => {
   return [...keys].every((k) => (a[k] ?? null) === (b[k] ?? null))
 }
 
-function useWide(min = 1024) {
-  const q = `(min-width: ${min}px)`
-  const [wide, setWide] = useState(() => window.matchMedia(q).matches)
-  useEffect(() => {
-    const m = window.matchMedia(q)
-    const f = () => setWide(m.matches)
-    m.addEventListener('change', f)
-    return () => m.removeEventListener('change', f)
-  }, [q])
-  return wide
-}
+// พื้นหลังโทนฟ้าอ่อนแบบคงที่ — ไม่ใช้ --primary-surface เพราะ globals.css สลับค่านี้เป็นสีเข้มตาม prefers-color-scheme
+// ขณะที่ surface อื่นยังเป็นสีสว่าง (ทำให้ได้กล่องสีกรมท่าบนหน้าขาว)
+const PRIMARY_TINT = 'rgba(37, 99, 235, 0.08)'
 
 export default function SettingsPage() {
   const { group } = useParams()
   const [sp] = useSearchParams()
   const navigate = useNavigate()
-  const wide = useWide()
   const { user } = useAuth()
 
   const g = NAV.find((x) => x.key === group)
@@ -100,7 +90,6 @@ export default function SettingsPage() {
     return () => window.removeEventListener('beforeunload', h)
   }, [dirty])
 
-  const navOpts: OptionType[] = FLAT.map((x) => ({ value: x.k, label: `${x.group.label} · ${x.label}` }))
   const ensureOk = async (fn: () => Promise<unknown>, okMsg?: string) => {
     await fn()
     if (okMsg) s.notify({ type: 'success', msg: okMsg })
@@ -108,33 +97,38 @@ export default function SettingsPage() {
   const toItems = (xs: OptionItem[]) => xs
   const minFor = (code: string) => s.minimumStock[code]
 
-  const navButton = (it: (typeof FLAT)[number]) => {
+  // Sidebar เลือก "กลุ่ม" แล้ว → ในหน้าแสดงเฉพาะหมวดของกลุ่มนั้นเป็นแท็บ (ไม่ซ้ำกับ Sidebar)
+  const groupItems = cur.group.items
+  const tabButton = (it: (typeof groupItems)[number]) => {
     const on = it.k === tab
     const Icon = it.icon
     return (
       <button
         key={it.k}
         type="button"
-        aria-current={on ? 'page' : undefined}
+        role="tab"
+        aria-selected={on}
+        tabIndex={on ? 0 : -1}
         onClick={() => go(it.k)}
         onKeyDown={(e) => {
-          if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+          if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
           e.preventDefault()
-          const i = FLAT.findIndex((x) => x.k === it.k)
-          const n = FLAT[(i + (e.key === 'ArrowDown' ? 1 : -1) + FLAT.length) % FLAT.length]
+          const i = groupItems.findIndex((x) => x.k === it.k)
+          const n = groupItems[(i + (e.key === 'ArrowRight' ? 1 : -1) + groupItems.length) % groupItems.length]
           go(n.k)
-          requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-stg-nav="${n.k}"]`)?.focus())
+          requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-stg-tab="${n.k}"]`)?.focus())
         }}
-        data-stg-nav={it.k}
+        data-stg-tab={it.k}
         style={{
-          display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 40, padding: '8px 12px',
-          border: 'none', borderRadius: 'var(--radius-md, 8px)', font: 'inherit', fontSize: 14, textAlign: 'left', cursor: 'pointer',
-          background: on ? 'var(--primary-surface)' : 'transparent', color: on ? 'var(--primary)' : 'var(--text-primary)', fontWeight: on ? 600 : 400,
+          display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 44, padding: '0 16px', whiteSpace: 'nowrap',
+          border: 'none', borderBottom: `2px solid ${on ? 'var(--primary)' : 'transparent'}`, marginBottom: -2,
+          background: 'transparent', font: 'inherit', fontSize: 14, cursor: 'pointer',
+          color: on ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: on ? 700 : 500,
         }}
-        onMouseEnter={(e) => { if (!on) e.currentTarget.style.background = 'var(--surface-raised)' }}
-        onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = 'transparent' }}
+        onMouseEnter={(e) => { if (!on) e.currentTarget.style.background = PRIMARY_TINT }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
       >
-        <Icon size={16} color={on ? 'var(--primary)' : 'var(--text-secondary)'} />{it.label}
+        <Icon size={16} />{it.label}
       </button>
     )
   }
@@ -142,47 +136,18 @@ export default function SettingsPage() {
   return (
     <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
       <Toast toast={s.toast} onDismiss={s.dismissToast} />
-      <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 20px' }}>
-        กำหนดค่าขั้นต่ำสต็อก จัดการผู้ใช้ ข้อมูลหลัก และตัวเลือกที่ใช้ในฟอร์มทั้งหมดของระบบ
-      </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: wide ? '232px minmax(0,1fr)' : 'minmax(0,1fr)', gap: wide ? 24 : 16, alignItems: 'start' }}>
-        {wide ? (
-          <nav aria-label="หมวดการตั้งค่า" style={{
-            position: 'sticky', top: 16, display: 'flex', flexDirection: 'column', gap: 16, padding: 12,
-            background: 'var(--surface, #fff)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg, 10px)', boxShadow: 'var(--shadow-sm)',
-          }}>
-            {NAV.map((ng) => (
-              <div key={ng.key} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <div style={{ padding: '0 12px 4px' }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{ng.label}</div>
-                  {ng.note && <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2, lineHeight: 1.5 }}>{ng.note}</div>}
-                </div>
-                {FLAT.filter((x) => x.group.key === ng.key).map(navButton)}
-              </div>
-            ))}
-          </nav>
-        ) : (
-          <SelectDropdown
-            label="หมวดการตั้งค่า"
-            options={navOpts}
-            value={navOpts.find((o) => o.value === tab) ?? null}
-            onChange={(o) => { const v = (o as OptionType | null)?.value; if (v) go(v as TabKey) }}
-            isClearable={false}
-            isSearchable={false}
-          />
-        )}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', borderBottom: '2px solid var(--border)', marginBottom: 16 }}>
+        <div role="tablist" aria-label={`หมวดใน ${cur.group.label}`} style={{ display: 'flex', overflowX: 'auto', minWidth: 0 }}>
+          {groupItems.map(tabButton)}
+        </div>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)', paddingBottom: 12 }}>
+          {tab === 'stock' ? <><Hand size={13} />หมวดนี้ต้องกด "บันทึก"</> : <><Cloud size={13} />บันทึกอัตโนมัติทุกการเปลี่ยนแปลง</>}
+        </span>
+      </div>
+      {cur.group.note && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '-4px 0 12px' }}>{cur.group.note}</p>}
 
-        <section aria-label={cur.label} style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-              {cur.group.label} / <b style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{cur.label}</b>
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
-              {tab === 'stock' ? <><Hand size={13} />หมวดนี้ต้องกด "บันทึก"</> : <><Cloud size={13} />บันทึกอัตโนมัติทุกการเปลี่ยนแปลง</>}
-            </span>
-          </div>
-
+      <section role="tabpanel" aria-label={cur.label} style={{ minWidth: 0 }}>
           {tab === 'stock' && (
             <SettingsMinStock
               groups={master.bloodTypes.filter((b) => b.active).map((b) => b.code)}
@@ -328,8 +293,7 @@ export default function SettingsPage() {
               onReorder={ext.reorderReasons}
             />
           )}
-        </section>
-      </div>
+      </section>
 
       <ConfirmModal
         open={leaveAsk}
