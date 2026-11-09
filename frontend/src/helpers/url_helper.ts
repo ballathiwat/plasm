@@ -69,3 +69,7 @@ export const EXT_PIN_SETUP = `${EXT_BASE}/pin/setup`
 export const EXT_PIN_VERIFY = `${EXT_BASE}/pin/verify`
 export const EXT_COMMITTEE = `${EXT_BASE}/committee`
 export const EXT_USERS = `${EXT_BASE}/users`
+
+// ===== Notifications =====
+export const NOTIFICATIONS = `${API}/notifications`
+export const NOTIFICATIONS_READ = `${API}/notifications/read`
