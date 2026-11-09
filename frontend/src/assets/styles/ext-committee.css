@@ -68,8 +68,8 @@
 .ext-cm-warn { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--warning-ink); margin-top: 12px; }
 
 /* form: 2 steps + vertical timeline + sticky summary */
-.ext-form-page { max-width: 1120px; }
-.ext-form-layout { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 20px; align-items: start; }
+.ext-form-page { width: 100%; max-width: 1600px; margin: 0 auto; } /* fit-laptop */
+.ext-form-layout { display: grid; grid-template-columns: minmax(0,1fr) clamp(300px, 26%, 380px); gap: 24px; align-items: start; }
 .ext-form-aside { position: sticky; top: 16px; margin-top: 40px; }
 @media (max-width: 960px) { .ext-form-layout { grid-template-columns: 1fr; } .ext-form-aside { position: static; margin-top: 0; order: -1; } }
 .ext-tl { display: grid; grid-template-columns: 32px minmax(0,1fr); column-gap: 14px; }
