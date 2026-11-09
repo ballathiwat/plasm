@@ -1,7 +1,7 @@
-// frontend/src/pages/ExtBloodForm/components/ExtFormSummary.tsx — การ์ดสรุป (sticky)
+// frontend/src/pages/ExtBloodForm/components/ExtFormSummary.tsx — การ์ดสรุป
 import type { ReactNode } from 'react'
 import { ClipboardList } from 'lucide-react'
-import { formatThaiDate } from '../../ExtBlood/services/extHelpers'
+import { formatThaiDate, bloodGroupClass } from '../../ExtBlood/services/extHelpers'
 
 interface Props {
   parts: boolean[]; date: string; source?: string; product?: string; bloodGroup?: string
@@ -18,11 +18,19 @@ export default function ExtFormSummary({ parts, date, source, product, bloodGrou
       <div className="ext-sum__body">
         {row('วันที่รับ', date && formatThaiDate(date))}
         {row('สถานที่ส่ง', source)}
-        {row('ชนิด / หมู่เลือด', (product || bloodGroup) && `${product || '—'} · ${bloodGroup || '—'}`)}
+        {row('ชนิด / หมู่เลือด', (product || bloodGroup) && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {product || '—'}
+            {bloodGroup && <span className={`blood-badge ${bloodGroupClass(bloodGroup)}`} style={{ padding: '1px 8px', fontSize: 12 }}>{bloodGroup}</span>}
+          </span>
+        ))}
         {row('ตำแหน่งจัดเก็บ', storage)}
         {row('หมายเลขกล่อง', boxLabel && <span style={{ fontFamily: 'var(--font-mono)' }}>{boxLabel}</span>)}
         {row('ไฟล์แนบ', files ? `${files} ไฟล์` : '')}
-        {row('ถุงเลือด', <b style={{ color: bags.length ? 'var(--primary)' : undefined }}>{bags.length} ถุง</b>)}
+        <div className="ext-sum__count">
+          <span className="ext-muted">ถุงเลือด</span>
+          <span className={`ext-sum__num${bags.length ? ' is-on' : ''}`}>{bags.length} <small>ถุง</small></span>
+        </div>
         {bags.length > 0 && (
           <div className="ext-sum__bags">
             {bags.slice(-6).map((b) => <span key={b} className="ext-sum__bag">{b}</span>)}
