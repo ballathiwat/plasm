@@ -45,7 +45,7 @@ export default function ExtBloodFormPage() {
   const trySubmit = () => (h.missingRoles.length ? setConfirmSend(true) : h.submit())
 
   return (
-    <div className="ext-form-page" style={{ animation: 'plasm-fade-in 0.2s ease' }}>
+    <div className={`ext-form-page${step === 2 ? ' ext-form-page--review' : ''}`} style={{ animation: 'plasm-fade-in 0.2s ease' }}>
       <ConfirmModal open={leave} type="danger" title="ออกจากหน้านี้?" message="ข้อมูลที่กรอกและถุงที่สแกนไว้จะหายไป หากต้องการเก็บไว้ ให้กด บันทึกร่าง ก่อน"
         confirmText="ออกโดยไม่บันทึก" cancelText="อยู่ต่อ" onClose={() => setLeave(false)} onConfirm={() => navigate('/ext-blood')} />
       <ConfirmModal open={confirmSend} type="warning" title="คณะกรรมการยังไม่ครบตามที่แนะนำ"
