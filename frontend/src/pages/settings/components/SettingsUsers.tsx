@@ -117,7 +117,7 @@ export default function SettingsUsers({
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                       {user.name}
-                      {isMe && <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 8px', borderRadius: 99, background: 'var(--primary-surface)', color: 'var(--primary)' }}>คุณ</span>}
+                      {isMe && <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 8px', borderRadius: 99, background: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary)' }}>คุณ</span>}
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                       @{user.username} · {user.role === 'admin' ? 'ผู้ดูแลระบบ' : 'เจ้าหน้าที่'}

@@ -165,7 +165,7 @@ export default function SettingsOptionList({
                       autoFocus aria-label={`แก้ไข ${it.name}`} value={editVal} maxLength={maxLength}
                       onChange={(e) => setEditVal(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') rename(it); if (e.key === 'Escape') setEditId(null) }}
-                      style={{ flex: 1, minWidth: 0, padding: '6px 10px', fontSize: 14, font: 'inherit', border: '1px solid var(--primary)', borderRadius: 6, outline: 'none', boxShadow: '0 0 0 3px var(--primary-surface)' }}
+                      style={{ flex: 1, minWidth: 0, padding: '6px 10px', fontSize: 14, font: 'inherit', border: '1px solid var(--primary)', borderRadius: 6, outline: 'none', boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.15)' }}
                     />
                     <button type="button" title="บันทึก" aria-label="บันทึก" onClick={() => rename(it)} disabled={busy} style={iconBtn('var(--primary)')}><Check size={15} /></button>
                     <button type="button" title="ยกเลิก" aria-label="ยกเลิก" onClick={() => setEditId(null)} style={iconBtn('var(--text-secondary)')}><X size={15} /></button>

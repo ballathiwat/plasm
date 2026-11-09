@@ -119,7 +119,7 @@ export default function SettingsZones({ zones, loading, onAddZone, onToggleZone,
         }}>
           <span>{undo.msg}</span>
           <button type="button" onClick={() => { onToggleShelf(undo.shelf); setUndo(null) }} style={{
-            background: 'none', border: 'none', color: 'var(--primary-surface)', font: 'inherit', fontSize: 13,
+            background: 'none', border: 'none', color: '#93C5FD', font: 'inherit', fontSize: 13,
             fontWeight: 700, cursor: 'pointer', padding: '4px 6px',
           }}>เลิกทำ</button>
         </div>
