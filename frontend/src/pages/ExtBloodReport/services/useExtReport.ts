@@ -1,24 +1,48 @@
 // frontend/src/pages/ExtBloodReport/services/useExtReport.ts
-import { useState, useEffect, useCallback } from 'react'
-import extReportService from './ExtReportService'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import extBloodService from '../../ExtBlood/services/ExtBloodService'
+import type { ExtSource, ExtBloodProduct } from '../../ExtBlood/services/ExtBloodType'
 import type { ExtReportFilter, ExtReportKPI, ExtReportChartItem, ExtReportMatrixRow } from './ExtReportType'
-import type { ExtSource } from '../../ExtBlood/services/ExtBloodType'
 
-function defaultFilter(): ExtReportFilter {
-  const n = new Date(); return { dateFrom: new Date(n.getFullYear(), n.getMonth(), 1).toISOString().slice(0, 10), dateTo: new Date(n.getFullYear(), n.getMonth() + 1, 0).toISOString().slice(0, 10) }
-}
+// Default: ต้นเดือนนี้ → วันนี้
+const today = () => new Date().toISOString().slice(0, 10)
+const monthStart = () => { const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10) }
+
 export default function useExtReport() {
-  const [filter, setFilterRaw] = useState<ExtReportFilter>(defaultFilter)
+  const [filter, setFilterRaw] = useState<ExtReportFilter>({ dateFrom: monthStart(), dateTo: today() })
   const [kpi, setKpi] = useState<ExtReportKPI | null>(null)
   const [chartData, setChartData] = useState<ExtReportChartItem[]>([])
   const [matrix, setMatrix] = useState<ExtReportMatrixRow[]>([])
   const [sources, setSources] = useState<ExtSource[]>([])
+  const [products, setProducts] = useState<ExtBloodProduct[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { extReportService.getSources().then(s => setSources(s.filter(x => x.active))) }, [])
-  const fetch = useCallback(async () => {
-    setLoading(true); try { const r: any = await extReportService.getReport(filter); setKpi(r.kpi || null); setChartData(r.chart || []); setMatrix(r.matrix || []) } catch { setKpi(null); setChartData([]); setMatrix([]) } finally { setLoading(false) }
+  // Master data
+  useEffect(() => {
+    Promise.all([extBloodService.getSources(), extBloodService.getBloodProducts()])
+      .then(([s, p]) => { setSources(s.filter((x) => x.active)); setProducts(p.filter((x) => x.active)) })
+  }, [])
+
+  const fetchReport = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params: Record<string, string> = {}
+      if (filter.dateFrom) params.dateFrom = filter.dateFrom
+      if (filter.dateTo) params.dateTo = filter.dateTo
+      if (filter.sourceId) params.sourceId = filter.sourceId
+      if (filter.bloodProductId) params.bloodProductId = filter.bloodProductId
+      if (filter.bloodGroup) params.bloodGroup = filter.bloodGroup
+      const res = await extBloodService.getReport(params) as any
+      setKpi(res.kpi ?? null)
+      setChartData(res.chart ?? [])
+      setMatrix(res.matrix ?? [])
+    } catch { /* ignore */ }
+    finally { setLoading(false) }
   }, [filter])
-  useEffect(() => { fetch() }, [fetch])
-  return { filter, setFilter: (f: Partial<ExtReportFilter>) => setFilterRaw(p => ({ ...p, ...f })), kpi, chartData, matrix, sources, loading }
+
+  useEffect(() => { fetchReport() }, [fetchReport])
+
+  const setFilter = (f: Partial<ExtReportFilter>) => setFilterRaw((p) => ({ ...p, ...f }))
+
+  return { filter, setFilter, kpi, chartData, matrix, sources, products, loading }
 }
