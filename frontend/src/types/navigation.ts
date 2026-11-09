@@ -14,7 +14,7 @@ import {
   BarChart3,
   FileText,
   CalendarDays,
-  Droplets, SlidersHorizontal,
+  Droplets, SlidersHorizontal, Database, ListChecks,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -59,8 +59,9 @@ export const MENU_ITEMS: MenuItem[] = [
     icon: Settings,
     roles: ['ADMIN'],
     children: [
-      { key: 'settings', label: 'ตั้งค่าระบบ', icon: SlidersHorizontal, roles: ['ADMIN'] },
-      { key: 'ext-blood-settings', label: 'ตั้งค่ารอรับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN'] },
+      { key: 'settings-system', label: 'ระบบ', icon: SlidersHorizontal, roles: ['ADMIN'] },
+      { key: 'settings-master', label: 'ข้อมูลหลัก', icon: Database, roles: ['ADMIN'] },
+      { key: 'settings-forms', label: 'ตัวเลือกในฟอร์ม', icon: ListChecks, roles: ['ADMIN'] },
     ],
   },
 ]
@@ -86,6 +87,9 @@ export const PAGE_TITLES: Record<string, string> = {
   'ext-blood-list': 'รอรับเลือดจากภายนอก',
   'ext-blood-create': 'บันทึกรับเลือด',
   'ext-blood-report': 'รายงานรับเลือดจากภายนอก',
-  'ext-blood-settings': 'ตั้งค่า — รับเลือดจากภายนอก',
+  'ext-blood-settings': 'ตั้งค่า — ตัวเลือกในฟอร์ม',
+  'settings-system': 'ตั้งค่า — ระบบ',
+  'settings-master': 'ตั้งค่า — ข้อมูลหลัก',
+  'settings-forms': 'ตั้งค่า — ตัวเลือกในฟอร์ม',
   settings: 'ตั้งค่า',
 }
