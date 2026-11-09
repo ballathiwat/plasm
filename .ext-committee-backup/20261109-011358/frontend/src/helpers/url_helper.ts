@@ -55,7 +55,7 @@ export const MASTER_REMOVAL_REASONS = `${API}/master/removal-reasons`
 export const GET_RACK = `${API}/master/zones`       // + /:zoneId/racks/:shelf
 export const SLOT_LOCKS = `${API}/locks`            // POST · PUT /:id (heartbeat) · DELETE /:id
 
-// ===== External Blood Receiving (รอรับเลือดจากภายนอก) =====
+// ===== External Blood Receiving (รับเลือดจากภายนอก) =====
 export const EXT_BASE = `${API}/ext`
 export const EXT_DOCUMENTS = `${EXT_BASE}/documents`
 export const EXT_SUMMARY = `${EXT_BASE}/summary`

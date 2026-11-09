@@ -44,7 +44,7 @@ export const MENU_ITEMS: MenuItem[] = [
     children: [
       { key: 'report-summary', label: 'รายงานสรุป', icon: FileText, roles: ['ADMIN', 'STAFF'] },
       { key: 'report-daily', label: 'นำเข้า/นำออก', icon: CalendarDays, roles: ['ADMIN', 'STAFF'] },
-      { key: 'ext-blood-report', label: 'รายงานรอรับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN', 'STAFF'] },
+      { key: 'ext-blood-report', label: 'รายงานรับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN', 'STAFF'] },
     ],
   },
   { key: 'storage', label: 'จัดเก็บ', icon: Package, roles: ['ADMIN', 'STAFF'] },
@@ -52,7 +52,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { key: 'search', label: 'ค้นหา', icon: Search, roles: ['ADMIN', 'STAFF'] },
   { key: 'map', label: 'แผนผัง', icon: Map, roles: ['ADMIN', 'STAFF'] },
   { key: 'log', label: 'ประวัติ', icon: ClipboardList, roles: ['ADMIN', 'STAFF'] },
-  { key: 'ext-blood-list', label: 'รอรับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN', 'STAFF'] },
+  { key: 'ext-blood-list', label: 'รับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN', 'STAFF'] },
   {
     key: 'settings-group',
     label: 'ตั้งค่า',
@@ -60,7 +60,7 @@ export const MENU_ITEMS: MenuItem[] = [
     roles: ['ADMIN'],
     children: [
       { key: 'settings', label: 'ตั้งค่าระบบ', icon: SlidersHorizontal, roles: ['ADMIN'] },
-      { key: 'ext-blood-settings', label: 'ตั้งค่ารอรับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN'] },
+      { key: 'ext-blood-settings', label: 'ตั้งค่ารับเลือดจากภายนอก', icon: Droplets, roles: ['ADMIN'] },
     ],
   },
 ]
@@ -83,7 +83,7 @@ export const PAGE_TITLES: Record<string, string> = {
   'report-summary': 'รายงานสรุป',
   'report-daily': 'รายงาน นำเข้า/นำออก',
   profile: 'โปรไฟล์',
-  'ext-blood-list': 'รอรับเลือดจากภายนอก',
+  'ext-blood-list': 'รับเลือดจากภายนอก',
   'ext-blood-create': 'บันทึกรับเลือด',
   'ext-blood-report': 'รายงานรับเลือดจากภายนอก',
   'ext-blood-settings': 'ตั้งค่า — รับเลือดจากภายนอก',
