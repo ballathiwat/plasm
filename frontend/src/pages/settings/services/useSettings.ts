@@ -20,6 +20,7 @@ export default function useSettings() {
   // ── Settings ──
   const [minimumStock, setMinimumStock] = useState<MinimumStock>(DEFAULT_MIN);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [savedMinimum, setSavedMinimum] = useState<MinimumStock>(DEFAULT_MIN);
 
   // ── Users ──
   const [users, setUsers] = useState<UserItem[]>([]);
@@ -39,8 +40,10 @@ export default function useSettings() {
     settingsService
       .getSettings()
       .then((data: any) => {
-        if (data?.minimumStock)
+        if (data?.minimumStock) {
           setMinimumStock(data.minimumStock as MinimumStock);
+          setSavedMinimum(data.minimumStock as MinimumStock);
+        }
       })
       .catch(() => {});
   }, []);
@@ -67,6 +70,7 @@ export default function useSettings() {
     setSavingSettings(true);
     try {
       await settingsService.updateMinimumStock(minimumStock);
+      setSavedMinimum(minimumStock);
       setToast({ type: "success", msg: "บันทึกค่าขั้นต่ำสำเร็จ" });
     } catch (err: any) {
       setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
@@ -161,6 +165,8 @@ export default function useSettings() {
     savingSettings,
     handleMinStockChange,
     handleSaveMinimumStock,
+    savedMinimum,
+    resetMinimumStock: () => setMinimumStock(savedMinimum),
     users,
     loadingUsers,
     showUserForm,
