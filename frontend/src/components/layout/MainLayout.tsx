@@ -6,9 +6,8 @@ import { useState, type ReactNode } from 'react'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import BottomNav from './BottomNav'
+import useNotificationCount from '../../helpers/useNotificationCount'
 import type { UserRole } from '../../types/navigation'
-import { useNavigate } from 'react-router-dom'
-import useNotifications, { type NotificationItem } from '../../helpers/useNotifications'
 
 interface MainLayoutProps {
   children: ReactNode
@@ -16,6 +15,7 @@ interface MainLayoutProps {
   onNavigate: (key: string) => void
   role?: UserRole
   userName?: string
+  userId?: string
   onLogout?: () => void
 }
 
@@ -25,15 +25,11 @@ export default function MainLayout({
   onNavigate,
   role = 'ADMIN',
   userName = 'ผู้ดูแลระบบ',
+  userId = '',
   onLogout,
 }: MainLayoutProps) {
   const [collapsed, setCollapsed] = useState(false)
-  const navigate = useNavigate()
-  const { items: notifications, markRead } = useNotifications()
-  const openNoti = (n: NotificationItem) => {
-    if (n.group === 'info' && !n.read) markRead([n.id])
-    if (n.target) navigate(n.target.path, { state: n.target.docId ? { openDocId: n.target.docId } : undefined })
-  }
+  const { count: notificationCount } = useNotificationCount()
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -52,9 +48,8 @@ export default function MainLayout({
           userName={userName}
           userRole={role}
           onNavigate={onNavigate}
-          notifications={notifications}
-          onNotificationClick={openNoti}
-          onMarkAllRead={() => markRead()}
+          notificationCount={notificationCount}
+          userId={userId}
         />
 
         <main className="flex-1 min-h-0 overflow-auto" style={{ padding: 24, background: 'var(--background)' }}>

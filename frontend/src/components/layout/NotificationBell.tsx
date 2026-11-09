@@ -1,490 +1,222 @@
-// frontend/src/components/layout/NotificationBell.tsx — กระดิ่ง + dropdown 380px (มือถือ = bottom sheet)
-import { useEffect, useRef, useState } from "react";
-import {
-  Bell,
-  BellOff,
-  Pencil,
-  XCircle,
-  CheckCircle,
-  AlertTriangle,
-  X,
-} from "lucide-react";
-import type { NotificationItem } from "../../helpers/useNotifications";
+// ============================================================
+//  src/components/layout/NotificationBell.tsx
+//  🔔 Notification bell — แสดงเอกสารที่รอฉันอนุมัติ
+// ============================================================
 
-const KIND = {
-  approve: { Icon: Pencil, fg: "#1D4ED8", bg: "#EFF6FF" },
-  rejected: { Icon: XCircle, fg: "#DC2626", bg: "#FEF2F2" },
-  approved: { Icon: CheckCircle, fg: "#16A34A", bg: "#F0FDF4" },
-  lowstock: { Icon: AlertTriangle, fg: "#D97706", bg: "#FFFBEB" },
-  info: { Icon: Bell, fg: "#71717A", bg: "#F4F4F5" },
-} as const;
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { Bell, Clock, CheckCircle, ChevronRight, Loader2 } from 'lucide-react'
+import apiAdapter from '../../helpers/http/apiAdapter'
+import { EXT_COMMITTEE } from '../../helpers/url_helper'
+import '../../assets/styles/components/notification-bell.css'
 
-export function timeAgoTh(iso: string) {
-  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return "เมื่อสักครู่";
-  if (s < 3600) return `${Math.floor(s / 60)} นาทีที่แล้ว`;
-  if (s < 86400) return `${Math.floor(s / 3600)} ชั่วโมงที่แล้ว`;
-  if (s < 604800) return `${Math.floor(s / 86400)} วันที่แล้ว`;
-  return new Date(iso).toLocaleDateString("th-TH", {
-    day: "numeric",
-    month: "short",
-  });
+// ── Types ──
+
+interface ExtCommitteeMember {
+  role: 'VERIFIER' | 'STORER' | 'APPROVER'
+  status: string
+  userId: string
 }
 
-const useMobile = () => {
-  const q = "(max-width: 768px)";
-  const [m, setM] = useState(() => window.matchMedia(q).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(q);
-    const f = () => setM(mq.matches);
-    mq.addEventListener("change", f);
-    return () => mq.removeEventListener("change", f);
-  }, []);
-  return m;
-};
-
-function Item({ n, onClick }: { n: NotificationItem; onClick: () => void }) {
-  const [h, setH] = useState(false);
-  const k = KIND[n.kind] ?? KIND.info;
-  return (
-    <button
-      role="menuitem"
-      onClick={onClick}
-      onMouseEnter={() => setH(true)}
-      onMouseLeave={() => setH(false)}
-      style={{
-        width: "100%",
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 10,
-        padding: "10px 12px",
-        border: "none",
-        borderRadius: 8,
-        background: h
-          ? "var(--surface-raised)"
-          : n.read
-            ? "transparent"
-            : "rgba(37,99,235,0.04)",
-        cursor: "pointer",
-        fontFamily: "inherit",
-        textAlign: "left",
-        transition: "background 0.1s",
-      }}
-    >
-      <span
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 8,
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: k.bg,
-          color: k.fg,
-        }}
-      >
-        <k.Icon size={16} />
-      </span>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span
-          style={{
-            display: "block",
-            fontSize: 13,
-            fontWeight: n.read ? 500 : 600,
-            color: "var(--text-primary)",
-            lineHeight: "18px",
-          }}
-        >
-          {n.title}
-        </span>
-        {n.detail && (
-          <span
-            style={{
-              display: "block",
-              fontSize: 12,
-              color: "var(--text-secondary)",
-              marginTop: 2,
-              lineHeight: "17px",
-            }}
-          >
-            {n.detail}
-          </span>
-        )}
-        <span
-          style={{
-            display: "block",
-            fontSize: 11,
-            color: "var(--text-secondary)",
-            marginTop: 4,
-          }}
-        >
-          {timeAgoTh(n.at)}
-        </span>
-      </span>
-      {!n.read && (
-        <span
-          aria-label="ยังไม่ได้อ่าน"
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: "var(--primary)",
-            flexShrink: 0,
-            marginTop: 6,
-          }}
-        />
-      )}
-    </button>
-  );
+interface InboxDoc {
+  id: string
+  docNumber: string
+  bloodProduct: { code: string }
+  bloodGroup: string
+  source: { name: string }
+  submittedAt?: string | null
+  committee?: ExtCommitteeMember[]
 }
+
+interface InboxResponse {
+  data: InboxDoc[]
+  total: number
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  VERIFIER: 'ผู้ตรวจ',
+  STORER: 'ผู้จัดเก็บ',
+  APPROVER: 'ผู้อนุมัติ',
+}
+
+// ── Relative time helper ──
+
+function relativeTime(iso?: string | null): string {
+  if (!iso) return ''
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60_000)
+  if (mins < 1) return 'เมื่อสักครู่'
+  if (mins < 60) return `${mins} นาทีที่แล้ว`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs} ชั่วโมงที่แล้ว`
+  const days = Math.floor(hrs / 24)
+  if (days < 7) return `${days} วันที่แล้ว`
+  return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })
+}
+
+// ── Component ──
 
 interface Props {
-  notifications: NotificationItem[];
-  onItemClick?: (n: NotificationItem) => void;
-  onMarkAllRead?: () => void;
-  onViewAll?: () => void;
+  count: number
+  onNavigate?: (key: string) => void
+  userId: string
 }
 
-export default function NotificationBell({
-  notifications,
-  onItemClick,
-  onMarkAllRead,
-  onViewAll,
-}: Props) {
-  const mobile = useMobile();
-  const [open, setOpen] = useState(false);
-  const [h, setH] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+export default function NotificationBell({ count, onNavigate, userId }: Props) {
+  const [open, setOpen] = useState(false)
+  const [items, setItems] = useState<InboxDoc[]>([])
+  const [loading, setLoading] = useState(false)
+  const [fetched, setFetched] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
+  // ── Fetch inbox เมื่อเปิด dropdown ──
+  const fetchInbox = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await apiAdapter.get<InboxResponse>(
+        `${EXT_COMMITTEE}/inbox`,
+        { page: 1, limit: 5 },
+      )
+      setItems(res.data)
+    } catch {
+      setItems([])
+    } finally {
+      setLoading(false)
+      setFetched(true)
+    }
+  }, [])
+
+  const toggle = () => {
+    const next = !open
+    setOpen(next)
+    if (next && !fetched) fetchInbox()
+    if (next && fetched) fetchInbox() // refresh ทุกครั้งที่เปิด
+  }
+
+  // ── Close on outside click / Escape ──
   useEffect(() => {
-    if (!open) return;
-    const fn = (e: MouseEvent) => {
-      if (!mobile && ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
-    };
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", fn);
-    document.addEventListener("keydown", esc);
+    if (!open) return
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
     return () => {
-      document.removeEventListener("mousedown", fn);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [open, mobile]);
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
 
-  const unread = notifications.filter((n) => !n.read).length;
-  const action = notifications.filter((n) => n.group === "action");
-  const info = notifications.filter((n) => n.group !== "action");
-  const click = (n: NotificationItem) => {
-    setOpen(false);
-    onItemClick?.(n);
-  };
-  const head = (t: string, c = 0) => (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "10px 12px 4px",
-        fontSize: 11,
-        fontWeight: 700,
-        color: "var(--text-secondary)",
-        letterSpacing: "0.03em",
-      }}
-    >
-      {t}
-      {c > 0 && <span style={{ fontWeight: 600 }}>({c})</span>}
-    </div>
-  );
+  // ── หาบทบาทของฉันในเอกสาร ──
+  const myRole = (doc: InboxDoc): string => {
+    const m = doc.committee?.find((c) => c.userId === userId && c.status === 'PENDING')
+    return m ? ROLE_LABEL[m.role] || m.role : 'รออนุมัติ'
+  }
 
-  const body = (
-    <>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "12px 16px",
-          borderBottom: "1px solid var(--border)",
-        }}
+  // ── Navigate → ext-blood แท็บ MINE ──
+  const goToInbox = () => {
+    setOpen(false)
+    onNavigate?.('ext-blood-list')
+  }
+
+  const displayCount = count > 99 ? '99+' : String(count)
+
+  return (
+    <div ref={ref} className="plasm-noti">
+      {/* Bell button */}
+      <button
+        className="plasm-noti__btn"
+        aria-label={`การแจ้งเตือน${count > 0 ? ` ${count} รายการ` : ''}`}
+        aria-expanded={open}
+        onClick={toggle}
       >
-        <span
-          style={{
-            fontSize: 15,
-            fontWeight: 700,
-            color: "var(--text-primary)",
-          }}
-        >
-          การแจ้งเตือน
-        </span>
-        {unread > 0 && (
-          <span
-            style={{
-              marginLeft: 8,
-              fontSize: 12,
-              color: "var(--text-secondary)",
-            }}
-          >
-            ยังไม่อ่าน {unread}
-          </span>
+        <Bell size={20} />
+        {count > 0 && (
+          <span className="plasm-noti__badge">{displayCount}</span>
         )}
-        {mobile && (
-          <button
-            aria-label="ปิด"
-            onClick={() => setOpen(false)}
-            style={{
-              marginLeft: "auto",
-              width: 36,
-              height: 36,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              background: "none",
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-              borderRadius: 8,
-            }}
-          >
-            <X size={18} />
-          </button>
-        )}
-      </div>
-      <div
-        style={{
-          overflowY: "auto",
-          padding: "0 4px 4px",
-          flex: 1,
-          minHeight: 0,
-        }}
-      >
-        {notifications.length === 0 ? (
-          <div style={{ padding: "32px 16px", textAlign: "center" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                marginBottom: 8,
-              }}
-            >
-              <BellOff size={28} color="var(--text-secondary)" />
-            </div>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: "var(--text-primary)",
-              }}
-            >
-              ไม่มีงานค้าง
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                color: "var(--text-secondary)",
-                marginTop: 2,
-              }}
-            >
-              คุณดำเนินการครบแล้ว
-            </div>
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div className="plasm-noti__panel">
+          {/* Header */}
+          <div className="plasm-noti__header">
+            <h3 className="plasm-noti__title">การแจ้งเตือน</h3>
+            {count > 0 && (
+              <span className="plasm-noti__count-badge">{displayCount}</span>
+            )}
           </div>
-        ) : (
-          <>
-            {action.length > 0 && (
+
+          {/* List */}
+          <div className="plasm-noti__list">
+            {loading && !fetched ? (
               <>
-                {head("ต้องดำเนินการ", action.length)}
-                {action.map((n) => (
-                  <Item key={n.id} n={n} onClick={() => click(n)} />
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="plasm-noti__skeleton">
+                    <div className="plasm-noti__skeleton-circle" />
+                    <div className="plasm-noti__skeleton-lines">
+                      <div className="plasm-noti__skeleton-line" />
+                      <div className="plasm-noti__skeleton-line plasm-noti__skeleton-line--short" />
+                    </div>
+                  </div>
                 ))}
               </>
+            ) : items.length > 0 ? (
+              items.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="plasm-noti__item"
+                  onClick={goToInbox}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter') goToInbox() }}
+                >
+                  <div className="plasm-noti__item-icon">
+                    <Clock size={16} />
+                  </div>
+                  <div className="plasm-noti__item-body">
+                    <p className="plasm-noti__item-title">
+                      {doc.docNumber} · {doc.bloodProduct.code} {doc.bloodGroup}
+                    </p>
+                    <p className="plasm-noti__item-desc">
+                      {doc.source.name}
+                    </p>
+                    <div className="plasm-noti__item-meta">
+                      <span className="plasm-noti__role-tag">{myRole(doc)}</span>
+                      <span className="plasm-noti__time">{relativeTime(doc.submittedAt)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="plasm-noti__empty">
+                <div className="plasm-noti__empty-icon">
+                  <CheckCircle size={20} />
+                </div>
+                <span className="plasm-noti__empty-text">ไม่มีรายการรออนุมัติ</span>
+              </div>
             )}
-            {info.length > 0 && (
-              <>
-                {head("แจ้งให้ทราบ")}
-                {info.map((n) => (
-                  <Item key={n.id} n={n} onClick={() => click(n)} />
-                ))}
-              </>
+
+            {/* Loading indicator เมื่อ refresh */}
+            {loading && fetched && (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 8 }}>
+                <Loader2 size={16} className="ext-spin" color="var(--primary)" />
+              </div>
             )}
-          </>
-        )}
-      </div>
-      {notifications.length > 0 && (
-        <div style={{ display: "flex", borderTop: "1px solid var(--border)" }}>
-          <button
-            onClick={() => onMarkAllRead?.()}
-            disabled={!info.some((n) => !n.read)}
-            style={{
-              flex: 1,
-              minHeight: 44,
-              border: "none",
-              background: "none",
-              fontFamily: "inherit",
-              fontSize: 13,
-              fontWeight: 500,
-              color: info.some((n) => !n.read)
-                ? "var(--text-secondary)"
-                : "var(--text-disabled)",
-              cursor: "pointer",
-            }}
-          >
-            อ่านทั้งหมดแล้ว
-          </button>
-          {onViewAll && (
-            <button
-              onClick={() => {
-                setOpen(false);
-                onViewAll();
-              }}
-              style={{
-                flex: 1,
-                minHeight: 44,
-                border: "none",
-                borderLeft: "1px solid var(--border)",
-                background: "none",
-                fontFamily: "inherit",
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--primary)",
-                cursor: "pointer",
-              }}
-            >
-              ดูทั้งหมด
-            </button>
+          </div>
+
+          {/* Footer */}
+          {count > 0 && (
+            <div className="plasm-noti__footer">
+              <button className="plasm-noti__footer-btn" onClick={goToInbox}>
+                ดูทั้งหมด <ChevronRight size={14} />
+              </button>
+            </div>
           )}
         </div>
       )}
-    </>
-  );
-
-  return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <button
-        onClick={() => setOpen(!open)}
-        onMouseEnter={() => setH(true)}
-        onMouseLeave={() => setH(false)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={
-          unread ? `การแจ้งเตือน ยังไม่อ่าน ${unread} รายการ` : "การแจ้งเตือน"
-        }
-        style={{
-          position: "relative",
-          width: 40,
-          height: 40,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          border: "none",
-          borderRadius: "var(--radius-md, 8px)",
-          background: h || open ? "var(--surface-raised)" : "none",
-          color: "var(--text-secondary)",
-          cursor: "pointer",
-          transition: "background 0.15s",
-        }}
-      >
-        <Bell size={20} />
-        {unread > 0 && (
-          <span
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              top: 4,
-              right: 4,
-              minWidth: 18,
-              height: 18,
-              padding: "0 5px",
-              boxSizing: "border-box",
-              borderRadius: 99,
-              background: "#DC2626",
-              color: "#fff",
-              fontSize: 11,
-              fontWeight: 700,
-              lineHeight: "14px",
-              textAlign: "center",
-              border: "2px solid var(--surface)",
-            }}
-          >
-            {unread > 99 ? "99+" : unread}
-          </span>
-        )}
-      </button>
-      {open && !mobile && (
-        <div
-          role="menu"
-          aria-label="การแจ้งเตือน"
-          style={{
-            position: "absolute",
-            top: "100%",
-            right: 0,
-            marginTop: 6,
-            width: 380,
-            maxWidth: "calc(100vw - 24px)",
-            maxHeight: 520,
-            display: "flex",
-            flexDirection: "column",
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-lg, 12px)",
-            boxShadow: "var(--shadow-md)",
-            overflow: "hidden",
-            animation: "plasm-fade-in 0.15s ease",
-            zIndex: 60,
-          }}
-        >
-          {body}
-        </div>
-      )}
-      {open && mobile && (
-        <div
-          onClick={() => setOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1000,
-            background: "rgba(0,0,0,0.4)",
-            display: "flex",
-            alignItems: "flex-end",
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="การแจ้งเตือน"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "100%",
-              maxHeight: "80vh",
-              display: "flex",
-              flexDirection: "column",
-              background: "var(--surface)",
-              borderRadius: "16px 16px 0 0",
-              boxShadow: "var(--shadow-md)",
-              animation: "plasm-fade-in 0.2s ease",
-              paddingBottom: "env(safe-area-inset-bottom)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                paddingTop: 8,
-              }}
-            >
-              <span
-                style={{
-                  width: 36,
-                  height: 4,
-                  borderRadius: 2,
-                  background: "var(--border)",
-                }}
-              />
-            </div>
-            {body}
-          </div>
-        </div>
-      )}
     </div>
-  );
+  )
 }
