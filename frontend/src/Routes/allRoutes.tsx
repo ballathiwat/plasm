@@ -19,7 +19,6 @@ import DailyReportPage from '../pages/report-daily'
 import ExtBloodPage from '../pages/ExtBlood'
 import ExtBloodFormPage from '../pages/ExtBloodForm'
 import ExtBloodReportPage from '../pages/ExtBloodReport'
-import ExtBloodSettingsPage from '../pages/ExtBloodSettings'
 
 export interface RouteConfig {
   path: string
@@ -43,8 +42,9 @@ const authProtectedRoutes: RouteConfig[] = [
   { path: '/ext-blood/create', component: <ExtBloodFormPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/ext-blood/:id/edit', component: <ExtBloodFormPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/ext-blood/report', component: <ExtBloodReportPage />, roles: ['ADMIN', 'STAFF'] },
-  { path: '/ext-blood/settings', component: <ExtBloodSettingsPage />, roles: ['ADMIN'] },
-  { path: '/settings', component: <SettingsPage />, roles: ['ADMIN'] },
+  { path: '/ext-blood/settings', component: <Navigate to="/settings/forms?tab=extSources" replace />, roles: ['ADMIN'] },
+  { path: '/settings', component: <Navigate to="/settings/system" replace />, roles: ['ADMIN'] },
+  { path: '/settings/:group', component: <SettingsPage />, roles: ['ADMIN'] },
   { path: '*', component: <Navigate to="/" replace /> },
 ]
 
