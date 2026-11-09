@@ -20,16 +20,11 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({
-  children,
-  activeModule,
-  onNavigate,
-  role = 'ADMIN',
-  userName = 'ผู้ดูแลระบบ',
-  userId = '',
-  onLogout,
+  children, activeModule, onNavigate,
+  role = 'ADMIN', userName = 'ผู้ดูแลระบบ', userId = '', onLogout,
 }: MainLayoutProps) {
   const [collapsed, setCollapsed] = useState(false)
-  const { count: notificationCount } = useNotificationCount()
+  const { totalCount, approvalCount, stockAlerts } = useNotificationCount()
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -41,21 +36,20 @@ export default function MainLayout({
         role={role}
         onLogout={onLogout}
       />
-
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <TopBar
           activeModule={activeModule}
           userName={userName}
           userRole={role}
           onNavigate={onNavigate}
-          notificationCount={notificationCount}
+          notificationCount={totalCount}
+          approvalCount={approvalCount}
+          stockAlerts={stockAlerts}
           userId={userId}
         />
-
         <main className="flex-1 min-h-0 overflow-auto" style={{ padding: 24, background: 'var(--background)' }}>
           {children}
         </main>
-
         <BottomNav activeModule={activeModule} onNavigate={onNavigate} />
       </div>
     </div>

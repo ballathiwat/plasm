@@ -1,56 +1,102 @@
 // ============================================================
 //  src/helpers/useNotificationCount.ts
-//  Polling hook — ดึงจำนวนเอกสารที่รอฉันอนุมัติ ทุก 60 วินาที
+//  Polling hook — สต็อกต่ำกว่าขั้นต่ำ + เอกสารรออนุมัติ
+//  Poll ทุก 60s, หยุดเมื่อ tab ไม่ active
 // ============================================================
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import apiAdapter from './http/apiAdapter'
-import { EXT_COMMITTEE } from './url_helper'
+import { GET_STOCK_SUMMARY, EXT_COMMITTEE } from './url_helper'
 
-const POLL_INTERVAL = 60_000 // 60 วินาที
+const POLL_INTERVAL = 60_000
+
+// ── Types ──
+
+interface StockSummary {
+  groups: string[]
+  stocks: Record<string, number>
+  minimum: Record<string, number>
+}
 
 interface ExtCounts {
   mine: number
   byStatus: Record<string, number>
 }
 
-export default function useNotificationCount() {
-  const [count, setCount] = useState(0)
+export type StockLevel = 'danger' | 'warning'
+
+export interface StockAlert {
+  group: string
+  current: number
+  minimum: number
+  level: StockLevel
+}
+
+export interface NotificationData {
+  approvalCount: number
+  stockAlerts: StockAlert[]
+  totalCount: number
+  loading: boolean
+}
+
+// ── Hook ──
+
+export default function useNotificationCount(): NotificationData & { refetch: () => void } {
+  const [approvalCount, setApprovalCount] = useState(0)
+  const [stockAlerts, setStockAlerts] = useState<StockAlert[]>([])
   const [loading, setLoading] = useState(true)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const fetch = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     try {
-      const res = await apiAdapter.get<ExtCounts>(`${EXT_COMMITTEE}/counts`)
-      setCount(res.mine)
+      const [stock, ext] = await Promise.all([
+        apiAdapter.get<StockSummary>(GET_STOCK_SUMMARY).catch(() => null),
+        apiAdapter.get<ExtCounts>(`${EXT_COMMITTEE}/counts`).catch(() => null),
+      ])
+
+      // สต็อก: เอาเฉพาะ danger + warning
+      if (stock) {
+        const alerts: StockAlert[] = []
+        for (const g of stock.groups) {
+          const c = stock.stocks[g] || 0
+          const m = stock.minimum[g]
+          if (!m) continue
+          if (c < m) alerts.push({ group: g, current: c, minimum: m, level: 'danger' })
+          else if (c < m * 1.2) alerts.push({ group: g, current: c, minimum: m, level: 'warning' })
+        }
+        setStockAlerts(alerts)
+      }
+
+      // อนุมัติ
+      if (ext) setApprovalCount(ext.mine)
     } catch {
-      // session หมดอายุหรือ network error → ไม่แสดง badge
+      // network error → ไม่ update
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    fetch()
-    timerRef.current = setInterval(fetch, POLL_INTERVAL)
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
-  }, [fetch])
+    fetchAll()
+    timerRef.current = setInterval(fetchAll, POLL_INTERVAL)
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  }, [fetchAll])
 
-  // หยุด poll เมื่อ tab ไม่ active, กลับมา poll ทันที
+  // หยุด poll เมื่อ tab ไม่ active
   useEffect(() => {
-    const onVisibility = () => {
+    const onVis = () => {
       if (document.hidden) {
         if (timerRef.current) clearInterval(timerRef.current)
       } else {
-        fetch()
-        timerRef.current = setInterval(fetch, POLL_INTERVAL)
+        fetchAll()
+        timerRef.current = setInterval(fetchAll, POLL_INTERVAL)
       }
     }
-    document.addEventListener('visibilitychange', onVisibility)
-    return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [fetch])
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [fetchAll])
 
-  return { count, loading, refetch: fetch }
+  const totalCount = approvalCount + stockAlerts.length
+
+  return { approvalCount, stockAlerts, totalCount, loading, refetch: fetchAll }
 }
