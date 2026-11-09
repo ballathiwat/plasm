@@ -36,7 +36,7 @@ export default function ExtFormBagInput({ bags, bagInput, setBagInput, addBag, r
     <div className="ext-bags">
       <div className="ext-bags__input">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <FormInput label="เลขถุงเลือด" value={bagInput} onChange={setBagInput} placeholder={`สแกนหรือพิมพ์เลขถุงที่ ${bags.length + 1} แล้วกด Enter`}
+          <FormInput label="เลขถุงเลือด" value={bagInput} onChange={setBagInput} placeholder={`สแกนเลขถุงที่ ${bags.length + 1} แล้วกด Enter`}
             mono icon={<ScanBarcode size={14} />} error={bagError} onKeyDown={onKeyDown} autoFocus />
         </div>
         <div className="ext-bags__add"><Button variant="primary" icon={<Plus size={14} />} onClick={addBag}>เพิ่ม</Button></div>

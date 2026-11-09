@@ -139,3 +139,9 @@
   .ext-sumbar__toggle { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-md, 8px); background: var(--surface); font: inherit; font-size: 13px; font-weight: 600; color: var(--text-primary); cursor: pointer; white-space: nowrap; }
   .ext-sumbar__actions { display: flex; gap: 8px; margin-left: auto; }
 }
+
+/* form-match fix — ชนะ ext-blood-form.css ที่โหลดทีหลัง */
+.ext-form-page.ext-form-page { width: 100%; max-width: 1600px; margin: 0 auto; }
+.ext-form-page.ext-form-page--review { max-width: 1040px; }
+.ext-form-grid.ext-form-grid--auto { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.ext-bags input::placeholder { font-family: var(--font-sans); letter-spacing: normal; }
