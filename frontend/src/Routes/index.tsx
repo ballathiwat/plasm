@@ -19,11 +19,14 @@ const PATH_TO_MODULE: Record<string, string> = {
   "/report": "report-summary",
   "/report/daily": "report-daily",
   "/profile": "profile",
-  "/settings": "settings",
+  "/settings": "settings-system",
+  "/settings/system": "settings-system",
+  "/settings/master": "settings-master",
+  "/settings/forms": "settings-forms",
   "/ext-blood": "ext-blood-list",
   "/ext-blood/create": "ext-blood-create",
   "/ext-blood/report": "ext-blood-report",
-  "/ext-blood/settings": "ext-blood-settings",
+  "/ext-blood/settings": "settings-forms",
 };
 
 const MODULE_TO_PATH: Record<string, string> = {
@@ -39,8 +42,11 @@ const MODULE_TO_PATH: Record<string, string> = {
   "ext-blood-list": "/ext-blood",
   "ext-blood-create": "/ext-blood/create",
   "ext-blood-report": "/ext-blood/report",
-  "ext-blood-settings": "/ext-blood/settings",
-  settings: "/settings",
+  "ext-blood-settings": "/settings/forms?tab=extSources",
+  settings: "/settings/system",
+  "settings-system": "/settings/system",
+  "settings-master": "/settings/master",
+  "settings-forms": "/settings/forms",
 };
 
 function LayoutWrapper({ children }: { children: React.ReactNode }) {
