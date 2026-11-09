@@ -5,15 +5,20 @@
 import { useState, useRef, useEffect } from 'react'
 import { User, ChevronDown, UserCircle } from 'lucide-react'
 import { PAGE_TITLES, type UserRole } from '../../types/navigation'
+import NotificationBell from './NotificationBell'
+import type { NotificationItem } from '../../helpers/useNotifications'
 
 interface TopBarProps {
   activeModule: string
   userName: string
   userRole: UserRole
   onNavigate?: (key: string) => void
+  notifications?: NotificationItem[]
+  onNotificationClick?: (n: NotificationItem) => void
+  onMarkAllRead?: () => void
 }
 
-export default function TopBar({ activeModule, userName, userRole, onNavigate }: TopBarProps) {
+export default function TopBar({ activeModule, userName, userRole, onNavigate, notifications, onNotificationClick, onMarkAllRead }: TopBarProps) {
   const title = PAGE_TITLES[activeModule] || 'Plasm'
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -43,6 +48,8 @@ export default function TopBar({ activeModule, userName, userRole, onNavigate }:
         {title}
       </h1>
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+      {notifications && <NotificationBell notifications={notifications} onItemClick={onNotificationClick} onMarkAllRead={onMarkAllRead} />}
       {/* User menu */}
       <div ref={menuRef} style={{ position: 'relative' }}>
         <button
@@ -123,6 +130,7 @@ export default function TopBar({ activeModule, userName, userRole, onNavigate }:
             </button>
           </div>
         )}
+      </div>
       </div>
     </header>
   )
