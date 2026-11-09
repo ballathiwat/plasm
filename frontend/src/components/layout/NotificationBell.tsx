@@ -4,7 +4,7 @@
 // ============================================================
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Bell, Clock, AlertTriangle, CheckCircle, ChevronRight, Loader2 } from 'lucide-react'
+import { Bell, Clock, AlertTriangle, CheckCircle, ChevronRight} from 'lucide-react'
 import apiAdapter from '../../helpers/http/apiAdapter'
 import { EXT_COMMITTEE } from '../../helpers/url_helper'
 import type { StockAlert } from '../../helpers/useNotificationCount'
