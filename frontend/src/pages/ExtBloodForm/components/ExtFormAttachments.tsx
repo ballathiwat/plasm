@@ -17,9 +17,6 @@ export default function ExtFormAttachments({
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div className="ext-form-section">
-      <h3 className="ext-form-section-title">
-        ไฟล์แนบ ({attachments.length}/10)
-      </h3>
       <div
         className="ext-drop-zone"
         onDragOver={(e) => e.preventDefault()}
