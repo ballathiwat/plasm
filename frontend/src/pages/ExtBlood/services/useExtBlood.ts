@@ -103,7 +103,7 @@ export default function useExtBlood() {
     say(decision === 'approve'
       ? { type: 'success', msg: doc.status === 'APPROVED' ? `${doc.docNumber} อนุมัติครบแล้ว` : `อนุมัติส่วนของคุณใน ${doc.docNumber} แล้ว` }
       : { type: 'warning', msg: `ส่ง ${doc.docNumber} กลับให้ผู้สร้างแก้ไขแล้ว` })
-    refresh()
+    refresh(); window.dispatchEvent(new Event('plasm:noti-refresh'))
   }
   const handleBatchApprove = async (pin: string) => {
     const r = await extBloodService.batchApproveMine(selectedIds, pin)

@@ -20,6 +20,7 @@ import lockRoutes from './routes/locks'
 import reportRoutes from './routes/reports'
 import extRoutes from './routes/ext'
 import extCommitteeRoutes from './routes/extCommittee'
+import notificationRoutes from './routes/notifications'
 
 const app = express()
 app.set('trust proxy', 1)
@@ -51,6 +52,7 @@ app.use('/api/v1/users', authGuard, usersRoutes)
 app.use('/api/v1/master', authGuard, masterRoutes)
 app.use('/api/v1/locks', authGuard, lockRoutes)
 app.use('/api/v1/reports', authGuard, reportRoutes)
+app.use('/api/v1/notifications', authGuard, notificationRoutes)
 app.use('/api/v1/ext', authGuard, extCommitteeRoutes)
 app.use('/api/v1/ext', authGuard, extRoutes)
 app.use('/uploads', express.static('uploads'))
