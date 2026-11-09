@@ -36,7 +36,7 @@ export default function ExtBloodPage() {
       {/* Header */}
       <div className="ext-header">
         <div>
-          <h2 className="ext-title">รอรับเลือดจากภายนอก</h2>
+          <h2 className="ext-title">รับเลือดจากภายนอก</h2>
           <p className="ext-subtitle">บันทึก ตรวจสอบ อนุมัติ และนำออกถุงเลือดจากศูนย์บริการโลหิตภายนอก</p>
         </div>
         <Button variant="primary" icon={<Plus size={18} />} onClick={() => navigate('/ext-blood/create')}>

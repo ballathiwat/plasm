@@ -1,4 +1,4 @@
-// src/routes/extCommittee.ts — คณะกรรมการอนุมัติ (รอรับเลือดจากภายนอก)
+// src/routes/extCommittee.ts — คณะกรรมการอนุมัติ (รับเลือดจากภายนอก)
 // mount: app.use('/api/v1/ext', authGuard, extCommitteeRoutes) ก่อน extRoutes
 
 import { Router, type Request, type Response, type NextFunction } from 'express'

@@ -53,7 +53,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { key: 'log', label: 'ประวัติ', icon: ClipboardList, roles: ['ADMIN', 'STAFF'] },
   {
     key: 'ext-blood',
-    label: 'รอรับเลือดจากภายนอก',
+    label: 'รับเลือดจากภายนอก',
     icon: Droplets,
     roles: ['ADMIN', 'STAFF'],
     children: [
@@ -83,7 +83,7 @@ export const PAGE_TITLES: Record<string, string> = {
   'report-summary': 'รายงานสรุป',
   'report-daily': 'รายงาน นำเข้า/นำออก',
   profile: 'โปรไฟล์',
-  'ext-blood-list': 'รอรับเลือดจากภายนอก',
+  'ext-blood-list': 'รับเลือดจากภายนอก',
   'ext-blood-create': 'บันทึกรับเลือด',
   'ext-blood-report': 'รายงานรับเลือดจากภายนอก',
   'ext-blood-settings': 'ตั้งค่า — รับเลือดจากภายนอก',

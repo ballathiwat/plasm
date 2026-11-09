@@ -1,4 +1,4 @@
-// src/routes/ext.ts — External Blood Receiving (รอรับเลือดจากภายนอก)
+// src/routes/ext.ts — External Blood Receiving (รับเลือดจากภายนอก)
 
 import { Router } from "express";
 import bcrypt from "bcryptjs";
