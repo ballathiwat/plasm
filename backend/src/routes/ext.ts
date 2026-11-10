@@ -119,6 +119,39 @@ router.get("/next-box-label", async (req, res) => {
   }
 });
 
+// GET /bags/check?bagNumber=XXX — เช็คเลขถุงซ้ำในระบบ
+router.get("/bags/check", async (req, res) => {
+  try {
+    const bagNumber = String(req.query.bagNumber ?? "").trim().toUpperCase();
+    if (!bagNumber) {
+      res.status(400).json({ message: "กรุณาระบุเลขถุงเลือด" });
+      return;
+    }
+    const excludeDocId = req.query.excludeDocId ? String(req.query.excludeDocId) : undefined;
+
+    const existing = await prisma.extBag.findFirst({
+      where: {
+        bagNumber,
+        ...(excludeDocId ? { documentId: { not: excludeDocId } } : {}),
+      },
+      include: { document: { select: { docNumber: true, boxLabel: true } } },
+    });
+
+    if (existing) {
+      res.json({
+        exists: true,
+        bagNumber,
+        docNumber: existing.document.docNumber,
+        boxLabel: existing.document.boxLabel,
+      });
+    } else {
+      res.json({ exists: false, bagNumber });
+    }
+  } catch (e) {
+    fail(res, e, "GET /ext/bags/check");
+  }
+});
+
 // GET /documents/:id
 router.get("/documents/:id", async (req, res) => {
   try {
@@ -176,6 +209,19 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
     ) {
       res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบ" });
       return;
+    }
+
+    // ── เช็คเลขถุงซ้ำในระบบ ──
+    if (bags.length > 0) {
+      const dupes = await prisma.extBag.findMany({
+        where: { bagNumber: { in: bags } },
+        include: { document: { select: { docNumber: true } } },
+      });
+      if (dupes.length > 0) {
+        const list = dupes.map((d) => d.bagNumber + " (อยู่ใน " + d.document.docNumber + ")").join(", ");
+        res.status(409).json({ message: "เลขถุงเลือดซ้ำในระบบ: " + list });
+        return;
+      }
     }
 
     const docNumber = await nextExtDocNumber();
