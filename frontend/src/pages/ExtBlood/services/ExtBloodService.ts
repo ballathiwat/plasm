@@ -63,6 +63,11 @@ const extBloodService = {
   // Master data
   getSources: () => apiAdapter.get<ExtSource[]>(EXT_SOURCES),
   getStorages: () => apiAdapter.get<ExtStorage[]>(EXT_STORAGES),
+  checkBag: (bagNumber: string, excludeDocId?: string) =>
+    apiAdapter.get<{ exists: boolean; bagNumber: string; docNumber?: string; boxLabel?: string }>(
+      EXT_DOCUMENTS.replace('/documents', '/bags/check'),
+      { bagNumber, ...(excludeDocId ? { excludeDocId } : {}) } as Record<string, string>,
+    ),
   getBloodProducts: () => apiAdapter.get<ExtBloodProduct[]>(EXT_BLOOD_PRODUCTS),
   getExportReasons: () => apiAdapter.get<ExtExportReason[]>(EXT_EXPORT_REASONS),
 

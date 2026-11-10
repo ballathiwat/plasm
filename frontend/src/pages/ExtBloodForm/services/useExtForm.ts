@@ -139,13 +139,20 @@ export default function useExtForm() {
     setCommitteeRaw(c);
   };
 
-  const addBag = () => {
+  const addBag = async () => {
     const n = bagInput.trim().toUpperCase();
     if (!n) return;
     if (form.bags.includes(n)) {
       setBagError(`${n} ถูกสแกนแล้ว (ถุงที่ ${form.bags.indexOf(n) + 1})`);
       return;
     }
+    try {
+      const check = await extBloodService.checkBag(n, savedId ?? undefined);
+      if (check.exists) {
+        setBagError(`${n} ซ้ำกับเอกสาร ${check.docNumber} (${check.boxLabel})`);
+        return;
+      }
+    } catch { /* API error — backend เช็คอีกทีตอน save */ }
     setDirty(true);
     setForm((p) => ({ ...p, bags: [...p.bags, n] }));
     setBagInput("");
