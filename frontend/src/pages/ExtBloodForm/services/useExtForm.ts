@@ -242,10 +242,8 @@ export default function useExtForm() {
 
   const buildFormData = (): FormData => {
     const fd = new FormData();
-    const bloodProductId =
-      form.bloodProductId ||
-      bloodProducts.find((b) => b.code === form.plasmaType)?.id ||
-      "";
+    const matched = bloodProducts.find((b) => b.code === form.plasmaType);
+    const bloodProductId = form.bloodProductId || matched?.id || "";
     const data = {
       ...form,
       bloodProductId,
@@ -259,6 +257,17 @@ export default function useExtForm() {
     attachments
       .filter((a) => a.file)
       .forEach((a) => fd.append("files", a.file!));
+
+    // debug — ลบทีหลังได้
+    console.log(
+      "bloodProducts loaded:",
+      bloodProducts.length,
+      "matched:",
+      matched?.code,
+      matched?.id,
+    );
+    console.log("bloodProductId sent:", fd.get("bloodProductId"));
+
     return fd;
   };
 
