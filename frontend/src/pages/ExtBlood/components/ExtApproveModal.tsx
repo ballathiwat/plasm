@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
 import Modal from '../../../components/common/Modal'
 import FormInput from '../../../components/common/FormInput'
 import Button from '../../../components/common/Button'
-import { myPending, myPendingAll, ROLE_LABEL } from '../services/committeeHelpers'
+import { myPendingAll, ROLE_LABEL } from '../services/committeeHelpers'
 import type { ExtDocument } from '../services/ExtBloodType'
 
 interface Props {
@@ -16,7 +16,7 @@ interface Props {
 
 export default function ExtApproveModal({ doc, userId, selectedCount, onDecide, onBatchApprove, onClose }: Props) {
   const isBatch = !doc
-  const mine = doc ? myPending(doc, userId) : undefined
+  
   const mineAll = doc ? myPendingAll(doc, userId) : []
   const [mode, setMode] = useState<'approve' | 'reject'>('approve')
   const [pin, setPin] = useState('')
