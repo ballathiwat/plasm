@@ -150,6 +150,13 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
       deferApproval,
       editReason,
     } = req.body as Record<string, string | undefined>;
+    // ── resolve bloodProductId จาก plasmaType ถ้าไม่ได้ส่งมา ──
+    if (!bloodProductId && req.body.plasmaType) {
+      const product = await prisma.extBloodProduct.findUnique({
+        where: { code: req.body.plasmaType },
+      });
+      if (product) bloodProductId = product.id;
+    }
     const bags: string[] = Array.isArray(req.body["bags[]"])
       ? req.body["bags[]"]
       : req.body["bags[]"]
