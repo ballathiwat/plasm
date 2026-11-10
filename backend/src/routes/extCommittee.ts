@@ -61,7 +61,8 @@ router.put('/documents/:id/committee', async (req, res) => {
 
     const members: { userId: string; role: CommitteeRole }[] = Array.isArray(req.body?.members) ? req.body.members : []
     if (members.some((m) => !m?.userId || !COMMITTEE_ROLES.includes(m.role))) { res.status(400).json({ message: 'ข้อมูลคณะกรรมการไม่ถูกต้อง' }); return }
-    if (new Set(members.map((m) => m.userId)).size !== members.length) { res.status(400).json({ message: '1 คนรับได้ 1 หน้าที่ต่อเอกสาร' }); return }
+    const keys = members.map((m) => `${m.userId}::${m.role}`)
+    if (new Set(keys).size !== members.length) { res.status(400).json({ message: 'มีหน้าที่ซ้ำกัน (คนเดียวกัน + หน้าที่เดียวกัน)' }); return }
     const found = await prisma.user.count({ where: { id: { in: members.map((m) => m.userId) }, active: true } })
     if (found !== members.length) { res.status(400).json({ message: 'มีผู้ใช้ที่ไม่พบหรือถูกปิดใช้งาน' }); return }
 
@@ -118,13 +119,14 @@ router.post('/documents/:id/recall', async (req, res) => {
 async function decide(docId: string, userId: string, decision: 'approve' | 'reject', reason?: string) {
   return prisma.$transaction(async (tx) => {
     const doc = await tx.extDocument.findUnique({ where: { id: docId } })
-    const me = await tx.extCommittee.findFirst({ where: { documentId: docId, userId, status: 'PENDING' }, include: { user: { select: { name: true } } } })
-    if (!doc || doc.status !== 'PENDING' || !me) return { ok: false as const }
+    const myPending = await tx.extCommittee.findMany({ where: { documentId: docId, userId, status: 'PENDING' }, include: { user: { select: { name: true } } } })
+    if (!doc || doc.status !== 'PENDING' || !myPending.length) return { ok: false as const }
     const now = new Date()
-    await tx.extCommittee.update({ where: { id: me.id }, data: { status: decision === 'approve' ? 'APPROVED' : 'REJECTED', reason: decision === 'reject' ? reason : null, actedAt: now } })
+    await tx.extCommittee.updateMany({ where: { id: { in: myPending.map((m) => m.id) } }, data: { status: decision === 'approve' ? 'APPROVED' : 'REJECTED', reason: decision === 'reject' ? reason : null, actedAt: now } })
     const all = await tx.extCommittee.findMany({ where: { documentId: docId } })
     const next = deriveDocStatus(all)
     const data: any = { status: next }
+    const me = myPending[0]
     if (next === 'REJECTED') data.rejectReason = `${me.user.name}: ${reason}`
     if (next === 'APPROVED') {
       // เติม field เดิม (verifier/storer/approver) ให้รายงานและหน้ารายละเอียดเดิมยังทำงาน
@@ -135,7 +137,7 @@ async function decide(docId: string, userId: string, decision: 'approve' | 'reje
       Object.assign(data, { approverId: a?.userId ?? userId, approvedAt: now, approverPin: true })
     }
     data.timeline = { create: [
-      { action: decision === 'approve' ? 'อนุมัติ' : 'ไม่อนุมัติ', detail: `${ROLE_LABEL[me.role as CommitteeRole]}${decision === 'reject' ? ` — ${reason}` : ''}`, userId },
+      { action: decision === 'approve' ? 'อนุมัติ' : 'ไม่อนุมัติ', detail: `${myPending.map((m) => ROLE_LABEL[m.role as CommitteeRole]).join(', ')}${decision === 'reject' ? ` — ${reason}` : ''}`, userId },
       ...(next !== 'PENDING' ? [{ action: next === 'APPROVED' ? 'อนุมัติครบ' : 'ส่งกลับแก้ไข', detail: next === 'APPROVED' ? 'คณะกรรมการอนุมัติครบทุกคน' : 'มีคณะกรรมการไม่อนุมัติ', userId }] : []),
     ] }
     await tx.extDocument.update({ where: { id: docId }, data })

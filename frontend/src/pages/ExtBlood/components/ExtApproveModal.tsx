@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
 import Modal from '../../../components/common/Modal'
 import FormInput from '../../../components/common/FormInput'
 import Button from '../../../components/common/Button'
-import { myPending, ROLE_LABEL } from '../services/committeeHelpers'
+import { myPending, myPendingAll, ROLE_LABEL } from '../services/committeeHelpers'
 import type { ExtDocument } from '../services/ExtBloodType'
 
 interface Props {
@@ -17,6 +17,7 @@ interface Props {
 export default function ExtApproveModal({ doc, userId, selectedCount, onDecide, onBatchApprove, onClose }: Props) {
   const isBatch = !doc
   const mine = doc ? myPending(doc, userId) : undefined
+  const mineAll = doc ? myPendingAll(doc, userId) : []
   const [mode, setMode] = useState<'approve' | 'reject'>('approve')
   const [pin, setPin] = useState('')
   const [reason, setReason] = useState('')
@@ -49,7 +50,7 @@ export default function ExtApproveModal({ doc, userId, selectedCount, onDecide, 
 
   return (
     <Modal open onClose={onClose} title={title} size="sm" footer={footer}>
-      {mine && <p className="ext-muted" style={{ margin: '0 0 12px', fontSize: 13 }}>ในฐานะ<b>{ROLE_LABEL[mine.role]}</b> — การอนุมัติมีผลเฉพาะส่วนของคุณ</p>}
+      {mineAll.length > 0 && <p className="ext-muted" style={{ margin: '0 0 12px', fontSize: 13 }}>ในฐานะ<b>{mineAll.map((m) => ROLE_LABEL[m.role]).join(', ')}</b> — การอนุมัติมีผลเฉพาะส่วนของคุณ ({mineAll.length > 1 ? `ทุก ${mineAll.length} หน้าที่พร้อมกัน` : '1 หน้าที่'})</p>}
       {!isBatch && (
         <div className="ext-approve-toggle">
           <button className={`ext-approve-toggle-btn ${mode === 'approve' ? 'ext-approve-toggle-btn--active ext-approve-toggle-btn--success' : ''}`} onClick={() => { setMode('approve'); setError('') }}><CheckCircle size={16} /> อนุมัติ</button>
