@@ -150,6 +150,16 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
       deferApproval,
       editReason,
     } = req.body as Record<string, string | undefined>;
+
+    const resolvedProductId =
+      bloodProductId ||
+      (req.body.plasmaType
+        ? (
+            await prisma.extBloodProduct.findFirst({
+              where: { code: req.body.plasmaType },
+            })
+          )?.id
+        : undefined);
     // ── resolve bloodProductId จาก plasmaType ถ้าไม่ได้ส่งมา ──
     if (!bloodProductId && req.body.plasmaType) {
       const product = await prisma.extBloodProduct.findUnique({
@@ -166,7 +176,7 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
     if (
       !receivedDate ||
       !sourceId ||
-      !bloodProductId ||
+      !resolvedProductId ||
       !bloodGroup ||
       !boxLabel ||
       !storageId
@@ -183,7 +193,7 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
         docNumber,
         receivedDate: new Date(receivedDate),
         sourceId,
-        bloodProductId,
+        bloodProductId: resolvedProductId,
         bloodGroup,
         boxLabel,
         storageId,
