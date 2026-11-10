@@ -122,6 +122,45 @@ async function main() {
     })
     console.log(`✅ Box: ${box.boxLabel} (${box.units.length} units)`)
   }
+    // ===== 6. Ext Blood — Master data =====
+  const extSources = [
+    { name: 'ศูนย์บริการโลหิตแห่งชาติ สภากาชาดไทย', locked: true },
+    { name: 'ภาคบริการโลหิตแห่งชาติ เขต 6 ขอนแก่น', locked: true },
+    { name: 'คลังเลือดกลาง รพ.ศรีนครินทร์', locked: true },
+  ]
+  for (const [i, s] of extSources.entries()) {
+    await prisma.extSource.upsert({ where: { name: s.name }, update: {}, create: { name: s.name, locked: s.locked, sort: i } })
+  }
+  const extStorages = [
+    { name: 'ตู้เย็น Blood Bank 1 (1-6°C)' },
+    { name: 'ตู้เย็น Blood Bank 2 (1-6°C)' },
+    { name: 'ห้อง -30°C (พลาสมา)' },
+    { name: 'ตู้แช่เกล็ดเลือด (20-24°C)' },
+  ]
+  for (const [i, s] of extStorages.entries()) {
+    await prisma.extStorage.upsert({ where: { name: s.name }, update: {}, create: { name: s.name, sort: i } })
+  }
+  const extProducts = [
+    { code: 'LDRC', name: 'Leukocyte Depleted Red Cell' },
+    { code: 'PRC', name: 'Packed Red Cell' },
+    { code: 'FFP', name: 'Fresh Frozen Plasma' },
+    { code: 'PC', name: 'Platelet Concentrate' },
+    { code: 'WB', name: 'Whole Blood' },
+    { code: 'Cryo', name: 'Cryoprecipitate' },
+  ]
+  for (const [i, p] of extProducts.entries()) {
+    await prisma.extBloodProduct.upsert({ where: { code: p.code }, update: {}, create: { code: p.code, name: p.name, sort: i } })
+  }
+  const extReasons = [
+    { name: 'จ่ายให้ผู้ป่วย' },
+    { name: 'ส่งคืนศูนย์เลือด' },
+    { name: 'หมดอายุ' },
+    { name: 'เสียหาย / ไม่ผ่าน QC' },
+  ]
+  for (const [i, r] of extReasons.entries()) {
+    await prisma.extExportReason.upsert({ where: { name: r.name }, update: {}, create: { name: r.name, sort: i } })
+  }
+  console.log('✅ Ext Blood master data')
 
   console.log('\n🎉 Seed completed!')
 }
@@ -132,57 +171,3 @@ main()
     process.exit(1)
   })
   .finally(() => prisma.$disconnect())
-  // ===== 6. Ext Blood — Master data =====
-  const extSources = [
-    { name: 'ศูนย์บริการโลหิตแห่งชาติ สภากาชาดไทย', locked: true },
-    { name: 'ภาคบริการโลหิตแห่งชาติ เขต 6 ขอนแก่น', locked: true },
-    { name: 'คลังเลือดกลาง รพ.ศรีนครินทร์', locked: true },
-  ]
-  for (const [i, s] of extSources.entries()) {
-    await prisma.extSource.upsert({
-      where: { name: s.name }, update: {},
-      create: { name: s.name, locked: s.locked, sort: i },
-    })
-  }
-
-  const extStorages = [
-    { name: 'ตู้เย็น Blood Bank 1 (1-6°C)' },
-    { name: 'ตู้เย็น Blood Bank 2 (1-6°C)' },
-    { name: 'ห้อง -30°C (พลาสมา)' },
-    { name: 'ตู้แช่เกล็ดเลือด (20-24°C)' },
-  ]
-  for (const [i, s] of extStorages.entries()) {
-    await prisma.extStorage.upsert({
-      where: { name: s.name }, update: {},
-      create: { name: s.name, sort: i },
-    })
-  }
-
-  const extProducts = [
-    { code: 'LDRC', name: 'Leukocyte Depleted Red Cell' },
-    { code: 'PRC', name: 'Packed Red Cell' },
-    { code: 'FFP', name: 'Fresh Frozen Plasma' },
-    { code: 'PC', name: 'Platelet Concentrate' },
-    { code: 'WB', name: 'Whole Blood' },
-    { code: 'Cryo', name: 'Cryoprecipitate' },
-  ]
-  for (const [i, p] of extProducts.entries()) {
-    await prisma.extBloodProduct.upsert({
-      where: { code: p.code }, update: {},
-      create: { code: p.code, name: p.name, sort: i },
-    })
-  }
-
-  const extReasons = [
-    { name: 'จ่ายให้ผู้ป่วย' },
-    { name: 'ส่งคืนศูนย์เลือด' },
-    { name: 'หมดอายุ' },
-    { name: 'เสียหาย / ไม่ผ่าน QC' },
-  ]
-  for (const [i, r] of extReasons.entries()) {
-    await prisma.extExportReason.upsert({
-      where: { name: r.name }, update: {},
-      create: { name: r.name, sort: i },
-    })
-  }
-  console.log('✅ Ext Blood master data')
