@@ -416,7 +416,7 @@ model ExtDocCounter {
   @@map("ext_doc_counters")
 }
 
-// ===== คณะกรรมการอนุมัติ (1 คน 1 หน้าที่ต่อเอกสาร, อนุมัติพร้อมกันได้) =====
+// ===== คณะกรรมการอนุมัติ (1 คนทำได้หลายหน้าที่, อนุมัติพร้อมกันได้) =====
 enum ExtCommitteeRole {
   VERIFIER
   STORER
@@ -443,7 +443,7 @@ model ExtCommittee {
   document ExtDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
   user     User        @relation(fields: [userId], references: [id])
 
-  @@unique([documentId, userId])
+  @@unique([documentId, userId, role])
   @@index([userId, status])
   @@map("ext_committee")
 }
