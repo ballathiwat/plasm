@@ -245,7 +245,7 @@ router.post(
       const {
         receivedDate,
         sourceId,
-        bloodProductId,
+        bloodProductId: resolvedProductId,
         bloodGroup,
         storageId,
         status,
@@ -259,6 +259,13 @@ router.post(
           : [];
       const files = (req.files as Express.Multer.File[]) || [];
 
+      // ── resolve bloodProductId จาก plasmaType (fallback) ──
+      let resolvedProductId = bloodProductId;
+      if (!resolvedProductId && req.body.plasmaType) {
+        const found = await prisma.extBloodProduct.findUnique({ where: { code: String(req.body.plasmaType) } });
+        if (found) resolvedProductId = found.id;
+      }
+
       // Delete old bags and recreate
       await prisma.extBag.deleteMany({
         where: { documentId: existing.id, status: "IN_STOCK" },
@@ -269,7 +276,7 @@ router.post(
         data: {
           receivedDate: receivedDate ? new Date(receivedDate) : undefined,
           sourceId,
-          bloodProductId,
+          bloodProductId: resolvedProductId || undefined,
           bloodGroup,
           storageId,
           status: status === "PENDING" ? "PENDING" : existing.status,
