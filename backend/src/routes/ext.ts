@@ -193,10 +193,11 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
             })
           )?.id
         : undefined);
-    const bags: string[] = Array.isArray(req.body["bags[]"])
-      ? req.body["bags[]"]
-      : req.body["bags[]"]
-        ? [req.body["bags[]"]]
+    console.log("DEBUG req.body keys:", Object.keys(req.body), "bags[]:", req.body["bags[]"] || req.body.bags, "bags:", req.body.bags);
+    const bags: string[] = Array.isArray(req.body["bags[]"] || req.body.bags)
+      ? req.body["bags[]"] || req.body.bags
+      : (req.body["bags[]"] ?? req.body.bags) || req.body.bags
+        ? [req.body["bags[]"] || req.body.bags]
         : [];
 
     if (
@@ -291,12 +292,25 @@ router.post(
         deferApproval,
         editReason,
       } = req.body as Record<string, string | undefined>;
-      const bags: string[] = Array.isArray(req.body["bags[]"])
-        ? req.body["bags[]"]
-        : req.body["bags[]"]
-          ? [req.body["bags[]"]]
+      const bags: string[] = Array.isArray(req.body["bags[]"] || req.body.bags)
+        ? req.body["bags[]"] || req.body.bags
+        : (req.body["bags[]"] ?? req.body.bags) || req.body.bags
+          ? [req.body["bags[]"] || req.body.bags]
           : [];
       const files = (req.files as Express.Multer.File[]) || [];
+
+      // ── เช็คเลขถุงซ้ำในระบบ (ไม่นับเอกสารตัวเอง) ──
+      if (bags.length > 0) {
+        const dupes = await prisma.extBag.findMany({
+          where: { bagNumber: { in: bags }, documentId: { not: existing.id } },
+          include: { document: { select: { docNumber: true } } },
+        });
+        if (dupes.length > 0) {
+          const list = dupes.map((d) => d.bagNumber + ' (อยู่ใน ' + d.document.docNumber + ')').join(', ');
+          res.status(409).json({ message: 'เลขถุงเลือดซ้ำในระบบ: ' + list });
+          return;
+        }
+      }
 
       // Delete old bags and recreate
       await prisma.extBag.deleteMany({
