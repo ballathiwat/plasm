@@ -160,13 +160,6 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
             })
           )?.id
         : undefined);
-    // ── resolve bloodProductId จาก plasmaType ถ้าไม่ได้ส่งมา ──
-    if (!bloodProductId && req.body.plasmaType) {
-      const product = await prisma.extBloodProduct.findUnique({
-        where: { code: req.body.plasmaType },
-      });
-      if (product) bloodProductId = product.id;
-    }
     const bags: string[] = Array.isArray(req.body["bags[]"])
       ? req.body["bags[]"]
       : req.body["bags[]"]
@@ -245,7 +238,7 @@ router.post(
       const {
         receivedDate,
         sourceId,
-        bloodProductId: resolvedProductId,
+        bloodProductId,
         bloodGroup,
         storageId,
         status,
@@ -259,13 +252,6 @@ router.post(
           : [];
       const files = (req.files as Express.Multer.File[]) || [];
 
-      // ── resolve bloodProductId จาก plasmaType (fallback) ──
-      let resolvedProductId = bloodProductId;
-      if (!resolvedProductId && req.body.plasmaType) {
-        const found = await prisma.extBloodProduct.findUnique({ where: { code: String(req.body.plasmaType) } });
-        if (found) resolvedProductId = found.id;
-      }
-
       // Delete old bags and recreate
       await prisma.extBag.deleteMany({
         where: { documentId: existing.id, status: "IN_STOCK" },
@@ -276,7 +262,7 @@ router.post(
         data: {
           receivedDate: receivedDate ? new Date(receivedDate) : undefined,
           sourceId,
-          bloodProductId: resolvedProductId || undefined,
+          bloodProductId,
           bloodGroup,
           storageId,
           status: status === "PENDING" ? "PENDING" : existing.status,
