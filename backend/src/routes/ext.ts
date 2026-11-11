@@ -11,6 +11,8 @@ import {
   formatExtDoc,
 } from "../lib/extHelpers";
 import { extUpload } from "../lib/extUpload";
+import path from "path";
+import fs from "fs";
 
 const router = Router();
 const fail = (res: any, e: unknown, tag: string) => {
@@ -664,6 +666,54 @@ router.post("/documents/:id/export", async (req, res) => {
 // ═════════════════════════════════════════════
 //  Attachments
 // ═════════════════════════════════════════════
+
+// GET /attachments/:id/file — เปิดไฟล์แนบ (เฉพาะผู้เกี่ยวข้อง)
+const UPLOAD_ROOT = path.resolve(__dirname, "../../uploads/ext");
+const INLINE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"]);
+
+router.get("/attachments/:id/file", async (req, res) => {
+  try {
+    const att = await prisma.extAttachment.findUnique({
+      where: { id: req.params.id },
+      include: { document: { select: { id: true, createdById: true, verifierId: true, storerId: true, approverId: true } } },
+    });
+    if (!att) {
+      res.status(404).json({ message: "ไม่พบไฟล์แนบ" });
+      return;
+    }
+    const uid = req.user!.id;
+    const d = att.document;
+    const related =
+      req.user!.role === "ADMIN" ||
+      [d.createdById, d.verifierId, d.storerId, d.approverId].includes(uid) ||
+      (await prisma.extCommittee.count({ where: { documentId: d.id, userId: uid } })) > 0;
+    if (!related) {
+      res.status(403).json({ message: "คุณไม่มีสิทธิ์เปิดไฟล์นี้ — เปิดได้เฉพาะผู้บันทึก คณะกรรมการ และผู้ดูแลระบบ" });
+      return;
+    }
+    const abs = path.resolve(UPLOAD_ROOT, path.basename(att.filePath));
+    if (!abs.startsWith(UPLOAD_ROOT + path.sep) || !fs.existsSync(abs)) {
+      res.status(404).json({ message: "ไม่พบไฟล์ในระบบ" });
+      return;
+    }
+
+    const detail = `เปิดไฟล์ ${att.fileName}`;
+    const seen = await prisma.extTimeline.findFirst({
+      where: { documentId: d.id, userId: uid, action: "เปิดไฟล์", detail, createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) } },
+      select: { id: true },
+    });
+    if (!seen) await prisma.extTimeline.create({ data: { documentId: d.id, userId: uid, action: "เปิดไฟล์", detail } });
+
+    const inline = INLINE_TYPES.has(att.fileType);
+    res.setHeader("Content-Type", inline ? att.fileType : "application/octet-stream");
+    res.setHeader("Content-Disposition", `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(att.fileName)}`);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "private, no-store");
+    fs.createReadStream(abs).on("error", (e) => fail(res, e, "GET /ext/attachments/:id/file stream")).pipe(res);
+  } catch (e) {
+    fail(res, e, "GET /ext/attachments/:id/file");
+  }
+});
 
 router.delete("/attachments/:id", async (req, res) => {
   try {

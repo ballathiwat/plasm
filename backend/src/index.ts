@@ -56,7 +56,7 @@ app.use('/api/v1/reports', authGuard, reportRoutes)
 app.use('/api/v1/notifications', authGuard, notificationRoutes)
 app.use('/api/v1/ext', authGuard, extCommitteeRoutes)
 app.use('/api/v1/ext', authGuard, extRoutes)
-app.use('/uploads', express.static('uploads'))
+  // /uploads ไม่เปิดสาธารณะแล้ว — ไฟล์แนบ ext เปิดผ่าน GET /api/v1/ext/attachments/:id/file
 
 // ===== Start =====
 app.listen(PORT, () => {

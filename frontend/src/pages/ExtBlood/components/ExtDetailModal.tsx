@@ -1,6 +1,6 @@
 // frontend/src/pages/ExtBlood/components/ExtDetailModal.tsx
 
-import { FileText, Paperclip, Clock, Users, Droplet, CheckCircle, PackageOpen, PackageCheck, ExternalLink, FileImage, File } from 'lucide-react'
+import { FileText, Paperclip, Clock, Users, Droplet, CheckCircle, PackageOpen, PackageCheck, ExternalLink, FileImage, File, Lock } from 'lucide-react'
 import Modal from '../../../components/common/Modal'
 import '../../../assets/styles/ext-blood-settings.css'
 import Button from '../../../components/common/Button'
@@ -12,7 +12,7 @@ const CM_LABEL = { DRAFT: 'ยังไม่ส่ง', PENDING: 'รออน�
 const API_URL = import.meta.env.VITE_API_URL || ''
 const fixName = (n: string) => { try { return /[\u00c0-\u00ff][\u0080-\u00bf]/.test(n) ? decodeURIComponent(escape(n)) : n } catch { return n } }
 
-const fileUrl = (a: ExtAttachment) => `${API_URL}/${a.filePath.replace(/^\/+/, '')}`
+const fileUrl = (a: ExtAttachment) => `${API_URL}/api/v1/ext/attachments/${a.id}/file`
 const fileSize = (b: number) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`)
 const fileIcon = (t: string) => (t?.startsWith('image/') ? <FileImage size={16} /> : t === 'application/pdf' ? <FileText size={16} /> : <File size={16} />)
 
@@ -28,13 +28,15 @@ function Row({ label, value, children, className }: { label: string; value?: str
 interface Props {
   doc: ExtDocument
   userId: string
+  isAdmin?: boolean
   onClose: () => void
   onApprove: (doc: ExtDocument) => void
   onExport: (doc: ExtDocument) => void
 }
 
-export default function ExtDetailModal({ doc, userId, onClose, onApprove, onExport }: Props) {
+export default function ExtDetailModal({ doc, userId, isAdmin = false, onClose, onApprove, onExport }: Props) {
   const cm = sortCommittee(doc.committee)
+  const canOpenFiles = isAdmin || [doc.createdById, doc.createdBy?.id, doc.verifier?.id, doc.storer?.id, doc.approver?.id].includes(userId) || cm.some((m) => m.userId === userId)
   const mine = !!myPending(doc, userId)
   const canExport = doc.status === 'APPROVED' && doc.bagRemaining > 0
   const exportedN = doc.bags.filter((b) => b.status === 'EXPORTED').length
@@ -113,12 +115,20 @@ export default function ExtDetailModal({ doc, userId, onClose, onApprove, onExpo
             <h4 className="ext-detail-section-title"><Paperclip size={16} /> {`ไฟล์แนบ (${doc.attachments.length})`}</h4>
             <div className="ext-detail-files">
               {doc.attachments.map((a) => (
+                canOpenFiles ? (
                 <a key={a.id} className="ext-file-link" href={fileUrl(a)} target="_blank" rel="noopener noreferrer" aria-label={`เปิดไฟล์ ${fixName(a.fileName)} ในแท็บใหม่`}>
                   <span className="ext-file-link__icon">{fileIcon(a.fileType)}</span>
                   <span className="ext-file-link__name">{fixName(a.fileName)}</span>
                   <span className="ext-file-link__size">{fileSize(a.fileSize)}</span>
                   <ExternalLink size={14} className="ext-file-link__ext" aria-hidden />
                 </a>
+              ) : (
+                <div key={a.id} className="ext-file-link is-locked" aria-disabled="true">
+                  <span className="ext-file-link__icon">{fileIcon(a.fileType)}</span>
+                  <span className="ext-file-link__name">{fixName(a.fileName)}</span>
+                  <span className="ext-file-link__lock"><Lock size={14} aria-hidden /> เฉพาะผู้เกี่ยวข้อง</span>
+                </div>
+              )
               ))}
             </div>
           </div>
