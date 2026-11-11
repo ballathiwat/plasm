@@ -6,7 +6,7 @@
 import PrintPreview, {
   PrintSection, PrintInfoGrid, PrintTable, PrintStats, PrintChips, PrintNote, PrintTag, chunk,
   type PrintColumn, type PrintPageDef, type PrintInfoItem,
-} from '@/components/common/PrintPreview'
+} from '../../../components/common/PrintPreview'
 import { formatThaiDate, formatThaiDateTime, statusLabel } from '../services/extHelpers'
 import { sortCommittee, ROLE_LABEL } from '../services/committeeHelpers'
 import type { ExtDocument, ExtBag, ExtCommitteeMember, ExtTimelineEntry } from '../services/ExtBloodType'

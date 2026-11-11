@@ -14,8 +14,8 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { FileText, Printer, X } from "lucide-react";
-import Button from "@/components/common/Button";
-import Switch from "@/components/common/Switch";
+import Button from "./Button";
+import Switch from "./Switch";
 import "@/assets/styles/components/print-preview.css";
 
 // ── Types ────────────────────────────────────────────────────
