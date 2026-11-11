@@ -163,21 +163,7 @@ a:hover { color: var(--primary-hover); }
   --toast-warning-icon: #EAC645;
   --toast-info-icon: #5296D5;
 }
-/* ── Dark mode: type toggle tokens ── */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-  }
-}
-[data-theme="dark"] {
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --primary-surface: #172554;
-    --primary-ink: #93C5FD;
-    --border-strong: #52525B;
-  }
-}
+/* primary-surface/ink: no OS-driven dark override — app has no dark theme yet; opt-in via [data-theme="dark"] */
 [data-theme="dark"] {
   --primary-surface: #172554;
   --primary-ink: #93C5FD;
