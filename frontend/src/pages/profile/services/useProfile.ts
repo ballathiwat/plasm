@@ -72,5 +72,6 @@ export default function useProfile() {
     handleChange,
     handleSubmit,
     dismissToast,
+    setToast,
   }
 }

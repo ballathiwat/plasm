@@ -75,6 +75,7 @@ const extBloodService = {
   setupPin: (data: { password: string; pin: string }) =>
     apiAdapter.post<typeof data, { message: string }>(EXT_PIN_SETUP, data),
   verifyPin: (pin: string) => apiAdapter.post<{ pin: string }, PinVerifyResult>(EXT_PIN_VERIFY, { pin }),
+  getPinStatus: () => apiAdapter.get<{ hasPin: boolean; lockedUntil: string | null }>(EXT_PIN_SETUP.replace('/setup', '/status')),
 }
 
 export type { ExtAttachment }

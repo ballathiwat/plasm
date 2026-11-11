@@ -1,44 +1,82 @@
 // frontend/src/pages/profile/components/ProfilePinSection.tsx
-import { useState } from 'react'
-import { KeyRound, Eye, EyeOff, Loader2, CheckCircle, AlertTriangle } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { KeyRound, CheckCircle, AlertTriangle, Lock } from 'lucide-react'
+import FormInput from '../../../components/common/FormInput'
+import Button from '../../../components/common/Button'
+import type { ToastState } from '../../../components/common/Toast'
 import extBloodService from '../../ExtBlood/services/ExtBloodService'
+import { formatThaiDateTime } from '../../ExtBlood/services/extHelpers'
+import ProfileCard from './ProfileCard'
 
-export default function ProfilePinSection() {
+type Field = 'password' | 'pin' | 'confirmPin'
+type PinStatus = { hasPin: boolean; lockedUntil: string | null }
+
+const digits = (v: string) => v.replace(/\D/g, '').slice(0, 6)
+
+export default function ProfilePinSection({ onToast }: { onToast: (t: ToastState) => void }) {
   const [password, setPassword] = useState('')
   const [pin, setPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState('')
-  const [error, setError] = useState('')
+  const [errors, setErrors] = useState<Partial<Record<Field, string>>>({})
+  const [saving, setSaving] = useState(false)
+  const [status, setStatus] = useState<PinStatus | null>(null)
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault(); setError(''); setSuccess('')
-    if (!password) { setError('กรุณากรอกรหัสผ่าน'); return }
-    if (pin.length !== 6) { setError('PIN ต้องเป็นตัวเลข 6 หลัก'); return }
-    if (pin !== confirmPin) { setError('PIN ไม่ตรงกัน'); return }
-    setLoading(true)
-    try { await extBloodService.setupPin({ password, pin }); setSuccess('ตั้ง PIN สำเร็จ'); setPassword(''); setPin(''); setConfirmPin('') }
-    catch (err: any) { setError(err?.message || 'เกิดข้อผิดพลาด') }
-    finally { setLoading(false) }
+  useEffect(() => { extBloodService.getPinStatus().then(setStatus).catch(() => setStatus(null)) }, [])
+
+  const locked = !!status?.lockedUntil && new Date(status.lockedUntil) > new Date()
+  const change = (k: Field, set: (v: string) => void, fmt = (v: string) => v) => (v: string) => {
+    set(fmt(v)); setErrors((e) => ({ ...e, [k]: undefined }))
   }
 
+  const submit = async () => {
+    if (saving) return
+    const e: Partial<Record<Field, string>> = {}
+    if (!password) e.password = 'กรอกรหัสผ่านเข้าระบบ เพื่อยืนยันว่าเป็นคุณ'
+    if (pin.length !== 6) e.pin = 'PIN ต้องเป็นตัวเลข 6 หลัก'
+    else if (confirmPin !== pin) e.confirmPin = 'PIN ทั้งสองช่องไม่ตรงกัน'
+    if (Object.keys(e).length) { setErrors(e); return }
+
+    setSaving(true)
+    try {
+      await extBloodService.setupPin({ password, pin })
+      onToast({ type: 'success', msg: status?.hasPin ? 'เปลี่ยน PIN สำเร็จ' : 'ตั้ง PIN สำเร็จ — ใช้ลงนามได้ทันที' })
+      setPassword(''); setPin(''); setConfirmPin(''); setErrors({})
+      setStatus({ hasPin: true, lockedUntil: null })
+    } catch (err: any) {
+      const msg = err?.message || 'ตั้ง PIN ไม่สำเร็จ ลองใหม่อีกครั้ง'
+      if (/รหัสผ่าน/.test(msg)) setErrors({ password: msg })
+      else onToast({ type: 'error', msg })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const badge = !status ? null
+    : locked ? <span className="profile-badge profile-badge--danger"><Lock size={12} aria-hidden="true" /> ถูกล็อก</span>
+    : status.hasPin ? <span className="profile-badge profile-badge--ok"><CheckCircle size={12} aria-hidden="true" /> ตั้งแล้ว</span>
+    : <span className="profile-badge profile-badge--warn"><AlertTriangle size={12} aria-hidden="true" /> ยังไม่ตั้ง</span>
+
+  const desc = locked
+    ? <>PIN ถูกล็อกถึง {formatThaiDateTime(status!.lockedUntil)} เพราะกรอกผิดหลายครั้ง — ตั้ง PIN ใหม่ด้านล่างเพื่อปลดล็อก</>
+    : status && !status.hasPin
+      ? 'ต้องตั้ง PIN ก่อน จึงจะอนุมัติหรือนำออกเอกสารในเมนูรับเลือดจากภายนอกได้'
+      : 'PIN 6 หลัก ใช้ยืนยันเมื่อลงนามในเมนูรับเลือดจากภายนอก'
+
   return (
-    <div className="profile-section">
-      <h3 className="profile-section-title"><KeyRound size={18} /> PIN ลงนามอิเล็กทรอนิกส์</h3>
-      <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px' }}>PIN 6 หลัก สำหรับลงนามผู้ตรวจ ผู้จัดเก็บ ผู้อนุมัติ ในเมนูรับเลือดจากภายนอก</p>
-      <form onSubmit={submit} style={{ maxWidth: 360 }}>
-        <div className="ext-form-group"><label className="ext-form-label">รหัสผ่านปัจจุบัน <span className="ext-required">*</span></label>
-          <div style={{ position: 'relative' }}><input type={showPw ? 'text' : 'password'} className="ext-form-input" value={password} onChange={e => { setPassword(e.target.value); setError('') }} placeholder="ยืนยันตัวตนก่อนตั้ง PIN" autoComplete="current-password" />
-            <button type="button" onClick={() => setShowPw(!showPw)} style={{ position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text-disabled)' }}>{showPw ? <EyeOff size={16} /> : <Eye size={16} />}</button></div></div>
-        <div className="ext-form-group"><label className="ext-form-label">PIN ใหม่ (6 หลัก) <span className="ext-required">*</span></label>
-          <input type="password" inputMode="numeric" maxLength={6} className="ext-form-input ext-pin-input" value={pin} onChange={e => { setPin(e.target.value.replace(/\D/g, '').slice(0, 6)); setError('') }} placeholder="••••••" autoComplete="off" /></div>
-        <div className="ext-form-group"><label className="ext-form-label">ยืนยัน PIN <span className="ext-required">*</span></label>
-          <input type="password" inputMode="numeric" maxLength={6} className="ext-form-input ext-pin-input" value={confirmPin} onChange={e => { setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 6)); setError('') }} placeholder="••••••" autoComplete="off" /></div>
-        {error && <div className="ext-form-error"><AlertTriangle size={14} /> {error}</div>}
-        {success && <div style={{ display:'flex',alignItems:'center',gap:6,color:'var(--success-ink)',fontSize:13,marginTop:4 }}><CheckCircle size={14} /> {success}</div>}
-        <button type="submit" className="plasm-btn plasm-btn--primary" disabled={loading} style={{ marginTop: 8 }}>{loading ? <Loader2 size={16} className="ext-spin" /> : <KeyRound size={16} />} {loading ? 'กำลังบันทึก...' : 'ตั้ง PIN'}</button>
-      </form>
-    </div>
+    <ProfileCard icon={<KeyRound size={18} />} title="PIN ลงนามอิเล็กทรอนิกส์" desc={desc} status={badge}>
+      <FormInput label="รหัสผ่านเข้าระบบ" type="password" required placeholder="กรอกรหัสผ่านที่ใช้ล็อกอิน"
+        helper="ยืนยันตัวตนก่อนตั้ง PIN" value={password} onChange={change('password', setPassword)} error={errors.password} autoComplete="current-password" />
+      <div className="profile-pin-row">
+        <FormInput label={status?.hasPin ? 'PIN ใหม่' : 'PIN'} type="password" required mono inputMode="numeric" maxLength={6} placeholder="6 หลัก"
+          value={pin} onChange={change('pin', setPin, digits)} error={errors.pin} autoComplete="off" />
+        <FormInput label="ยืนยัน PIN" type="password" required mono inputMode="numeric" maxLength={6} placeholder="6 หลัก"
+          value={confirmPin} onChange={change('confirmPin', setConfirmPin, digits)} error={errors.confirmPin} autoComplete="off" />
+      </div>
+      <div className="profile-actions">
+        <Button onClick={submit} loading={saving} disabled={saving} icon={<KeyRound size={16} />}>
+          {saving ? 'กำลังบันทึก...' : status?.hasPin ? 'เปลี่ยน PIN' : 'ตั้ง PIN'}
+        </Button>
+      </div>
+    </ProfileCard>
   )
 }

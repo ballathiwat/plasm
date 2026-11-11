@@ -927,6 +927,18 @@ masterCrud("/export-reasons", "extExportReason");
 //  PIN setup / verify
 // ═════════════════════════════════════════════
 
+router.get("/pin/status", async (req, res) => {
+  try {
+    const u = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { pinHash: true, pinLockedUntil: true },
+    });
+    res.json({ hasPin: !!u?.pinHash, lockedUntil: u?.pinLockedUntil ?? null });
+  } catch (e) {
+    fail(res, e, "GET /ext/pin/status");
+  }
+});
+
 router.post("/pin/setup", async (req, res) => {
   try {
     const { password, pin } = req.body;
