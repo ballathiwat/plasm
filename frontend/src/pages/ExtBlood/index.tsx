@@ -82,7 +82,7 @@ export default function ExtBloodPage() {
 
       {h.selectedIds.length > 0 && <ExtBatchBar count={h.selectedIds.length} onApprove={() => h.openApprove()} onClear={h.clearSelection} />}
 
-      {h.showDetailModal && h.detailDoc && <ExtDetailModal doc={h.detailDoc} onClose={h.closeDetail} />}
+      {h.showDetailModal && h.detailDoc && <ExtDetailModal doc={h.detailDoc} userId={h.user.id} onClose={h.closeDetail} onApprove={h.openApprove} onExport={h.openExport} />}
       {h.showApproveModal && (
         <ExtApproveModal doc={h.detailDoc} userId={h.user.id} selectedCount={h.selectedIds.length}
           onDecide={h.handleDecide} onBatchApprove={h.handleBatchApprove} onClose={h.closeApprove} />
