@@ -244,7 +244,7 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
         bags: { create: bags.map((n) => ({ bagNumber: n })) },
         attachments: {
           create: files.map((f) => ({
-            fileName: f.originalname,
+            fileName: Buffer.from(f.originalname, 'latin1').toString('utf8'),
             fileType: f.mimetype,
             fileSize: f.size,
             filePath: `uploads/ext/${f.filename}`,
@@ -333,7 +333,7 @@ router.post(
             files.length > 0
               ? {
                   create: files.map((f) => ({
-                    fileName: f.originalname,
+                    fileName: Buffer.from(f.originalname, 'latin1').toString('utf8'),
                     fileType: f.mimetype,
                     fileSize: f.size,
                     filePath: `uploads/ext/${f.filename}`,

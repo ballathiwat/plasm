@@ -2,6 +2,7 @@
 
 import { FileText, Paperclip, Clock, Users, Droplet, CheckCircle, PackageOpen, PackageCheck, ExternalLink, FileImage, File } from 'lucide-react'
 import Modal from '../../../components/common/Modal'
+import '../../../assets/styles/ext-blood-settings.css'
 import Button from '../../../components/common/Button'
 import { formatThaiDate, formatThaiDateTime, statusLabel, statusClass, bloodGroupClass } from '../services/extHelpers'
 import { sortCommittee, myPending, ROLE_LABEL } from '../services/committeeHelpers'
@@ -9,6 +10,7 @@ import type { ExtDocument, ExtAttachment } from '../services/ExtBloodType'
 
 const CM_LABEL = { DRAFT: 'ยังไม่ส่ง', PENDING: 'รออนุมัติ', APPROVED: 'อนุมัติแล้ว', REJECTED: 'ไม่อนุมัติ' } as const
 const API_URL = import.meta.env.VITE_API_URL || ''
+const fixName = (n: string) => { try { return /[\u00c0-\u00ff][\u0080-\u00bf]/.test(n) ? decodeURIComponent(escape(n)) : n } catch { return n } }
 
 const fileUrl = (a: ExtAttachment) => `${API_URL}/${a.filePath.replace(/^\/+/, '')}`
 const fileSize = (b: number) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`)
@@ -111,9 +113,9 @@ export default function ExtDetailModal({ doc, userId, onClose, onApprove, onExpo
             <h4 className="ext-detail-section-title"><Paperclip size={16} /> {`ไฟล์แนบ (${doc.attachments.length})`}</h4>
             <div className="ext-detail-files">
               {doc.attachments.map((a) => (
-                <a key={a.id} className="ext-file-link" href={fileUrl(a)} target="_blank" rel="noopener noreferrer" aria-label={`เปิดไฟล์ ${a.fileName} ในแท็บใหม่`}>
+                <a key={a.id} className="ext-file-link" href={fileUrl(a)} target="_blank" rel="noopener noreferrer" aria-label={`เปิดไฟล์ ${fixName(a.fileName)} ในแท็บใหม่`}>
                   <span className="ext-file-link__icon">{fileIcon(a.fileType)}</span>
-                  <span className="ext-file-link__name">{a.fileName}</span>
+                  <span className="ext-file-link__name">{fixName(a.fileName)}</span>
                   <span className="ext-file-link__size">{fileSize(a.fileSize)}</span>
                   <ExternalLink size={14} className="ext-file-link__ext" aria-hidden />
                 </a>
