@@ -38,10 +38,10 @@ export default function TopBar({
 
   return (
     <header
-      className="flex items-center justify-between px-6 flex-none"
+      className="flex items-center justify-between gap-3 px-4 md:px-6 flex-none"
       style={{ height: 56, background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
     >
-      <h1 style={{ fontWeight: 700, fontSize: 18, lineHeight: '28px' }}>{title}</h1>
+      <h1 className="truncate" style={{ fontWeight: 700, fontSize: 18, lineHeight: '28px', minWidth: 0 }}>{title}</h1>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         {/* 🔔 Notification Bell */}
@@ -66,7 +66,7 @@ export default function TopBar({
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-raised, #F4F4F5)' }}
             onMouseLeave={(e) => { if (!showMenu) e.currentTarget.style.background = 'none' }}
           >
-            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>{userName}</span>
+            <span className="hidden sm:inline" style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>{userName}</span>
             <div style={{
               width: 32, height: 32, borderRadius: '50%', background: 'var(--surface-raised)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
