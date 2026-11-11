@@ -12,6 +12,7 @@
 import {
   useState,
   useCallback,
+  useId,
   type ReactNode,
   type CSSProperties,
   type InputHTMLAttributes,
@@ -102,6 +103,10 @@ export default function FormInput(props: FormInputProps) {
   const [showPwd, setShowPwd] = useState(false);
   const isPassword = type === "password";
   const isTextarea = type === "textarea";
+  const autoId = useId();
+  const fieldId = (rest as { id?: string }).id ?? autoId;
+  const msgId = `${fieldId}-msg`;
+  const describedBy = error || helper ? msgId : undefined;
 
   const togglePwd = useCallback(() => setShowPwd((s) => !s), []);
 
@@ -131,7 +136,7 @@ export default function FormInput(props: FormInputProps) {
 
   return (
     <div className={wrapperCls} style={style}>
-      {label && <label className={labelCls}>{label}</label>}
+      {label && <label className={labelCls} htmlFor={fieldId}>{label}</label>}
 
       <div className="plasm-input__wrap">
         {/* Left icon */}
@@ -145,6 +150,9 @@ export default function FormInput(props: FormInputProps) {
         {isTextarea ? (
           <textarea
             className={fieldCls}
+            id={fieldId}
+            aria-invalid={!!error}
+            aria-describedby={describedBy}
             value={value as string}
             onChange={(e) => onChange(e.target.value)}
             rows={(rest as TextareaFieldProps).rows ?? 3}
@@ -165,6 +173,9 @@ export default function FormInput(props: FormInputProps) {
         ) : (
           <input
             className={fieldCls}
+            id={fieldId}
+            aria-invalid={!!error}
+            aria-describedby={describedBy}
             type={isPassword ? (showPwd ? "text" : "password") : type}
             value={value}
             onChange={(e) => onChange(e.target.value)}
@@ -188,9 +199,10 @@ export default function FormInput(props: FormInputProps) {
         {isPassword && (
           <button
             type="button"
-            tabIndex={-1}
             className="plasm-input__icon-btn"
             onClick={togglePwd}
+            aria-label={showPwd ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+            aria-pressed={showPwd}
           >
             {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
@@ -205,8 +217,8 @@ export default function FormInput(props: FormInputProps) {
       </div>
 
       {/* Error / Helper */}
-      {error && <p className="plasm-input__error">{error}</p>}
-      {!error && helper && <p className="plasm-input__helper">{helper}</p>}
+      {error && <p id={msgId} className="plasm-input__error" role="alert">{error}</p>}
+      {!error && helper && <p id={msgId} className="plasm-input__helper">{helper}</p>}
     </div>
   );
 }
