@@ -1,0 +1,134 @@
+/* ============================================================
+   src/assets/styles/components/switch.css
+   BEM prefix: .plasm-switch
+   ============================================================ */
+
+/* ── Container ── */
+.plasm-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.plasm-switch--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.plasm-switch--reverse {
+  flex-direction: row-reverse;
+}
+
+/* ── Track ── */
+.plasm-switch__track {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 99px;
+  background: var(--border, #e2e8f0);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Size: sm (default) */
+.plasm-switch--sm .plasm-switch__track {
+  width: 34px;
+  height: 18px;
+}
+.plasm-switch--sm .plasm-switch__thumb {
+  width: 14px;
+  height: 14px;
+  top: 2px;
+  left: 2px;
+}
+.plasm-switch--sm.plasm-switch--on .plasm-switch__thumb {
+  transform: translateX(16px);
+}
+
+/* Size: md */
+.plasm-switch--md .plasm-switch__track {
+  width: 42px;
+  height: 22px;
+}
+.plasm-switch--md .plasm-switch__thumb {
+  width: 18px;
+  height: 18px;
+  top: 2px;
+  left: 2px;
+}
+.plasm-switch--md.plasm-switch--on .plasm-switch__thumb {
+  transform: translateX(20px);
+}
+
+/* Size: lg */
+.plasm-switch--lg .plasm-switch__track {
+  width: 50px;
+  height: 26px;
+}
+.plasm-switch--lg .plasm-switch__thumb {
+  width: 22px;
+  height: 22px;
+  top: 2px;
+  left: 2px;
+}
+.plasm-switch--lg.plasm-switch--on .plasm-switch__thumb {
+  transform: translateX(24px);
+}
+
+/* ── Thumb ── */
+.plasm-switch__thumb {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── On state (default = primary) ── */
+.plasm-switch--on .plasm-switch__track {
+  background: var(--primary, #2563eb);
+}
+
+/* ── Color variants ── */
+.plasm-switch--success.plasm-switch--on .plasm-switch__track {
+  background: var(--color-success, #16a34a);
+}
+.plasm-switch--danger.plasm-switch--on .plasm-switch__track {
+  background: var(--color-danger, #dc2626);
+}
+.plasm-switch--warning.plasm-switch--on .plasm-switch__track {
+  background: var(--color-warning, #d97706);
+}
+
+/* ── Focus ring (keyboard only) ── */
+.plasm-switch:focus-visible .plasm-switch__track {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+.plasm-switch--success:focus-visible .plasm-switch__track {
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25);
+}
+.plasm-switch--danger:focus-visible .plasm-switch__track {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
+}
+
+/* ── Hover ── */
+.plasm-switch:not(.plasm-switch--disabled):hover .plasm-switch__track {
+  filter: brightness(0.95);
+}
+
+/* ── Label ── */
+.plasm-switch__label {
+  font-family: var(--font-family, 'IBM Plex Sans Thai', system-ui, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #1e293b);
+  line-height: 1.3;
+}
+.plasm-switch--sm .plasm-switch__label { font-size: 12px; }
+.plasm-switch--lg .plasm-switch__label { font-size: 14px; }
+
+/* ── Helper text ── */
+.plasm-switch__helper {
+  font-size: 11px;
+  color: var(--text-secondary, #64748b);
+  margin-top: 2px;
+}
