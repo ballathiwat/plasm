@@ -50,7 +50,7 @@ export default function MainLayout({
         <main className="flex-1 min-h-0 overflow-auto" style={{ padding: 24, background: 'var(--background)' }}>
           {children}
         </main>
-        <BottomNav activeModule={activeModule} onNavigate={onNavigate} />
+        <BottomNav activeModule={activeModule} onNavigate={onNavigate} role={role} onLogout={onLogout} />
       </div>
     </div>
   )
