@@ -1,225 +1,136 @@
-# Plasm — ระบบจัดเก็บและนำออกพลาสมา
+# Plasm — ระบบจัดการคลังพลาสมาและรับเลือดจากภายนอก
 
-ระบบเว็บแอปสำหรับจัดเก็บและนำออกพลาสมา (FFP) ในธนาคารเลือด
+เว็บแอปสำหรับจัดเก็บ ค้นหา และนำออกพลาสมา (FFP) พร้อมระบบบันทึก ตรวจสอบ อนุมัติ และติดตามการรับเลือดจากภายนอก สำหรับธนาคารเลือด
 
-## Features
+## ฟีเจอร์หลัก
 
-- 📊 **แดชบอร์ด** — แสดงสต็อกแยกตามหมู่เลือด พร้อม Alert เมื่อต่ำกว่า minimum
-- 📦 **จัดเก็บ** — รันหมายเลขกล่องอัตโนมัติ, พิมพ์บาร์โค้ด, ตรวจจับ Unit ซ้ำ
-- 📤 **นำออก** — นำออกทั้งกล่อง หรือเป็น Unit
-- 🔍 **ค้นหา** — ค้นหา Unit ว่าอยู่กล่องไหน ตำแหน่งไหน
-- 🗺️ **แผนผัง** — แผนผังห้อง -30°C (7 ตำแหน่ง) และตู้ -30°C
-- 📋 **ประวัติ** — บันทึกทุกการจัดเก็บ/นำออก
+### คลังพลาสมา
 
-## Minimum Stock Alert
+- 📊 **แดชบอร์ดและสต็อก** — ดูสรุปสต็อก แยกตามชนิดพลาสมาและหมู่เลือด พร้อมการแจ้งเตือนเมื่อสต็อกต่ำกว่าค่าขั้นต่ำ
+- 📦 **จัดเก็บ** — บันทึกกล่องและ Unit ตรวจจับ Unit ซ้ำ และพิมพ์ฉลากบาร์โค้ด
+- 📤 **นำออก** — นำออกได้ทั้งกล่องหรือ Unit พร้อมบันทึกประวัติ
+- 🔍 **ค้นหา** — ค้นหากล่องหรือ Unit และดูตำแหน่งจัดเก็บ
+- 🗺️ **แผนผังและ Rack** — ดูตำแหน่งจัดเก็บในห้องและตู้แช่ รวมถึงชั้นและช่องของ Rack
+- 📋 **ประวัติและรายงาน** — ตรวจสอบกิจกรรมและรายงานการเคลื่อนไหวของสต็อก
+
+### รับเลือดจากภายนอก
+
+- 🩸 บันทึกเอกสารรับเลือด รายละเอียดผลิตภัณฑ์ จำนวนถุง และไฟล์แนบ
+- ✅ รองรับขั้นตอนตรวจสอบ จัดเก็บ และอนุมัติ โดยกำหนดผู้รับผิดชอบและติดตามสถานะเอกสาร
+- 📦 บันทึกการนำถุงเลือดออก พร้อมเหตุผล และดูรายงานสรุป
+- 🔐 รองรับการยืนยันด้วย PIN สำหรับขั้นตอนที่เกี่ยวข้อง
+
+### ตั้งค่าและผู้ใช้
+
+- จัดการบัญชีผู้ใช้และสิทธิ์ ADMIN/STAFF
+- กำหนดค่าขั้นต่ำสต็อกและจัดการข้อมูลหลัก เช่น ชนิดพลาสมา หมู่เลือด และสถานที่จัดเก็บ
+- จัดการตัวเลือกในฟอร์มรับเลือดจากภายนอก
+
+## ค่าขั้นต่ำสต็อกเริ่มต้น
+
+ค่าต่อไปนี้เป็นค่าเริ่มต้นที่ seed ให้ฐานข้อมูล และผู้ดูแลระบบสามารถเปลี่ยนได้ในหน้าตั้งค่า
 
 | หมู่เลือด | ขั้นต่ำ (units) |
-|-----------|----------------|
-| A         | 150            |
-| B         | 300            |
-| O         | 300            |
-| AB        | 100            |
+|-----------|----------------:|
+| A         | 150             |
+| B         | 300             |
+| O         | 300             |
+| AB        | 100             |
 
 ## Tech Stack
 
-- **Frontend:** React 19 + TypeScript + Vite + Tailwind CSS v4
-- **Backend:** Express + TypeScript
-- **Icons:** Lucide React
-- **Table:** TanStack Table
-- **HTTP:** Axios + Mock Adapter (dev)
+- **Frontend:** React 19, TypeScript, Vite 8, Tailwind CSS 4
+- **Backend:** Express 5, TypeScript, Prisma 6
+- **Database:** PostgreSQL
+- **Routing:** React Router 7
+- **UI:** Lucide React, Sass, IBM Plex Sans Thai และ Noto Sans Thai
+- **Tables:** TanStack Table
+- **HTTP:** Axios
 - **Barcode:** JsBarcode
 
-## Getting Started
+## ความต้องการก่อนติดตั้ง
+
+- Node.js และ npm
+- PostgreSQL
+
+## เริ่มต้นใช้งาน
+
+### 1. ตั้งค่าฐานข้อมูลและ Backend
 
 ```bash
-# Frontend
+cd backend
+npm install
+```
+
+สร้างไฟล์ `backend/.env` จากตัวอย่าง แล้วกำหนดค่าเชื่อมต่อฐานข้อมูลและ secret สำหรับ JWT:
+
+```bash
+cp env.example .env
+```
+
+แก้ `DATABASE_URL` ให้ตรงกับ PostgreSQL ในเครื่อง และเปลี่ยน `JWT_SECRET` เป็นค่าลับที่คาดเดายาก จากนั้นรัน migration และ seed ข้อมูลเริ่มต้น:
+
+```bash
+npm run db:migrate
+npm run db:seed
+npm run dev
+```
+
+Backend จะเริ่มที่ `http://localhost:3000` โดยมี health check ที่ `/api/v1/health` หากต้องการใช้ข้อมูลตัวอย่างจาก seed โปรดตรวจสอบและเปลี่ยนรหัสผ่านเริ่มต้นก่อนนำระบบไปใช้งานจริง
+
+### 2. เริ่ม Frontend
+
+เปิดอีกหน้าต่าง Terminal:
+
+```bash
 cd frontend
 npm install
 npm run dev
+```
 
-# Backend
-cd backend
-npm install
+Vite จะรายงาน URL สำหรับเปิดเว็บแอปใน Terminal (โดยปกติคือ `http://localhost:5173`) การตั้งค่า proxy สำหรับ API อยู่ใน `frontend/vite.config.ts`
+
+### คำสั่งที่ใช้บ่อย
+
+```bash
+# Frontend (จาก frontend/)
 npm run dev
+npm run build
+npm run lint
+
+# Backend (จาก backend/)
+npm run dev
+npm run build
+npm start
+npm run db:migrate
+npm run db:seed
+npm run db:studio
 ```
 
-## Project Structure
+## โครงสร้างโปรเจกต์
 
-```
+```text
 plasm/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml                    # CI/CD: Tailscale + SSH auto-deploy
-├── README.md
-│
+├── .github/workflows/deploy.yml     # Workflow สำหรับ deploy
 ├── backend/
-│   ├── env.example
-│   ├── gitignore
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── prisma/
-│   │   ├── schema.prisma                 # DB schema
-│   │   └── seed.ts                       # Seed data
+│   ├── prisma/                      # Schema, migrations และ seed
 │   └── src/
-│       ├── index.ts                      # Express entry point
-│       ├── lib/
-│       │   └── prisma.ts                 # Prisma client instance
-│       ├── middleware/
-│       │   └── auth.ts                   # JWT auth middleware
-│       └── routes/
-│           ├── auth.ts                   # Login/register
-│           ├── boxes.ts                  # Box CRUD
-│           ├── units.ts                  # Unit CRUD
-│           ├── stock.ts                  # Stock summary/alerts
-│           ├── log.ts                    # Activity log
-│           ├── settings.ts               # Min stock config
-│           └── users.ts                  # User management (admin)
-│
+│       ├── middleware/              # Authentication middleware
+│       ├── lib/                     # Prisma และ business helpers
+│       └── routes/                  # Auth, คลัง, รายงาน, ตั้งค่า, รับเลือด ฯลฯ
 └── frontend/
-    ├── index.html
-    ├── package.json
-    ├── vite.config.ts
-    ├── tailwind.config.ts
-    ├── tsconfig.json / tsconfig.app.json / tsconfig.node.json
-    │
-    ├── public/
-    │   ├── favicon.svg
-    │   ├── sidebar-bg.png
-    │   └── fonts/
-    │       ├── ibm-plex-sans-thai.css
-    │       └── ibm-plex-sans-thai-*.woff2  # (12 font files, 400-700)
-    │
-    ├── assets/
-    │   ├── index.ts                      # Asset barrel export
-    │   ├── images/
-    │   │   ├── auth-bg.jpg
-    │   │   ├── error.svg / error500.png / notfound.png / maintenance.png
-    │   │   ├── logo/
-    │   │   │   ├── plasm-dark.svg
-    │   │   │   ├── plasm-light.svg
-    │   │   │   └── plasm-sm.svg
-    │   │   ├── sidebar/img-1.jpg
-    │   │   └── users/user-dummy-img.jpg
-    │   ├── plasm/
-    │   │   ├── login/login_cover.png
-    │   │   └── sidebar/icon-plasm.svg
-    │   └── styles/
-    │       ├── dashboard.css
-    │       └── design-system.css
-    │
+    ├── assets/                      # ภาพและ styles
+    ├── public/                      # ไฟล์ static และ fonts
     └── src/
-        ├── main.tsx                      # Entry point
-        ├── App.tsx                       # App wrapper
-        ├── globals.css
-        ├── index.css
-        │
-        ├── Routes/
-        │   ├── index.tsx                 # Router setup
-        │   ├── allRoutes.tsx             # Route definitions
-        │   └── AuthProtected.tsx         # Auth guard
-        │
-        ├── helpers/
-        │   ├── url_helper.ts             # API base URLs
-        │   ├── api_helper.ts             # Generic HTTP methods
-        │   ├── backend_helper.ts         # Business-specific API calls
-        │   ├── http/
-        │   │   ├── axiosInstance.ts       # Axios config + interceptors
-        │   │   ├── apiAdapter.ts          # Request/response adapter
-        │   │   └── types.ts              # HTTP types
-        │   └── services/
-        │       └── authService.ts        # Auth token management
-        │
-        ├── common/
-        │   └── data/
-        │       └── index.ts              # Mock/static data
-        │
-        ├── types/
-        │   ├── models.ts                 # Data models (Box, Unit, etc.)
-        │   └── navigation.ts             # Nav/route types
-        │
-        ├── components/
-        │   ├── layout/
-        │   │   ├── index.ts
-        │   │   ├── MainLayout.tsx        # Main app layout
-        │   │   ├── Sidebar.tsx           # Blue sidebar nav
-        │   │   ├── TopBar.tsx            # Top header bar
-        │   │   └── BottomNav.tsx         # Mobile bottom nav
-        │   └── shared/
-        │       ├── index.ts
-        │       ├── ContentCard.tsx
-        │       ├── PageHeader.tsx
-        │       ├── StatusBadge.tsx
-        │       └── SummaryCards.tsx
-        │
-        └── pages/
-            ├── auth/
-            │   └── LoginPage.tsx
-            │
-            ├── dashboard/
-            │   └── DashboardPage.tsx
-            │
-            ├── storage/                  # ── Sentinel pattern ──
-            │   ├── index.tsx             # Main page (imports hook+components)
-            │   ├── components/
-            │   │   ├── BarcodeLabel.tsx
-            │   │   ├── StorageBoxList.tsx
-            │   │   ├── StorageNewBoxForm.tsx
-            │   │   └── StorageToast.tsx
-            │   └── services/
-            │       ├── StorageService.ts   # API calls
-            │       ├── StorageType.ts      # Interfaces
-            │       └── useStorage.ts       # State + logic hook
-            │
-            ├── withdraw/
-            │   ├── index.tsx
-            │   ├── WithdrawPage.tsx
-            │   ├── components/
-            │   │   ├── WithdrawBoxList.tsx
-            │   │   ├── WithdrawBoxDetail.tsx
-            │   │   └── WithdrawConfirmModal.tsx
-            │   └── services/
-            │       ├── WithdrawService.ts
-            │       ├── WithdrawType.ts
-            │       └── useWithdraw.ts
-            │
-            ├── search/
-            │   ├── index.tsx
-            │   ├── SearchPage.tsx
-            │   ├── components/
-            │   │   ├── SearchBar.tsx
-            │   │   └── SearchResults.tsx
-            │   └── services/
-            │       ├── SearchService.ts
-            │       ├── SearchType.ts
-            │       └── useSearch.ts
-            │
-            ├── map/
-            │   ├── index.tsx
-            │   ├── components/
-            │   │   ├── MapRoomGrid.tsx
-            │   │   └── MapCabinetGrid.tsx
-            │   └── services/
-            │       ├── MapService.ts
-            │       ├── MapType.ts
-            │       └── useMap.ts
-            │
-            ├── log/
-            │   ├── index.tsx
-            │   ├── components/
-            │   │   ├── LogFiltersBar.tsx
-            │   │   └── LogTable.tsx
-            │   └── services/
-            │       ├── LogService.ts
-            │       ├── LogType.ts
-            │       └── useLog.ts
-            │
-            └── settings/
-                ├── index.tsx
-                ├── components/
-                │   ├── SettingsMinStock.tsx
-                │   └── SettingsUsers.tsx
-                └── services/
-                    ├── SettingsService.ts
-                    ├── SettingsType.ts
-                    └── useSettings.ts
+        ├── Routes/                  # Route config และ auth guard
+        ├── components/              # Components ใช้ร่วมกันและ layout
+        ├── helpers/                 # API client, hooks และ utilities
+        └── pages/                   # Dashboard, storage, reports, profile,
+                                     # external blood และ settings
 ```
+
+## หมายเหตุด้านความปลอดภัย
+
+- ห้ามนำค่า `JWT_SECRET` ตัวอย่างหรือรหัสผ่านจาก seed ไปใช้ในระบบจริง
+- เก็บไฟล์ `.env` และข้อมูลรับรองฐานข้อมูลเป็นความลับ และอย่า commit ขึ้น Git
+- สำรองฐานข้อมูลอย่างสม่ำเสมอ และจำกัดการเข้าถึงระบบตามนโยบายของหน่วยงาน
