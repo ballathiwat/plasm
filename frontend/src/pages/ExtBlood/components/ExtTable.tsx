@@ -12,7 +12,7 @@ export interface ExtRowHandlers {
   documents: ExtDocument[]; userId: string; isAdmin: boolean
   onViewDetail: (doc: ExtDocument) => void; onApprove: (doc: ExtDocument) => void; onExport: (doc: ExtDocument) => void
   onEdit: (id: string) => void; onDelete: (doc: ExtDocument) => void; onRecall: (doc: ExtDocument) => void
-  onPrint: (doc: ExtDocument) => { /* เพิ่มบรรทัดนี้ */ }
+  onPrint: (doc: ExtDocument) => void
 
 }
 
