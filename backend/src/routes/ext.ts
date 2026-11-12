@@ -124,12 +124,16 @@ router.get("/next-box-label", async (req, res) => {
 // GET /bags/check?bagNumber=XXX — เช็คเลขถุงซ้ำในระบบ
 router.get("/bags/check", async (req, res) => {
   try {
-    const bagNumber = String(req.query.bagNumber ?? "").trim().toUpperCase();
+    const bagNumber = String(req.query.bagNumber ?? "")
+      .trim()
+      .toUpperCase();
     if (!bagNumber) {
       res.status(400).json({ message: "กรุณาระบุเลขถุงเลือด" });
       return;
     }
-    const excludeDocId = req.query.excludeDocId ? String(req.query.excludeDocId) : undefined;
+    const excludeDocId = req.query.excludeDocId
+      ? String(req.query.excludeDocId)
+      : undefined;
 
     const existing = await prisma.extBag.findFirst({
       where: {
@@ -195,22 +199,33 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
             })
           )?.id
         : undefined);
-    console.log("DEBUG req.body keys:", Object.keys(req.body), "bags[]:", req.body["bags[]"] || req.body.bags, "bags:", req.body.bags);
+    console.log(
+      "DEBUG req.body keys:",
+      Object.keys(req.body),
+      "bags[]:",
+      req.body["bags[]"] || req.body.bags,
+      "bags:",
+      req.body.bags,
+    );
     const bags: string[] = Array.isArray(req.body["bags[]"] || req.body.bags)
       ? req.body["bags[]"] || req.body.bags
       : (req.body["bags[]"] ?? req.body.bags) || req.body.bags
         ? [req.body["bags[]"] || req.body.bags]
         : [];
 
-    if (
-      !receivedDate ||
-      !sourceId ||
-      !resolvedProductId ||
-      !bloodGroup ||
-      !boxLabel ||
-      !storageId
-    ) {
-      res.status(400).json({ message: "กรุณากรอกข้อมูลให้ครบ" });
+    const missingFields: string[] = [];
+    if (!receivedDate?.trim()) missingFields.push("วันที่รับ");
+    if (!sourceId?.trim()) missingFields.push("สถานที่ส่งเลือด");
+    if (!resolvedProductId?.trim()) missingFields.push("ชนิดเลือด");
+    if (!bloodGroup?.trim()) missingFields.push("หมู่เลือด");
+    if (!boxLabel?.trim()) missingFields.push("หมายเลขกล่อง");
+    if (!storageId?.trim()) missingFields.push("ตำแหน่งจัดเก็บ");
+
+    if (missingFields.length > 0) {
+      res.status(400).json({
+        message: `กรุณากรอกข้อมูลให้ครบ: ${missingFields.join(", ")}`,
+        missingFields,
+      });
       return;
     }
 
@@ -221,7 +236,9 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
         include: { document: { select: { docNumber: true } } },
       });
       if (dupes.length > 0) {
-        const list = dupes.map((d) => d.bagNumber + " (อยู่ใน " + d.document.docNumber + ")").join(", ");
+        const list = dupes
+          .map((d) => d.bagNumber + " (อยู่ใน " + d.document.docNumber + ")")
+          .join(", ");
         res.status(409).json({ message: "เลขถุงเลือดซ้ำในระบบ: " + list });
         return;
       }
@@ -246,7 +263,7 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
         bags: { create: bags.map((n) => ({ bagNumber: n })) },
         attachments: {
           create: files.map((f) => ({
-            fileName: Buffer.from(f.originalname, 'latin1').toString('utf8'),
+            fileName: Buffer.from(f.originalname, "latin1").toString("utf8"),
             fileType: f.mimetype,
             fileSize: f.size,
             filePath: `uploads/ext/${f.filename}`,
@@ -308,8 +325,10 @@ router.post(
           include: { document: { select: { docNumber: true } } },
         });
         if (dupes.length > 0) {
-          const list = dupes.map((d) => d.bagNumber + ' (อยู่ใน ' + d.document.docNumber + ')').join(', ');
-          res.status(409).json({ message: 'เลขถุงเลือดซ้ำในระบบ: ' + list });
+          const list = dupes
+            .map((d) => d.bagNumber + " (อยู่ใน " + d.document.docNumber + ")")
+            .join(", ");
+          res.status(409).json({ message: "เลขถุงเลือดซ้ำในระบบ: " + list });
           return;
         }
       }
@@ -335,7 +354,9 @@ router.post(
             files.length > 0
               ? {
                   create: files.map((f) => ({
-                    fileName: Buffer.from(f.originalname, 'latin1').toString('utf8'),
+                    fileName: Buffer.from(f.originalname, "latin1").toString(
+                      "utf8",
+                    ),
                     fileType: f.mimetype,
                     fileSize: f.size,
                     filePath: `uploads/ext/${f.filename}`,
@@ -669,13 +690,29 @@ router.post("/documents/:id/export", async (req, res) => {
 
 // GET /attachments/:id/file — เปิดไฟล์แนบ (เฉพาะผู้เกี่ยวข้อง)
 const UPLOAD_ROOT = path.resolve(__dirname, "../../uploads/ext");
-const INLINE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"]);
+const INLINE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+]);
 
 router.get("/attachments/:id/file", async (req, res) => {
   try {
     const att = await prisma.extAttachment.findUnique({
       where: { id: req.params.id },
-      include: { document: { select: { id: true, createdById: true, verifierId: true, storerId: true, approverId: true } } },
+      include: {
+        document: {
+          select: {
+            id: true,
+            createdById: true,
+            verifierId: true,
+            storerId: true,
+            approverId: true,
+          },
+        },
+      },
     });
     if (!att) {
       res.status(404).json({ message: "ไม่พบไฟล์แนบ" });
@@ -686,9 +723,16 @@ router.get("/attachments/:id/file", async (req, res) => {
     const related =
       req.user!.role === "ADMIN" ||
       [d.createdById, d.verifierId, d.storerId, d.approverId].includes(uid) ||
-      (await prisma.extCommittee.count({ where: { documentId: d.id, userId: uid } })) > 0;
+      (await prisma.extCommittee.count({
+        where: { documentId: d.id, userId: uid },
+      })) > 0;
     if (!related) {
-      res.status(403).json({ message: "คุณไม่มีสิทธิ์เปิดไฟล์นี้ — เปิดได้เฉพาะผู้บันทึก คณะกรรมการ และผู้ดูแลระบบ" });
+      res
+        .status(403)
+        .json({
+          message:
+            "คุณไม่มีสิทธิ์เปิดไฟล์นี้ — เปิดได้เฉพาะผู้บันทึก คณะกรรมการ และผู้ดูแลระบบ",
+        });
       return;
     }
     const abs = path.resolve(UPLOAD_ROOT, path.basename(att.filePath));
@@ -699,17 +743,34 @@ router.get("/attachments/:id/file", async (req, res) => {
 
     const detail = `เปิดไฟล์ ${att.fileName}`;
     const seen = await prisma.extTimeline.findFirst({
-      where: { documentId: d.id, userId: uid, action: "เปิดไฟล์", detail, createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) } },
+      where: {
+        documentId: d.id,
+        userId: uid,
+        action: "เปิดไฟล์",
+        detail,
+        createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) },
+      },
       select: { id: true },
     });
-    if (!seen) await prisma.extTimeline.create({ data: { documentId: d.id, userId: uid, action: "เปิดไฟล์", detail } });
+    if (!seen)
+      await prisma.extTimeline.create({
+        data: { documentId: d.id, userId: uid, action: "เปิดไฟล์", detail },
+      });
 
     const inline = INLINE_TYPES.has(att.fileType);
-    res.setHeader("Content-Type", inline ? att.fileType : "application/octet-stream");
-    res.setHeader("Content-Disposition", `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(att.fileName)}`);
+    res.setHeader(
+      "Content-Type",
+      inline ? att.fileType : "application/octet-stream",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(att.fileName)}`,
+    );
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Cache-Control", "private, no-store");
-    fs.createReadStream(abs).on("error", (e) => fail(res, e, "GET /ext/attachments/:id/file stream")).pipe(res);
+    fs.createReadStream(abs)
+      .on("error", (e) => fail(res, e, "GET /ext/attachments/:id/file stream"))
+      .pipe(res);
   } catch (e) {
     fail(res, e, "GET /ext/attachments/:id/file");
   }
