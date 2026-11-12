@@ -20,6 +20,9 @@ import ExtApproveModal from './components/ExtApproveModal'
 import ExtExportModal from './components/ExtExportModal'
 import '../../assets/styles/ext-blood.css'
 import '../../assets/styles/ext-committee.css'
+import { useState } from 'react'
+import { ExtDocument } from './services/ExtBloodType'
+import ExtBloodPrint from './components/ExtBloodPrint'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'MINE', label: 'รอฉันอนุมัติ' },
@@ -40,6 +43,7 @@ export default function ExtBloodPage() {
     onViewDetail: h.openDetail, onApprove: h.openApprove, onExport: h.openExport,
     onEdit: (id: string) => navigate(`/ext-blood/${id}/edit`), onDelete: h.setDeleteDoc, onRecall: h.handleRecall,
   }
+  const [printDoc, setPrintDoc] = useState<ExtDocument | null>(null)
 
   return (
     <div className="ext-blood-page" style={{ animation: 'plasm-fade-in 0.2s ease', paddingBottom: h.selectedIds.length ? 72 : 0 }}>
@@ -73,11 +77,23 @@ export default function ExtBloodPage() {
       ) : (
         <>
           <div className="ext-desktop-only">
-            <ExtTable {...rowProps} selectedIds={h.selectedIds} onToggleSelect={h.toggleSelect} onToggleSelectAll={h.toggleSelectAll} isMine={h.isMine} />
+            <ExtTable {...rowProps} selectedIds={h.selectedIds} onToggleSelect={h.toggleSelect} onToggleSelectAll={h.toggleSelectAll} isMine={h.isMine}  onPrint={(d) => setPrintDoc(d)}  />
           </div>
-          <div className="ext-mobile-only"><ExtMobileCards {...rowProps} /></div>
+          <div className="ext-mobile-only"><ExtMobileCards {...rowProps} onPrint={(d) => setPrintDoc(d)} /></div>
           <ExtPagination page={h.filter.page || 1} totalPages={h.totalPages} totalItems={h.totalItems} onPageChange={h.setPage} />
+        
+     <ExtBloodPrint                                           
+
+        open={!!printDoc}
+
+        doc={printDoc!}
+
+        onClose={() => setPrintDoc(null)}
+
+      />
         </>
+        
+         
       )}
 
       {h.selectedIds.length > 0 && <ExtBatchBar count={h.selectedIds.length} onApprove={() => h.openApprove()} onClear={h.clearSelection} />}

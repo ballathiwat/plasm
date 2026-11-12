@@ -1,15 +1,19 @@
 // frontend/src/pages/ExtBlood/components/ExtTable.tsx
-import { Eye, CheckCircle, PackageOpen, Pencil, Trash2, RotateCcw } from 'lucide-react'
+import { Printer,Eye, CheckCircle, PackageOpen, Pencil, Trash2, RotateCcw } from 'lucide-react'
 import Button from '../../../components/common/Button'
 import { formatThaiDate, statusLabel, statusClass, bloodGroupClass } from '../services/extHelpers'
 import { myPending, approvedCount, sortCommittee, canRecall, ROLE_LABEL } from '../services/committeeHelpers'
 import type { ExtDocument } from '../services/ExtBloodType'
 import ExtRowMenu, { type RowMenuItem } from './ExtRowMenu'
+import { useState } from 'react'
+import ExtBloodPrint from './ExtBloodPrint'
 
 export interface ExtRowHandlers {
   documents: ExtDocument[]; userId: string; isAdmin: boolean
   onViewDetail: (doc: ExtDocument) => void; onApprove: (doc: ExtDocument) => void; onExport: (doc: ExtDocument) => void
   onEdit: (id: string) => void; onDelete: (doc: ExtDocument) => void; onRecall: (doc: ExtDocument) => void
+  onPrint: (doc: ExtDocument) => { /* เพิ่มบรรทัดนี้ */ }
+
 }
 
 /** ปุ่มหลัก 1 ปุ่ม + เมนู ⋯ ตามสถานะเอกสาร */
@@ -26,6 +30,7 @@ export function rowActions(d: ExtDocument, h: Omit<ExtRowHandlers, 'documents'>)
   if (canExport && primary.label !== 'นำออก') more.push({ icon: <PackageOpen size={15} />, label: 'นำออก', onClick: () => h.onExport(d) })
   if (['DRAFT', 'APPROVED', 'REJECTED'].includes(d.status) && primary.label !== 'แก้ไข') more.push({ icon: <Pencil size={15} />, label: 'แก้ไข', onClick: () => h.onEdit(d.id) })
   if (canRecall(d, h.userId, h.isAdmin)) more.push({ icon: <RotateCcw size={15} />, label: 'ดึงกลับเพื่อแก้ไข', onClick: () => h.onRecall(d) })
+  more.push({ icon: <Printer size={15} />, label: 'พิมพ์เอกสาร', onClick: () => h.onPrint(d) })   // ⬅️ ใส่บรรทัดนี้ตรงนี้
   if (d.status === 'DRAFT') more.push({ icon: <Trash2 size={15} />, label: 'ลบเอกสารร่าง', onClick: () => h.onDelete(d), danger: true })
   return { mine, primary, more }
 }
@@ -55,6 +60,7 @@ export default function ExtTable({ documents, selectedIds, onToggleSelect, onTog
   const mineDocs = documents.filter(isMine)
   const showCb = mineDocs.length > 0
   const allSel = showCb && mineDocs.every((d) => selectedIds.includes(d.id))
+  const [printDoc, setPrintDoc] = useState<ExtDocument | null>(null)
   return (
     <div className="ext-table-wrap">
       <table className="ext-table">
@@ -83,6 +89,20 @@ export default function ExtTable({ documents, selectedIds, onToggleSelect, onTog
           )
         })}</tbody>
       </table>
+
+      {printDoc && (
+
+        <ExtBloodPrint
+
+          open
+
+          doc={printDoc}
+
+          onClose={() => setPrintDoc(null)}
+
+        />
+
+      )}
     </div>
   )
 }

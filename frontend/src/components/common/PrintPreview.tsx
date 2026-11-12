@@ -16,7 +16,8 @@ import { createPortal } from "react-dom";
 import { FileText, Printer, X } from "lucide-react";
 import Button from "./Button";
 import Switch from "./Switch";
-import "@/assets/styles/components/print-preview.css";
+import '../../assets/styles/components/print-preview.css'
+
 
 // ── Types ────────────────────────────────────────────────────
 export interface PrintPageDef {
