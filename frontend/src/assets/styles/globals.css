@@ -91,6 +91,33 @@
   --toast-text: #000000;
   --toast-close: #71717A;
   --toast-shadow: 0px 8px 16px -2px rgba(27,33,44,0.12);
+
+  /* ── Alias ของชื่อ token แบบเก่าที่โค้ดยังเรียกใช้ ──
+     ชี้ไปที่ token หลักด้านบนเพื่อให้สีตรงกันทั้งระบบ — โค้ดใหม่ให้ใช้ token หลักโดยตรง */
+  --color-primary: var(--primary);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-disabled);
+  --color-danger: var(--stock-danger);
+  --color-success: var(--stock-normal);
+  --color-warning: var(--stock-warning);
+  --danger: var(--stock-danger);
+  --warning: var(--stock-warning);
+  --primary-light: var(--primary-surface);
+  --text: var(--text-primary);
+  --text-muted: var(--text-disabled);
+  --font-family: var(--font-sans);
+
+  /* Semantic borders (คู่กับ *-surface / *-ink) */
+  --danger-border: #FECACA;
+  --warning-border: #FDE68A;
+  --success-border: #BBF7D0;
+
+  /* Spacing */
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
 }
 
 html, body, #root {
