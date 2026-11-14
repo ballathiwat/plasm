@@ -153,8 +153,20 @@ export default function useExtForm() {
         return;
       }
     } catch { /* API error — backend เช็คอีกทีตอน save */ }
+    // ใช้ functional update เพื่อเช็คซ้ำจาก state ล่าสุด (กัน race condition ตอนสแกนเร็ว)
+    let alreadyExists = false;
+    setForm((p) => {
+      if (p.bags.includes(n)) {
+        alreadyExists = true;
+        return p;
+      }
+      return { ...p, bags: [...p.bags, n] };
+    });
+    if (alreadyExists) {
+      setBagError(`${n} ถูกสแกนแล้ว`);
+      return;
+    }
     setDirty(true);
-    setForm((p) => ({ ...p, bags: [...p.bags, n] }));
     setBagInput("");
     setBagError("");
   };
