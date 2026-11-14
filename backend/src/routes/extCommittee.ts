@@ -1,7 +1,7 @@
 // src/routes/extCommittee.ts — คณะกรรมการอนุมัติ (รับเลือดจากภายนอก)
 // mount: app.use('/api/v1/ext', authGuard, extCommitteeRoutes) ก่อน extRoutes
 
-import { Router, type Request, type Response, type NextFunction } from 'express'
+import { Router, type Request, type Response } from 'express'
 import { prisma } from '../lib/prisma'
 import { verifyPin } from '../lib/extPin'
 import { extDocInclude, formatExtDoc } from '../lib/extHelpers'
@@ -168,19 +168,5 @@ router.post('/committee/batch-approve', async (req, res) => {
     res.json({ count })
   } catch (e) { fail(res, e, 'POST /ext/committee/batch-approve') }
 })
-
-// ── กัน endpoint อนุมัติแบบเดิม ถ้าเอกสารมีคณะกรรมการ ──
-const legacyGuard = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const ids: string[] = req.params.id ? [String(req.params.id)] : Array.isArray(req.body?.ids) ? req.body.ids : []
-    const n = ids.length ? await prisma.extCommittee.count({ where: { documentId: { in: ids } } }) : 0
-    if (n > 0) { res.status(409).json({ message: 'เอกสารนี้ใช้การอนุมัติแบบคณะกรรมการ' }); return }
-    next()
-  } catch (e) { fail(res, e, 'legacyGuard') }
-}
-router.post('/documents/:id/approve', legacyGuard)
-router.post('/documents/:id/reject', legacyGuard)
-router.post('/documents/batch-approve', legacyGuard)
-router.post('/documents/batch-reject', legacyGuard)
 
 export default router
