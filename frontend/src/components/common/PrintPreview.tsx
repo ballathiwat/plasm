@@ -337,6 +337,8 @@ export interface PrintAttachmentFile {
   name: string;              // ชื่อไฟล์ที่แสดง (ไม่ใช่ path)
   url?: string;              // URL ที่เปิดได้จริง (resolve มาแล้วจากฝั่งผู้เรียก)
   mimeType?: string | null;
+  badge?: string;            // ป้ายกำกับเพิ่มเติม เช่น "เพิ่มหลังอนุมัติ"
+  note?: string;             // รายละเอียดต่อท้ายป้าย เช่น ผู้อัปโหลด · วันเวลา
 }
 
 const IMAGE_MIME = new Set(["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"]);
@@ -370,7 +372,11 @@ const PrintAttachmentImage = ({ file, ratio, single }: { file: PrintAttachmentFi
           <span className="pv-att__ph"><ImageOff size={20} aria-hidden />ไม่สามารถแสดงรูปได้</span>
         )}
       </div>
-      <figcaption title={file.name}>{file.name}</figcaption>
+      <figcaption title={file.name}>
+        {file.badge && <span className="pv-att__badge">{file.badge}</span>}
+        {file.name}
+        {file.note && <span className="pv-att__note"> · {file.note}</span>}
+      </figcaption>
     </figure>
   );
 };
@@ -398,7 +404,11 @@ export const printAttachmentBlocks = (files: PrintAttachmentFile[], { columns = 
         {others.map((f) => (
           <li className="pv-file" key={f.key}>
             {/pdf|word|document|text/i.test(f.mimeType ?? "") || /\.(pdf|docx?|txt)$/i.test(f.name) ? <FileText size={14} aria-hidden /> : <File size={14} aria-hidden />}
-            <span className="pv-file__name">{f.name}</span>
+            <span className="pv-file__name">
+              {f.badge && <span className="pv-att__badge">{f.badge}</span>}
+              {f.name}
+              {f.note && <span className="pv-att__note"> · {f.note}</span>}
+            </span>
             {fileExt(f.name) && <span className="pv-file__ext">{fileExt(f.name)}</span>}
           </li>
         ))}

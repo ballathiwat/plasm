@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../Routes/AuthProtected'
 import extBloodService from './ExtBloodService'
 import { myPending } from './committeeHelpers'
+import { validatePostImages } from './extHelpers'
 import type {
   ExtDocument, ExtDocStatus, ExtListFilter, ExtSummary, ExtCounts,
   ExtSource, ExtStorage, ExtBloodProduct, ExtExportReason,
@@ -123,6 +124,24 @@ export default function useExtBlood() {
     say({ type: 'success', msg: `นำออก ${bagIds.length} ถุงสำเร็จ` }); refresh()
   }
 
+  /** เพิ่มรูปหลังอนุมัติ — คืนข้อความ error (แสดงใน modal) หรือ null เมื่อสำเร็จ */
+  const handleUploadPostImages = async (doc: ExtDocument, files: File[]): Promise<string | null> => {
+    const invalid = validatePostImages(files)
+    if (invalid) return invalid
+    try {
+      const fd = new FormData()
+      files.forEach((f) => fd.append('files', f))
+      const updated = await extBloodService.uploadPostApprovalImages(doc.id, fd)
+      setDetailDoc(updated)
+      setDocuments((p) => p.map((d) => (d.id === updated.id ? updated : d)))
+      say({ type: 'success', msg: `เพิ่มรูปใน ${updated.docNumber} แล้ว ${files.length} รูป` })
+      return null
+    } catch (e: unknown) {
+      console.error('uploadPostApprovalImages', e)
+      return (e as { message?: string })?.message || 'อัปโหลดรูปไม่สำเร็จ'
+    }
+  }
+
   return {
     user, documents, summary, counts, totalPages, totalItems,
     sources, storages, bloodProducts, exportReasons,
@@ -132,6 +151,6 @@ export default function useExtBlood() {
     setActiveTab, setFilter, setPage,
     toggleSelect, toggleSelectAll, clearSelection,
     openDetail, closeDetail, openApprove, closeApprove, openExport, closeExport,
-    refresh, handleDecide, handleBatchApprove, handleRecall, handleDelete, handleExportBags,
+    refresh, handleDecide, handleBatchApprove, handleRecall, handleDelete, handleExportBags, handleUploadPostImages,
   }
 }

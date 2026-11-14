@@ -18,6 +18,7 @@ import type {
   CommitteeDraft,
 } from "./ExtFormType";
 import type { ExtRoleRules } from "../../ExtBlood/services/ExtBloodType";
+import { isEditableStatus } from "../../ExtBlood/services/extHelpers";
 import apiAdapter from "../../../helpers/http/apiAdapter";
 import { EXT_BASE } from "../../../helpers/url_helper";
 
@@ -87,6 +88,19 @@ export default function useExtForm() {
     extBloodService
       .getDocument(docId)
       .then((doc) => {
+        // เอกสารที่ส่งอนุมัติ/อนุมัติ/นำออกแล้ว แก้ไขไม่ได้ (backend ล็อกเช่นกัน)
+        if (!isEditableStatus(doc.status)) {
+          navigate("/ext-blood", {
+            replace: true,
+            state: {
+              toast: {
+                type: "warning",
+                msg: `${doc.docNumber} แก้ไขไม่ได้แล้ว — หากอนุมัติแล้ว เพิ่มรูปได้จากหน้ารายละเอียด`,
+              },
+            },
+          });
+          return;
+        }
         setExistingDoc(doc);
         setForm({
           receivedDate: doc.receivedDate.slice(0, 10),

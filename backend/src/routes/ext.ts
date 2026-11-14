@@ -9,8 +9,19 @@ import {
   nextExtDocNumber,
   extDocInclude,
   formatExtDoc,
+  isExtEditable,
+  canAddPostApprovalImage,
 } from "../lib/extHelpers";
-import { extUpload } from "../lib/extUpload";
+import {
+  extUpload,
+  extImageUpload,
+  isRealImageFile,
+  discardUploadedFiles,
+  EXT_IMAGE_ONLY_MESSAGE,
+  EXT_MAX_FILES,
+} from "../lib/extUpload";
+import multer from "multer";
+import type { Request, Response, NextFunction } from "express";
 import path from "path";
 import fs from "fs";
 
@@ -277,6 +288,7 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
             fileType: f.mimetype,
             fileSize: f.size,
             filePath: `uploads/ext/${f.filename}`,
+            uploadedById: req.user!.id,
           })),
         },
         timeline: {
@@ -306,8 +318,26 @@ router.post(
         where: { id: req.params.id as string },
         include: { bags: true },
       });
+      const uploaded = req.files as Express.Multer.File[] | undefined;
       if (!existing) {
+        discardUploadedFiles(uploaded);
         res.status(404).json({ message: "ไม่พบเอกสาร" });
+        return;
+      }
+      // ── ล็อก: แก้ไขได้เฉพาะเอกสารร่าง / ถูกส่งกลับแก้ไข และเฉพาะผู้สร้างหรือ ADMIN ──
+      if (!isExtEditable(existing.status)) {
+        discardUploadedFiles(uploaded);
+        res.status(409).json({
+          message: "แก้ไขได้เฉพาะเอกสารร่างหรือที่ถูกส่งกลับแก้ไข",
+        });
+        return;
+      }
+      if (
+        existing.createdById !== req.user!.id &&
+        req.user!.role !== "ADMIN"
+      ) {
+        discardUploadedFiles(uploaded);
+        res.status(403).json({ message: "แก้ไขได้เฉพาะผู้สร้างเอกสาร" });
         return;
       }
 
@@ -382,6 +412,7 @@ router.post(
                     fileType: f.mimetype,
                     fileSize: f.size,
                     filePath: `uploads/ext/${f.filename}`,
+                    uploadedById: req.user!.id,
                   })),
                 }
               : undefined,
@@ -847,6 +878,147 @@ router.get("/attachments/:id/file", async (req, res) => {
   }
 });
 
+// ── POST /documents/:id/attachments — เพิ่มรูปหลังอนุมัติ (เฉพาะสถานะ APPROVED) ──
+// ลำดับ: ตรวจสิทธิ์/สถานะ → รับไฟล์ → ตรวจไฟล์ → บันทึก (ไม่แตะ status และฟิลด์อื่นของเอกสาร)
+const guardPostApprovalUpload = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const doc = await prisma.extDocument.findUnique({
+      where: { id: String(req.params.id) },
+      select: {
+        id: true,
+        status: true,
+        createdById: true,
+        verifierId: true,
+        storerId: true,
+        approverId: true,
+      },
+    });
+    if (!doc) {
+      res.status(404).json({ message: "ไม่พบเอกสาร" });
+      return;
+    }
+    if (doc.status !== "APPROVED") {
+      res.status(409).json({
+        message: "เพิ่มรูปได้เฉพาะเอกสารที่อนุมัติแล้ว",
+      });
+      return;
+    }
+    if (!(await canAddPostApprovalImage(doc, req.user!))) {
+      res.status(403).json({
+        message:
+          "คุณไม่มีสิทธิ์เพิ่มรูปในเอกสารนี้ — เพิ่มได้เฉพาะผู้บันทึก คณะกรรมการ และผู้ดูแลระบบ",
+      });
+      return;
+    }
+    next();
+  } catch (e) {
+    fail(res, e, "POST /ext/documents/:id/attachments guard");
+  }
+};
+
+const receivePostApprovalImages = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  extImageUpload.array("files", EXT_MAX_FILES)(req, res, (err: unknown) => {
+    if (!err) {
+      next();
+      return;
+    }
+    discardUploadedFiles(req.files as Express.Multer.File[] | undefined);
+    if (err instanceof multer.MulterError) {
+      const message =
+        err.code === "LIMIT_FILE_SIZE"
+          ? "ไฟล์ใหญ่เกิน 10 MB"
+          : err.code === "LIMIT_FILE_COUNT" ||
+              err.code === "LIMIT_UNEXPECTED_FILE"
+            ? `อัปโหลดได้สูงสุด ${EXT_MAX_FILES} รูปต่อครั้ง`
+            : "อัปโหลดไฟล์ไม่สำเร็จ";
+      res.status(400).json({ message });
+      return;
+    }
+    if (err instanceof Error && err.message === EXT_IMAGE_ONLY_MESSAGE) {
+      res.status(400).json({ message: EXT_IMAGE_ONLY_MESSAGE });
+      return;
+    }
+    fail(res, err, "POST /ext/documents/:id/attachments upload");
+  });
+};
+
+router.post(
+  "/documents/:id/attachments",
+  guardPostApprovalUpload,
+  receivePostApprovalImages,
+  async (req, res) => {
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    try {
+      const id = String(req.params.id);
+      if (files.length === 0) {
+        res.status(400).json({ message: "กรุณาเลือกรูปอย่างน้อย 1 รูป" });
+        return;
+      }
+      if (!files.every((f) => isRealImageFile(f.path))) {
+        discardUploadedFiles(files);
+        res.status(400).json({ message: EXT_IMAGE_ONLY_MESSAGE });
+        return;
+      }
+
+      const names = files.map((f) =>
+        Buffer.from(f.originalname, "latin1").toString("utf8"),
+      );
+      const saved = await prisma.$transaction(async (tx) => {
+        // ตรวจสถานะซ้ำใน transaction — กันกรณีเอกสารถูกนำออกครบระหว่างอัปโหลด
+        const current = await tx.extDocument.findUnique({
+          where: { id },
+          select: { status: true },
+        });
+        if (!current || current.status !== "APPROVED") return false;
+        await tx.extAttachment.createMany({
+          data: files.map((f, i) => ({
+            documentId: id,
+            fileName: names[i],
+            fileType: f.mimetype,
+            fileSize: f.size,
+            filePath: `uploads/ext/${f.filename}`,
+            isPostApproval: true,
+            uploadedById: req.user!.id,
+          })),
+        });
+        await tx.extTimeline.create({
+          data: {
+            documentId: id,
+            userId: req.user!.id,
+            action: "เพิ่มรูปหลังอนุมัติ",
+            detail: `เพิ่มรูป ${files.length} ไฟล์: ${names.join(", ")}`,
+          },
+        });
+        return true;
+      });
+      if (!saved) {
+        discardUploadedFiles(files);
+        res.status(409).json({
+          message: "เพิ่มรูปได้เฉพาะเอกสารที่อนุมัติแล้ว",
+        });
+        return;
+      }
+
+      const doc = await prisma.extDocument.findUnique({
+        where: { id },
+        include: extDocInclude,
+      });
+      res.status(201).json(formatExtDoc(doc));
+    } catch (e) {
+      discardUploadedFiles(files);
+      fail(res, e, "POST /ext/documents/:id/attachments");
+    }
+  },
+);
+
 router.delete("/attachments/:id", async (req, res) => {
   try {
     // ── authorization: ต้องเป็นผู้เกี่ยวข้องกับเอกสาร หรือ ADMIN ──
@@ -854,12 +1026,19 @@ router.delete("/attachments/:id", async (req, res) => {
       where: { id: req.params.id },
       include: {
         document: {
-          select: { id: true, createdById: true, verifierId: true, storerId: true, approverId: true },
+          select: { id: true, status: true, createdById: true, verifierId: true, storerId: true, approverId: true },
         },
       },
     });
     if (!att) {
       res.status(404).json({ message: "ไม่พบไฟล์แนบ" });
+      return;
+    }
+    // ── ล็อก: หลังส่งอนุมัติแล้วห้ามลบไฟล์แนบ (รวมรูปที่เพิ่มหลังอนุมัติ) ──
+    if (!isExtEditable(att.document.status)) {
+      res.status(409).json({
+        message: "ลบไฟล์แนบได้เฉพาะเอกสารร่างหรือที่ถูกส่งกลับแก้ไข",
+      });
       return;
     }
     const uid = req.user!.id;

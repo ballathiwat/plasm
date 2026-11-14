@@ -32,6 +32,7 @@ model User {
   extExports     ExtExport[]
   extTimeline    ExtTimeline[]
   extCommittee   ExtCommittee[]
+  extAttachments ExtAttachment[]
   logs         LogEntry[]
   unitRemovals UnitRemoval[]
   slotLocks    SlotLock[]
@@ -363,8 +364,12 @@ model ExtAttachment {
   fileSize   Int         @map("file_size")
   filePath   String      @map("file_path")
   createdAt  DateTime    @default(now()) @map("created_at")
+  // รูปที่เพิ่มหลังเอกสารอนุมัติแล้ว (รูปเดิมทั้งหมด = false)
+  isPostApproval Boolean @default(false) @map("is_post_approval")
+  uploadedById   String? @map("uploaded_by_id")
 
-  document ExtDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  document   ExtDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  uploadedBy User?       @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
 
   @@map("ext_attachments")
 }

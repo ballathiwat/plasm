@@ -1,7 +1,7 @@
 // frontend/src/pages/ExtBlood/services/extHelpers.ts
 
 import { EXT_ATTACHMENTS } from '../../../helpers/url_helper'
-import type { ExtAttachment, ExtDocStatus } from './ExtBloodType'
+import type { ExtAttachment, ExtDocStatus, ExtDocument } from './ExtBloodType'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -51,4 +51,33 @@ export function bloodGroupClass(group: string): string {
   if (base === 'O') return 'bb-O'
   if (base === 'AB') return 'bb-AB'
   return ''
+}
+
+// ── สถานะที่ยังแก้ไขข้อมูลเอกสารได้ (ตรงกับ backend: isExtEditable) ──
+export const isEditableStatus = (s: ExtDocStatus) => s === 'DRAFT' || s === 'REJECTED'
+
+// ── รูปที่เพิ่มหลังอนุมัติ ──
+export const POST_IMAGE_ACCEPT = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp'
+export const POST_IMAGE_MAX_SIZE = 10 * 1024 * 1024 // 10 MB — ค่าเดียวกับ backend (extUpload)
+export const POST_IMAGE_MAX_FILES = 10
+const POST_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp']
+const POST_IMAGE_EXT = /\.(jpe?g|png|webp)$/i
+
+/** สิทธิ์เพิ่มรูปหลังอนุมัติ: ผู้สร้างเอกสาร, คณะกรรมการ, ADMIN — backend ตรวจซ้ำอีกชั้น */
+export const canAddPostApprovalImage = (doc: ExtDocument, userId: string, isAdmin: boolean) =>
+  doc.status === 'APPROVED' && (
+    isAdmin ||
+    [doc.createdById, doc.createdBy?.id, doc.verifier?.id, doc.storer?.id, doc.approver?.id].includes(userId) ||
+    (doc.committee ?? []).some((m) => m.userId === userId)
+  )
+
+/** ตรวจไฟล์ก่อนส่ง — คืนข้อความ error หรือ null ถ้าผ่าน */
+export function validatePostImages(files: File[]): string | null {
+  if (files.length === 0) return 'กรุณาเลือกรูปอย่างน้อย 1 รูป'
+  if (files.length > POST_IMAGE_MAX_FILES) return `อัปโหลดได้สูงสุด ${POST_IMAGE_MAX_FILES} รูปต่อครั้ง`
+  const badType = files.find((f) => !POST_IMAGE_MIMES.includes(f.type) || !POST_IMAGE_EXT.test(f.name))
+  if (badType) return `รับเฉพาะไฟล์รูป jpg, jpeg, png, webp — "${badType.name}" ไม่ใช่ไฟล์ที่รองรับ`
+  const tooBig = files.find((f) => f.size > POST_IMAGE_MAX_SIZE)
+  if (tooBig) return `ไฟล์ "${tooBig.name}" ใหญ่เกิน 10 MB`
+  return null
 }
