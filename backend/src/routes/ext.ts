@@ -202,24 +202,29 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
       ? Array.isArray(rawBags) ? rawBags : [rawBags]
       : [];
 
-    // ── validate required fields (ข้ามเมื่อเป็น DRAFT) ──
+    // ── validate required fields ──
+    // FK fields ต้องมีค่าเสมอ (ทั้ง DRAFT และ PENDING) เพราะ Prisma required
     const isDraft = status !== "PENDING";
+    const missingFields: string[] = [];
+
+    // FK fields — ต้องมีค่าเสมอ ไม่งั้น Prisma จะ error
+    if (!sourceId?.trim()) missingFields.push("สถานที่ส่งเลือด");
+    if (!resolvedProductId?.trim()) missingFields.push("ชนิดเลือด");
+    if (!storageId?.trim()) missingFields.push("ตำแหน่งจัดเก็บ");
+
     if (!isDraft) {
-      const missingFields: string[] = [];
+      // เพิ่ม validation สำหรับ PENDING
       if (!receivedDate?.trim()) missingFields.push("วันที่รับ");
-      if (!sourceId?.trim()) missingFields.push("สถานที่ส่งเลือด");
-      if (!resolvedProductId?.trim()) missingFields.push("ชนิดเลือด");
       if (!bloodGroup?.trim()) missingFields.push("หมู่เลือด");
       if (!boxLabel?.trim()) missingFields.push("หมายเลขกล่อง");
-      if (!storageId?.trim()) missingFields.push("ตำแหน่งจัดเก็บ");
+    }
 
-      if (missingFields.length > 0) {
-        res.status(400).json({
-          message: `กรุณากรอกข้อมูลให้ครบ: ${missingFields.join(", ")}`,
-          missingFields,
-        });
-        return;
-      }
+    if (missingFields.length > 0) {
+      res.status(400).json({
+        message: `กรุณากรอกข้อมูลให้ครบ: ${missingFields.join(", ")}`,
+        missingFields,
+      });
+      return;
     }
 
     // ── เช็คเลขถุงซ้ำภายในรายการเดียวกัน ──

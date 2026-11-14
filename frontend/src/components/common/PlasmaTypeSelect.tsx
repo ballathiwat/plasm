@@ -1,7 +1,8 @@
 // frontend/src/components/common/PlasmaTypeSelect.tsx
 //
-// Dropdown ชนิดเลือด — รายการตัวเลือกมาจากฐานข้อมูล master plasma-types.
-// ถ้า parent ส่ง products มา จะส่ง product ID ที่มี code ตรงกันกลับไปด้วย
+// Dropdown ชนิดเลือด — เมื่อ parent ส่ง products มา ใช้ products เป็นรายการตัวเลือก
+// (ป้องกัน code ไม่ตรงกันระหว่าง master กับ ext_blood_products)
+// ถ้าไม่ส่ง products → ดึงจาก master plasma-types ตามเดิม
 //
 // Usage:
 //   <PlasmaTypeSelect value={type} onChange={setType} />
@@ -64,16 +65,22 @@ export default function PlasmaTypeSelect({
 }: PlasmaTypeSelectProps) {
   const plasmaTypes = usePlasmaTypes()
 
+  // เมื่อมี products → ใช้ code จาก products เป็นตัวเลือก (การันตี match)
+  // ไม่มี products → ใช้ master plasma-types ตามเดิม
   const options = useMemo<OptionType[]>(() => {
     const opts: OptionType[] = []
     if (showAll) opts.push(toOption('', allLabel))
-    opts.push(...plasmaTypes.map((code) => toOption(code, code)))
+    if (products && products.length > 0) {
+      opts.push(...products.map((p) => toOption(p.code, p.name || p.code)))
+    } else {
+      opts.push(...plasmaTypes.map((code) => toOption(code, code)))
+    }
     return opts
-  }, [plasmaTypes, showAll, allLabel])
+  }, [plasmaTypes, products, showAll, allLabel])
 
   const handleChange = (opt: OptionType | null) => {
     const code = opt?.value ?? ''
-    const productId = products?.find((product) => product.code === code)?.id
+    const productId = products?.find((p) => p.code === code)?.id
     onChange(code, productId)
   }
 
