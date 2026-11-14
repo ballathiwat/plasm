@@ -1,11 +1,11 @@
 // frontend/src/pages/ExtBlood/components/ExtDetailModal.tsx
 
 import { useRef, useState } from 'react'
-import { FileText, Paperclip, Clock, Users, Droplet, CheckCircle, PackageOpen, PackageCheck, ExternalLink, FileImage, File, Lock, ImagePlus } from 'lucide-react'
-import Modal from '../../../components/common/Modal'
+import { FileText, Paperclip, Clock, Users, Droplet, CheckCircle, PackageOpen, PackageCheck, ExternalLink, FileImage, File, Lock, ImagePlus, Trash2 } from 'lucide-react'
+import Modal, { ConfirmModal } from '../../../components/common/Modal'
 import '../../../assets/styles/ext-blood-settings.css'
 import Button from '../../../components/common/Button'
-import { formatThaiDate, formatThaiDateTime, statusLabel, statusClass, bloodGroupClass, attachmentUrl as fileUrl, fixFileName as fixName, canAddPostApprovalImage, POST_IMAGE_ACCEPT, POST_IMAGE_MAX_FILES } from '../services/extHelpers'
+import { formatThaiDate, formatThaiDateTime, statusLabel, statusClass, bloodGroupClass, attachmentUrl as fileUrl, fixFileName as fixName, canAddPostApprovalImage, canAdminDeleteAttachment, POST_IMAGE_ACCEPT, POST_IMAGE_MAX_FILES } from '../services/extHelpers'
 import { sortCommittee, myPending, ROLE_LABEL } from '../services/committeeHelpers'
 import type { ExtDocument, ExtAttachment } from '../services/ExtBloodType'
 
@@ -31,10 +31,12 @@ interface Props {
   onExport: (doc: ExtDocument) => void
   /** เพิ่มรูปหลังอนุมัติ — คืนข้อความ error หรือ null เมื่อสำเร็จ */
   onUploadImages: (doc: ExtDocument, files: File[]) => Promise<string | null>
+  /** ADMIN ลบไฟล์แนบของเอกสารที่อนุมัติแล้ว — คืนข้อความ error หรือ null เมื่อสำเร็จ */
+  onDeleteAttachment: (doc: ExtDocument, attachmentId: string) => Promise<string | null>
 }
 
 /** รายการไฟล์แนบ 1 แถว — post = รูปที่เพิ่มหลังอนุมัติ (ติดป้าย + ผู้อัปโหลด + วันเวลา) */
-function FileRow({ a, canOpen, post }: { a: ExtAttachment; canOpen: boolean; post?: boolean }) {
+function FileRow({ a, canOpen, post, onDelete }: { a: ExtAttachment; canOpen: boolean; post?: boolean; onDelete?: (a: ExtAttachment) => void }) {
   const name = fixName(a.fileName)
   const body = (
     <>
@@ -50,7 +52,7 @@ function FileRow({ a, canOpen, post }: { a: ExtAttachment; canOpen: boolean; pos
       </span>
     </>
   )
-  return canOpen ? (
+  const link = canOpen ? (
     <a className="ext-file-link" href={fileUrl(a)} target="_blank" rel="noopener noreferrer" aria-label={`เปิดไฟล์ ${name} ในแท็บใหม่`}>
       {body}
       <span className="ext-file-link__size">{fileSize(a.fileSize)}</span>
@@ -62,13 +64,31 @@ function FileRow({ a, canOpen, post }: { a: ExtAttachment; canOpen: boolean; pos
       <span className="ext-file-link__lock"><Lock size={14} aria-hidden /> เฉพาะผู้เกี่ยวข้อง</span>
     </div>
   )
+  if (!onDelete) return link
+  return (
+    <div className="ext-file-row">
+      {link}
+      <button type="button" className="ext-file-row__del" aria-label={`ลบไฟล์ ${name}`} title="ลบไฟล์ (ผู้ดูแลระบบ)" onClick={() => onDelete(a)}><Trash2 size={16} aria-hidden /></button>
+    </div>
+  )
 }
 
-export default function ExtDetailModal({ doc, userId, isAdmin = false, onClose, onApprove, onExport, onUploadImages }: Props) {
+export default function ExtDetailModal({ doc, userId, isAdmin = false, onClose, onApprove, onExport, onUploadImages, onDeleteAttachment }: Props) {
   const fileInput = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const canUpload = canAddPostApprovalImage(doc, userId, isAdmin)
+  const canDelete = canAdminDeleteAttachment(doc, isAdmin)
+  const [delTarget, setDelTarget] = useState<ExtAttachment | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const askDelete = canDelete ? (a: ExtAttachment) => { setDeleteError(''); setDelTarget(a) } : undefined
+  const confirmDelete = async () => {
+    if (!delTarget) return
+    setDeleting(true)
+    const err = await onDeleteAttachment(doc, delTarget.id)
+    setDeleting(false); setDeleteError(err ?? ''); setDelTarget(null)
+  }
   const preFiles = doc.attachments.filter((a) => !a.isPostApproval)
   const postFiles = doc.attachments.filter((a) => a.isPostApproval)
   const pickImages = async (list: FileList | null) => {
@@ -152,11 +172,12 @@ export default function ExtDetailModal({ doc, userId, isAdmin = false, onClose, 
           </ul>
         </div>
 
+        {deleteError && <p className="ext-post-upload__error" role="alert">{deleteError}</p>}
         {preFiles.length > 0 && (
           <div className="ext-detail-section">
             <h4 className="ext-detail-section-title"><Paperclip size={16} /> {`ไฟล์แนบ (${preFiles.length})`}</h4>
             <div className="ext-detail-files">
-              {preFiles.map((a) => <FileRow key={a.id} a={a} canOpen={canOpenFiles} />)}
+              {preFiles.map((a) => <FileRow key={a.id} a={a} canOpen={canOpenFiles} onDelete={askDelete} />)}
             </div>
           </div>
         )}
@@ -173,11 +194,11 @@ export default function ExtDetailModal({ doc, userId, isAdmin = false, onClose, 
                 </span>
               )}
             </h4>
-            {canUpload && <p className="ext-post-upload__hint">{`รับเฉพาะรูป jpg, jpeg, png, webp — ไฟล์ละไม่เกิน 10 MB สูงสุด ${POST_IMAGE_MAX_FILES} รูปต่อครั้ง · เพิ่มแล้วลบไม่ได้ และไม่มีผลต่อสถานะการอนุมัติ`}</p>}
+            {canUpload && <p className="ext-post-upload__hint">{`รับเฉพาะรูป jpg, jpeg, png, webp — ไฟล์ละไม่เกิน 10 MB สูงสุด ${POST_IMAGE_MAX_FILES} รูปต่อครั้ง · เพิ่มแล้วลบเองไม่ได้ (ผู้ดูแลระบบลบได้) และไม่มีผลต่อสถานะการอนุมัติ`}</p>}
             {uploadError && <p className="ext-post-upload__error" role="alert">{uploadError}</p>}
             {postFiles.length > 0 && (
               <div className="ext-detail-files">
-                {postFiles.map((a) => <FileRow key={a.id} a={a} canOpen={canOpenFiles} post />)}
+                {postFiles.map((a) => <FileRow key={a.id} a={a} canOpen={canOpenFiles} post onDelete={askDelete} />)}
               </div>
             )}
           </div>
@@ -201,6 +222,9 @@ export default function ExtDetailModal({ doc, userId, isAdmin = false, onClose, 
           </div>
         )}
       </div>
+      <ConfirmModal open={!!delTarget} onClose={() => setDelTarget(null)} onConfirm={confirmDelete} type="danger" loading={deleting}
+        title="ลบไฟล์แนบ?" confirmText="ลบ"
+        message={delTarget ? `ลบ "${fixName(delTarget.fileName)}" ออกจาก ${doc.docNumber} — ลบแล้วกู้คืนไม่ได้ และจะถูกบันทึกในประวัติของเอกสาร` : ''} />
     </Modal>
   )
 }

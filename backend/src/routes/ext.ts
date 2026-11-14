@@ -448,6 +448,11 @@ router.delete("/documents/:id", async (req, res) => {
       res.status(400).json({ message: "ลบได้เฉพาะเอกสารร่าง" });
       return;
     }
+    // ── สิทธิ์: ลบได้เฉพาะผู้สร้างเอกสารหรือ ADMIN ──
+    if (doc.createdById !== req.user!.id && req.user!.role !== "ADMIN") {
+      res.status(403).json({ message: "ลบได้เฉพาะผู้สร้างเอกสาร" });
+      return;
+    }
     await prisma.extDocument.delete({ where: { id: req.params.id } });
     res.json({ message: "ลบเอกสารสำเร็จ" });
   } catch (e) {
@@ -1034,24 +1039,40 @@ router.delete("/attachments/:id", async (req, res) => {
       res.status(404).json({ message: "ไม่พบไฟล์แนบ" });
       return;
     }
-    // ── ล็อก: หลังส่งอนุมัติแล้วห้ามลบไฟล์แนบ (รวมรูปที่เพิ่มหลังอนุมัติ) ──
-    if (!isExtEditable(att.document.status)) {
+    const uid = req.user!.id;
+    const d = att.document;
+    const isAdmin = req.user!.role === "ADMIN";
+    // ── ล็อก: หลังส่งอนุมัติแล้วผู้ใช้ทั่วไปลบไฟล์แนบไม่ได้ (รวมรูปที่เพิ่มหลังอนุมัติ)
+    //    ข้อยกเว้น: ADMIN ลบได้เมื่อเอกสารเป็น APPROVED เพื่อจัดการรูปที่อัปโหลดผิด ──
+    const adminOverride = isAdmin && d.status === "APPROVED";
+    if (!isExtEditable(d.status) && !adminOverride) {
       res.status(409).json({
-        message: "ลบไฟล์แนบได้เฉพาะเอกสารร่างหรือที่ถูกส่งกลับแก้ไข",
+        message: isAdmin
+          ? "ผู้ดูแลระบบลบไฟล์แนบได้เฉพาะเอกสารร่าง ที่ถูกส่งกลับแก้ไข หรืออนุมัติแล้ว"
+          : "ลบไฟล์แนบได้เฉพาะเอกสารร่างหรือที่ถูกส่งกลับแก้ไข",
       });
       return;
     }
-    const uid = req.user!.id;
-    const d = att.document;
     const isRelated =
-      req.user!.role === "ADMIN" ||
+      isAdmin ||
       [d.createdById, d.verifierId, d.storerId, d.approverId].includes(uid);
     if (!isRelated) {
       res.status(403).json({ message: "ไม่มีสิทธิ์ลบไฟล์แนบนี้" });
       return;
     }
 
-    await prisma.extAttachment.delete({ where: { id: req.params.id } });
+    // ลบ record + บันทึก timeline ใน transaction เดียว (ไม่แตะ status ของเอกสาร)
+    await prisma.$transaction([
+      prisma.extAttachment.delete({ where: { id: att.id } }),
+      prisma.extTimeline.create({
+        data: {
+          documentId: d.id,
+          userId: uid,
+          action: "ลบไฟล์แนบ",
+          detail: `ลบ${att.isPostApproval ? "รูปที่เพิ่มหลังอนุมัติ" : "ไฟล์แนบ"} ${att.fileName}${adminOverride ? " (ผู้ดูแลระบบ ลบหลังอนุมัติ)" : ""}`,
+        },
+      }),
+    ]);
     res.json({ message: "ลบไฟล์แนบสำเร็จ" });
   } catch (e) {
     fail(res, e, "DELETE /ext/attachments/:id");
