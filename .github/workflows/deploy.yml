@@ -21,8 +21,19 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
 
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key athiwat@${{ secrets.SERVER_TAILSCALE_IP }} << 'ENDSSH'
+            # หยุดทันทีเมื่อคำสั่งใดล้มเหลว — ไม่เช่นนั้น workflow จะขึ้นเขียวทั้งที่ deploy ไม่สำเร็จ
+            set -e
+
             cd /home/athiwat/plasm
-            git pull origin main
+
+            # ห้ามแก้โค้ดบน server โดยตรง: ถ้ามีไฟล์ที่ track ถูกแก้ค้างไว้ git pull จะถูกปฏิเสธ
+            if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+              echo "DEPLOY ABORTED: มีไฟล์ถูกแก้ค้างไว้บน server (ยังไม่ได้ commit):"
+              git status --short --untracked-files=no
+              exit 1
+            fi
+
+            git pull --ff-only origin main
 
             cd backend
             npm install
@@ -34,4 +45,6 @@ jobs:
             cd ../frontend
             npm install
             npm run build
+
+            echo "deploy ok: $(git -C /home/athiwat/plasm log -1 --oneline)"
           ENDSSH
