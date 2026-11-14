@@ -4,10 +4,10 @@
 // ============================================================
 
 import PrintPreview, {
-  PrintSection, PrintInfoGrid, PrintTable, PrintStats, PrintChips, PrintNote, PrintTag, chunk,
+  PrintSection, PrintInfoGrid, PrintTable, PrintStats, PrintChips, PrintNote, PrintTag, chunk, printAttachmentBlocks,
   type PrintColumn, type PrintPageDef, type PrintInfoItem,
 } from '../../../components/common/PrintPreview'
-import { formatThaiDate, formatThaiDateTime, statusLabel } from '../services/extHelpers'
+import { formatThaiDate, formatThaiDateTime, statusLabel, attachmentUrl, fixFileName } from '../services/extHelpers'
 import { sortCommittee, ROLE_LABEL } from '../services/committeeHelpers'
 import type { ExtDocument, ExtBag, ExtCommitteeMember, ExtTimelineEntry } from '../services/ExtBloodType'
 
@@ -89,16 +89,12 @@ export default function ExtBloodPrint({ open, onClose, doc }: ExtBloodPrintProps
   }
 
   if (doc.attachments?.length) {
-    pages.push({ title: 'ไฟล์แนบ', content: (
-      <PrintSection title="ไฟล์แนบ" hint={`${doc.attachments.length} ไฟล์`}>
-        <PrintTable columns={[
-          { header: '#', width: 40, align: 'center', render: (_r, i) => i + 1 },
-          { header: 'ชื่อไฟล์', render: (r) => r.fileName },
-          { header: 'ประเภท', width: 100, render: (r) => r.fileType || '—' },
-          { header: 'ขนาด', width: 100, align: 'right', render: (r) => r.fileSize > 1048576 ? `${(r.fileSize / 1048576).toFixed(1)} MB` : `${(r.fileSize / 1024).toFixed(0)} KB` },
-        ]} data={doc.attachments} rowKey={(r) => r.id} />
-      </PrintSection>
-    ) })
+    // รูป → แสดงรูปจริง (grid 2 คอลัมน์), ไฟล์อื่น → ไอคอน + ชื่อไฟล์ · ใช้ blocks เพื่อขึ้นหน้าใหม่อัตโนมัติ
+    const files = doc.attachments.map((a) => ({ key: a.id, name: fixFileName(a.fileName), url: attachmentUrl(a), mimeType: a.fileType }))
+    pages.push({ title: 'ไฟล์แนบ', overflowSubtitle: '(ต่อ)', blocks: [
+      <PrintSection title="ไฟล์แนบ" hint={`${doc.attachments.length} ไฟล์`} />,
+      ...printAttachmentBlocks(files, { columns: 2 }),
+    ] })
   }
 
   return <PrintPreview open={open} onClose={onClose} docNo={doc.docNumber} title="บันทึกรับเลือดจากภายนอก" subtitle="External Blood Receiving" docNoLabel="เลขที่เอกสาร" watermark="PLASM" watermarkSub="External Blood" pages={pages} />

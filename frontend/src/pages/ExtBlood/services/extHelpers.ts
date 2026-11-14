@@ -1,6 +1,15 @@
 // frontend/src/pages/ExtBlood/services/extHelpers.ts
 
-import type { ExtDocStatus } from './ExtBloodType'
+import { EXT_ATTACHMENTS } from '../../../helpers/url_helper'
+import type { ExtAttachment, ExtDocStatus } from './ExtBloodType'
+
+const API_URL = import.meta.env.VITE_API_URL || ''
+
+// URL เปิดไฟล์แนบจริง — filePath ใน DB เปิดตรงไม่ได้ ต้องผ่าน endpoint ที่ตรวจสิทธิ์ (cookie)
+export const attachmentUrl = (a: Pick<ExtAttachment, 'id'>) => `${API_URL}${EXT_ATTACHMENTS}/${a.id}/file`
+
+// ชื่อไฟล์ภาษาไทยที่ multer อ่านเป็น latin1 → แปลงกลับเป็น UTF-8
+export const fixFileName = (n: string) => { try { return /[\u00c0-\u00ff][\u0080-\u00bf]/.test(n) ? decodeURIComponent(escape(n)) : n } catch { return n } }
 
 const THAI_MONTHS = [
   'ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
