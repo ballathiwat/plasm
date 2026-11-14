@@ -6,7 +6,7 @@ import DateInput from '../../../components/common/DateInput'
 import PlasmaTypeSelect from '../../../components/common/PlasmaTypeSelect'
 import BloodGroupSelect from '../../../components/common/BloodGroupSelect'
 import type { ExtFormData } from '../services/ExtFormType'
-import type { ExtSource, ExtStorage } from '../../ExtBlood/services/ExtBloodType'
+import type { ExtSource, ExtStorage, ExtBloodProduct } from '../../ExtBlood/services/ExtBloodType'
 
 const toOption = (value: string, label: string): OptionType => ({ value, label })
 const findOption = (opts: OptionType[], val: string) => opts.find((o) => o.value === val) ?? null
@@ -16,11 +16,12 @@ interface Props {
   setField: <K extends keyof ExtFormData>(k: K, v: ExtFormData[K]) => void
   sources: ExtSource[]
   storages: ExtStorage[]
+  bloodProducts: ExtBloodProduct[]
   errors?: Partial<Record<keyof ExtFormData, string>>
   nextLabel?: string
 }
 
-export default function ExtFormReceiveInfo({ form, setField, sources, storages, errors = {} }: Props) {
+export default function ExtFormReceiveInfo({ form, setField, sources, storages, bloodProducts, errors = {} }: Props) {
   const sourceOpts = useMemo(() => sources.map((s) => toOption(s.id, s.name)), [sources])
   const storageOpts = useMemo(() => storages.map((s) => toOption(s.id, s.name)), [storages])
   return (
@@ -33,7 +34,18 @@ export default function ExtFormReceiveInfo({ form, setField, sources, storages, 
           onChange={(opt) => setField('sourceId', opt?.value ?? '')} isClearable={false} error={errors.sourceId} />
       </div>
       <div className="ext-req">
-        <PlasmaTypeSelect label="ชนิดเลือด" placeholder="เลือกชนิด..." value={form.plasmaType} onChange={(v) => setField('plasmaType', v)} showAll={false} error={errors.plasmaType} />
+        <PlasmaTypeSelect
+          label="ชนิดเลือด"
+          placeholder="เลือกชนิด..."
+          value={form.plasmaType}
+          products={bloodProducts}
+          onChange={(code, productId) => {
+            setField('plasmaType', code)
+            setField('bloodProductId', productId ?? '')
+          }}
+          showAll={false}
+          error={errors.plasmaType}
+        />
       </div>
       <div className="ext-req">
         <BloodGroupSelect value={form.bloodGroup} onChange={(v) => setField('bloodGroup', v)} showAll={false} error={errors.bloodGroup} />
