@@ -72,3 +72,29 @@ export function discardUploadedFiles(files: Express.Multer.File[] | undefined): 
     })
   }
 }
+
+const EXT_UPLOAD_ROOT = path.resolve(__dirname, '../../uploads/ext')
+
+/**
+ * ลบไฟล์แนบจริงออกจากดิสก์ หลังลบ record ในฐานข้อมูลสำเร็จแล้ว
+ * - รับค่า file_path จาก ext_attachments (เช่น "uploads/ext/<name>") ใช้เฉพาะชื่อไฟล์ กัน path traversal
+ * - ไฟล์ที่ไม่มีอยู่แล้วถือว่าสำเร็จ · ลบไม่ได้จะ log ไว้และคืนรายชื่อที่ลบไม่สำเร็จ (ไม่ throw)
+ */
+export async function removeAttachmentFiles(filePaths: string[]): Promise<string[]> {
+  const failed: string[] = []
+  for (const fp of filePaths) {
+    const abs = path.resolve(EXT_UPLOAD_ROOT, path.basename(fp))
+    if (!abs.startsWith(EXT_UPLOAD_ROOT + path.sep)) {
+      failed.push(fp)
+      continue
+    }
+    try {
+      await fs.promises.unlink(abs)
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code === 'ENOENT') continue
+      console.error('removeAttachmentFiles', abs, e)
+      failed.push(fp)
+    }
+  }
+  return failed
+}
