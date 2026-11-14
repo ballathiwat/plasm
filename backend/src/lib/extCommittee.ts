@@ -12,7 +12,7 @@ const DEFAULT_RULE: CommitteeRole[] = ['VERIFIER', 'STORER', 'APPROVER']
 export async function getRoleRules(): Promise<Record<string, CommitteeRole[]>> {
   const [setting, products] = await Promise.all([
     prisma.setting.findUnique({ where: { key: RULES_SETTING_KEY } }),
-    prisma.extBloodProduct.findMany({ where: { active: true }, orderBy: { sort: 'asc' } }),
+    prisma.masterPlasmaType.findMany({ where: { active: true }, orderBy: { sort: 'asc' } }),
   ])
   const custom = (setting?.value ?? {}) as Record<string, unknown>
   const out: Record<string, CommitteeRole[]> = {}

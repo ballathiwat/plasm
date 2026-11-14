@@ -1,7 +1,7 @@
 // frontend/src/pages/ExtBloodSettings/services/ExtSettingsService.ts
 import apiAdapter from '../../../helpers/http/apiAdapter'
-import { EXT_SOURCES, EXT_STORAGES, EXT_BLOOD_PRODUCTS, EXT_EXPORT_REASONS } from '../../../helpers/url_helper'
-import type { ExtSource, ExtStorage, ExtBloodProduct, ExtExportReason } from '../../ExtBlood/services/ExtBloodType'
+import { EXT_SOURCES, EXT_STORAGES, EXT_EXPORT_REASONS } from '../../../helpers/url_helper'
+import type { ExtSource, ExtStorage, ExtExportReason } from '../../ExtBlood/services/ExtBloodType'
 
 const svc = {
   // Sources
@@ -18,12 +18,7 @@ const svc = {
   deleteStorage: (id: string) => apiAdapter.delete<{ message: string }>(`${EXT_STORAGES}/${id}`),
   reorderStorages: (ids: string[]) => apiAdapter.patch<{ ids: string[] }, void>(`${EXT_STORAGES}/reorder`, { ids }),
 
-  // Blood Products (nameField = code)
-  getBloodProducts: () => apiAdapter.get<ExtBloodProduct[]>(EXT_BLOOD_PRODUCTS),
-  createBloodProduct: (code: string) => apiAdapter.post<{ code: string }, ExtBloodProduct>(EXT_BLOOD_PRODUCTS, { code }),
-  updateBloodProduct: (id: string, data: Partial<ExtBloodProduct>) => apiAdapter.put<typeof data, ExtBloodProduct>(`${EXT_BLOOD_PRODUCTS}/${id}`, data),
-  deleteBloodProduct: (id: string) => apiAdapter.delete<{ message: string }>(`${EXT_BLOOD_PRODUCTS}/${id}`),
-  reorderBloodProducts: (ids: string[]) => apiAdapter.patch<{ ids: string[] }, void>(`${EXT_BLOOD_PRODUCTS}/reorder`, { ids }),
+  // Blood Products → ใช้ MasterPlasmaType ผ่านหน้า Master Settings แทน (migration 20261114)
 
   // Export Reasons
   getExportReasons: () => apiAdapter.get<ExtExportReason[]>(EXT_EXPORT_REASONS),

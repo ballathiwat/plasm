@@ -191,7 +191,7 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
       bloodProductId ||
       (req.body.plasmaType
         ? (
-            await prisma.extBloodProduct.findFirst({
+            await prisma.masterPlasmaType.findFirst({
               where: { code: req.body.plasmaType },
             })
           )?.id
@@ -1000,7 +1000,7 @@ router.get("/report", async (req, res) => {
 
 function masterCrud(
   path: string,
-  model: "extSource" | "extStorage" | "extBloodProduct" | "extExportReason",
+  model: "extSource" | "extStorage" | "extExportReason",
   nameField = "name",
 ) {
   const db = (prisma as any)[model];
@@ -1075,7 +1075,6 @@ function masterCrud(
 
 masterCrud("/sources", "extSource");
 masterCrud("/storages", "extStorage");
-masterCrud("/blood-products", "extBloodProduct", "code");
 masterCrud("/export-reasons", "extExportReason");
 
 // ═════════════════════════════════════════════

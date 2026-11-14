@@ -49,10 +49,17 @@ async function main() {
   console.log('✅ Minimum stock settings')
 
   // ===== 4. Master data (ต้องมาก่อนกล่อง) =====
-  const plasmaTypes = ['FFP', 'Cryo']
-  for (const [i, code] of plasmaTypes.entries()) {
+  const plasmaTypes = [
+    { code: 'FFP', name: 'Fresh Frozen Plasma' },
+    { code: 'Cryo', name: 'Cryoprecipitate' },
+    { code: 'LDRC', name: 'Leukocyte Depleted Red Cell' },
+    { code: 'PRC', name: 'Packed Red Cell' },
+    { code: 'PC', name: 'Platelet Concentrate' },
+    { code: 'WB', name: 'Whole Blood' },
+  ]
+  for (const [i, p] of plasmaTypes.entries()) {
     await prisma.masterPlasmaType.upsert({
-      where: { code }, update: {}, create: { code, sort: i },
+      where: { code: p.code }, update: {}, create: { code: p.code, name: p.name, sort: i },
     })
   }
 
@@ -140,17 +147,7 @@ async function main() {
   for (const [i, s] of extStorages.entries()) {
     await prisma.extStorage.upsert({ where: { name: s.name }, update: {}, create: { name: s.name, sort: i } })
   }
-  const extProducts = [
-    { code: 'LDRC', name: 'Leukocyte Depleted Red Cell' },
-    { code: 'PRC', name: 'Packed Red Cell' },
-    { code: 'FFP', name: 'Fresh Frozen Plasma' },
-    { code: 'PC', name: 'Platelet Concentrate' },
-    { code: 'WB', name: 'Whole Blood' },
-    { code: 'Cryo', name: 'Cryoprecipitate' },
-  ]
-  for (const [i, p] of extProducts.entries()) {
-    await prisma.extBloodProduct.upsert({ where: { code: p.code }, update: {}, create: { code: p.code, name: p.name, sort: i } })
-  }
+  // ExtBloodProduct ถูกยุบรวมเข้า MasterPlasmaType แล้ว (migration 20261114)
   const extReasons = [
     { name: 'จ่ายให้ผู้ป่วย' },
     { name: 'ส่งคืนศูนย์เลือด' },
