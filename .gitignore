@@ -46,3 +46,8 @@ temp/
 backend_backup/
 *.bak
 .*-backup/
+
+# Uploaded files (ไฟล์แนบจากผู้ใช้ — ห้าม commit) เก็บเฉพาะโฟลเดอร์ว่างไว้ให้ multer เขียนได้
+backend/uploads/**
+!backend/uploads/ext/
+!backend/uploads/ext/.gitkeep
