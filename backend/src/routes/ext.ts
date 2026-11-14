@@ -213,20 +213,36 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
         ? [req.body["bags[]"] || req.body.bags]
         : [];
 
-    const missingFields: string[] = [];
-    if (!receivedDate?.trim()) missingFields.push("วันที่รับ");
-    if (!sourceId?.trim()) missingFields.push("สถานที่ส่งเลือด");
-    if (!resolvedProductId?.trim()) missingFields.push("ชนิดเลือด");
-    if (!bloodGroup?.trim()) missingFields.push("หมู่เลือด");
-    if (!boxLabel?.trim()) missingFields.push("หมายเลขกล่อง");
-    if (!storageId?.trim()) missingFields.push("ตำแหน่งจัดเก็บ");
+    // ── validate required fields (ข้ามเมื่อเป็น DRAFT) ──
+    const isDraft = status !== "PENDING";
+    if (!isDraft) {
+      const missingFields: string[] = [];
+      if (!receivedDate?.trim()) missingFields.push("วันที่รับ");
+      if (!sourceId?.trim()) missingFields.push("สถานที่ส่งเลือด");
+      if (!resolvedProductId?.trim()) missingFields.push("ชนิดเลือด");
+      if (!bloodGroup?.trim()) missingFields.push("หมู่เลือด");
+      if (!boxLabel?.trim()) missingFields.push("หมายเลขกล่อง");
+      if (!storageId?.trim()) missingFields.push("ตำแหน่งจัดเก็บ");
 
-    if (missingFields.length > 0) {
-      res.status(400).json({
-        message: `กรุณากรอกข้อมูลให้ครบ: ${missingFields.join(", ")}`,
-        missingFields,
-      });
-      return;
+      if (missingFields.length > 0) {
+        res.status(400).json({
+          message: `กรุณากรอกข้อมูลให้ครบ: ${missingFields.join(", ")}`,
+          missingFields,
+        });
+        return;
+      }
+    }
+
+    // ── เช็คเลขถุงซ้ำภายในรายการเดียวกัน ──
+    if (bags.length > 0) {
+      const uniqueBags = [...new Set(bags)];
+      if (uniqueBags.length !== bags.length) {
+        const dupesInArray = bags.filter((b, i) => bags.indexOf(b) !== i);
+        res.status(400).json({
+          message: `เลขถุงซ้ำกันในรายการ: ${[...new Set(dupesInArray)].join(", ")}`,
+        });
+        return;
+      }
     }
 
     // ── เช็คเลขถุงซ้ำในระบบ ──
@@ -317,6 +333,18 @@ router.post(
           ? [req.body["bags[]"] || req.body.bags]
           : [];
       const files = (req.files as Express.Multer.File[]) || [];
+
+      // ── เช็คเลขถุงซ้ำภายในรายการเดียวกัน ──
+      if (bags.length > 0) {
+        const uniqueBags = [...new Set(bags)];
+        if (uniqueBags.length !== bags.length) {
+          const dupesInArray = bags.filter((b, i) => bags.indexOf(b) !== i);
+          res.status(400).json({
+            message: `เลขถุงซ้ำกันในรายการ: ${[...new Set(dupesInArray)].join(", ")}`,
+          });
+          return;
+        }
+      }
 
       // ── เช็คเลขถุงซ้ำในระบบ (ไม่นับเอกสารตัวเอง) ──
       if (bags.length > 0) {
