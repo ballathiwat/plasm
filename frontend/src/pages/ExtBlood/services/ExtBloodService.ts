@@ -3,7 +3,7 @@
 import apiAdapter from '../../../helpers/http/apiAdapter'
 import {
   EXT_DOCUMENTS, EXT_SUMMARY, EXT_REPORT,
-  EXT_SOURCES, EXT_STORAGES, EXT_BLOOD_PRODUCTS, EXT_EXPORT_REASONS,
+  EXT_SOURCES, EXT_STORAGES, EXT_EXPORT_REASONS, MASTER_PLASMA_TYPES,
   EXT_ATTACHMENTS, EXT_PIN_SETUP, EXT_PIN_VERIFY, EXT_COMMITTEE, EXT_USERS,
 } from '../../../helpers/url_helper'
 import type {
@@ -68,7 +68,7 @@ const extBloodService = {
       EXT_DOCUMENTS.replace('/documents', '/bags/check'),
       { bagNumber, ...(excludeDocId ? { excludeDocId } : {}) } as Record<string, string>,
     ),
-  getBloodProducts: () => apiAdapter.get<ExtBloodProduct[]>(EXT_BLOOD_PRODUCTS),
+  getBloodProducts: () => apiAdapter.get<ExtBloodProduct[]>(MASTER_PLASMA_TYPES),
   getExportReasons: () => apiAdapter.get<ExtExportReason[]>(EXT_EXPORT_REASONS),
 
   // PIN

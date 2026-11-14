@@ -62,7 +62,7 @@ export const EXT_SUMMARY = `${EXT_BASE}/summary`
 export const EXT_REPORT = `${EXT_BASE}/report`
 export const EXT_SOURCES = `${EXT_BASE}/sources`
 export const EXT_STORAGES = `${EXT_BASE}/storages`
-export const EXT_BLOOD_PRODUCTS = `${EXT_BASE}/blood-products`
+// EXT_BLOOD_PRODUCTS ถูกยุบรวมเข้า MASTER_PLASMA_TYPES แล้ว (migration 20261114)
 export const EXT_EXPORT_REASONS = `${EXT_BASE}/export-reasons`
 export const EXT_ATTACHMENTS = `${EXT_BASE}/attachments`
 export const EXT_PIN_SETUP = `${EXT_BASE}/pin/setup`

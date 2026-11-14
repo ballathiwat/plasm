@@ -22,8 +22,9 @@ export interface ExtSource {
 export interface ExtStorage {
   id: string; name: string; active: boolean; sort: number
 }
+/** ใช้ MasterPlasmaType เป็น single source of truth (migration 20261114) */
 export interface ExtBloodProduct {
-  id: string; code: string; name?: string; active: boolean; sort: number
+  id: string; code: string; name?: string; color?: string; active: boolean; sort: number
 }
 export interface ExtExportReason {
   id: string; name: string; active: boolean; sort: number
