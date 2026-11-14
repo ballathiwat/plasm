@@ -17,6 +17,7 @@ import {
   extImageUpload,
   isRealImageFile,
   discardUploadedFiles,
+  removeAttachmentFiles,
   EXT_IMAGE_ONLY_MESSAGE,
   EXT_MAX_FILES,
 } from "../lib/extUpload";
@@ -429,6 +430,7 @@ router.delete("/documents/:id", async (req, res) => {
   try {
     const doc = await prisma.extDocument.findUnique({
       where: { id: req.params.id },
+      include: { attachments: { select: { filePath: true } } },
     });
     if (!doc) {
       res.status(404).json({ message: "ไม่พบเอกสาร" });
@@ -444,6 +446,8 @@ router.delete("/documents/:id", async (req, res) => {
       return;
     }
     await prisma.extDocument.delete({ where: { id: req.params.id } });
+    // ไฟล์แนบของเอกสารถูกลบ record ไปด้วย (cascade) → ลบไฟล์จริงออกจากดิสก์ด้วย
+    await removeAttachmentFiles(doc.attachments.map((a) => a.filePath));
     res.json({ message: "ลบเอกสารสำเร็จ" });
   } catch (e) {
     fail(res, e, "DELETE /ext/documents/:id");
@@ -861,6 +865,8 @@ router.delete("/attachments/:id", async (req, res) => {
         },
       }),
     ]);
+    // ลบไฟล์จริงออกจากดิสก์หลัง record ถูกลบแล้ว (ลบไฟล์ไม่ได้ → log ไว้ ไม่ทำให้คำขอล้มเหลว)
+    await removeAttachmentFiles([att.filePath]);
     res.json({ message: "ลบไฟล์แนบสำเร็จ" });
   } catch (e) {
     fail(res, e, "DELETE /ext/attachments/:id");
