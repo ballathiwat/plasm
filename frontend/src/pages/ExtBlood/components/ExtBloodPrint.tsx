@@ -14,6 +14,8 @@ import type { ExtDocument, ExtBag, ExtCommitteeMember, ExtTimelineEntry } from '
 const CM_STATUS: Record<string, string> = { DRAFT: 'ยังไม่ส่ง', PENDING: 'รออนุมัติ', APPROVED: 'อนุมัติแล้ว', REJECTED: 'ไม่อนุมัติ' }
 const CM_TONE: Record<string, 'success' | 'danger' | 'warning' | 'neutral'> = { APPROVED: 'success', REJECTED: 'danger', PENDING: 'warning', DRAFT: 'neutral' }
 const BAGS_PER_PAGE = 60
+// จำนวนคอลัมน์ของรูปไฟล์แนบ: 1 = รูปใหญ่เต็มความกว้างหน้า · 2 = ประหยัดกระดาษเมื่อรูปเยอะ
+const ATTACH_COLUMNS = 1
 
 function buildInfo(doc: ExtDocument): PrintInfoItem[] {
   return [
@@ -89,12 +91,12 @@ export default function ExtBloodPrint({ open, onClose, doc }: ExtBloodPrintProps
   }
 
   if (doc.attachments?.length) {
-    // รูป → แสดงรูปจริง (grid 2 คอลัมน์), ไฟล์อื่น → ไอคอน + ชื่อไฟล์ · ใช้ blocks เพื่อขึ้นหน้าใหม่อัตโนมัติ
+    // รูป → แสดงรูปจริง, ไฟล์อื่น → ไอคอน + ชื่อไฟล์ · ใช้ blocks เพื่อขึ้นหน้าใหม่อัตโนมัติ
     const files = doc.attachments.map((a) => ({ key: a.id, name: fixFileName(a.fileName), url: attachmentUrl(a), mimeType: a.fileType }))
-    pages.push({ title: 'ไฟล์แนบ', overflowSubtitle: '(ต่อ)', blocks: [
-      <PrintSection title="ไฟล์แนบ" hint={`${doc.attachments.length} ไฟล์`} />,
-      ...printAttachmentBlocks(files, { columns: 2 }),
-    ] })
+    pages.push({ title: 'ไฟล์แนบ', overflowSubtitle: '(ต่อ)', blocks: printAttachmentBlocks(files, {
+      columns: ATTACH_COLUMNS,
+      heading: <PrintSection title="ไฟล์แนบ" hint={`${doc.attachments.length} ไฟล์`} />,
+    }) })
   }
 
   return <PrintPreview open={open} onClose={onClose} docNo={doc.docNumber} title="บันทึกรับเลือดจากภายนอก" subtitle="External Blood Receiving" docNoLabel="เลขที่เอกสาร" watermark="PLASM" watermarkSub="External Blood" pages={pages} />

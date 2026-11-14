@@ -36,6 +36,8 @@ const PAGE_PAD_MM = 24;
 const SAFETY_MM = 1.5;
 const IMG_WAIT_MS = 15000;
 
+const nextFrames = () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
 // true เมื่อ render อยู่ใน container ที่ใช้วัดความสูง (ซ่อน) — ใช้กันไม่ให้โหลดรูปซ้ำ 2 รอบ
 const MeasureContext = createContext(false);
 
@@ -84,7 +86,7 @@ const PrintPreview = ({
 }: PrintPreviewProps) => {
   const [showWatermark, setShowWatermark] = useState(true);
   const measureRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
   const [preparing, setPreparing] = useState(false);
   const [heights, setHeights] = useState<number[][] | null>(null);
   const [env, setEnv] = useState<{ headerH: number; availPx: number } | null>(null);
@@ -111,6 +113,11 @@ const PrintPreview = ({
     };
     measure();
     void document.fonts?.ready.then(measure);
+    // รูปที่สูงตามสัดส่วนจริงจะเปลี่ยนความสูง block หลังโหลดเสร็จ → วัดใหม่เพื่อแบ่งหน้าให้ถูก
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    root.querySelectorAll<HTMLElement>("[data-blk]").forEach((el) => ro.observe(el));
+    return () => ro.disconnect();
   }, [open, hasFlow, pages]);
 
   const rendered = useMemo(() => {
@@ -159,8 +166,14 @@ const PrintPreview = ({
   const handlePrint = async () => {
     if (preparing) return;
     setPreparing(true);
-    try { await waitForImages(scrollRef.current); } finally { setPreparing(false); }
-    if (!scrollRef.current) return; // ปิดพรีวิวไปแล้วระหว่างรอรูป
+    try {
+      // รอรูป → รอให้แบ่งหน้าใหม่เสร็จ (2 เฟรม) → รอรูปที่ถูกย้ายหน้าอีกรอบ
+      for (let i = 0; i < 3; i += 1) {
+        await waitForImages(portalRef.current);
+        await nextFrames();
+      }
+    } finally { setPreparing(false); }
+    if (!portalRef.current) return; // ปิดพรีวิวไปแล้วระหว่างรอรูป
     const prev = document.title;
     const restore = () => { document.title = prev; window.removeEventListener("afterprint", restore); };
     window.addEventListener("afterprint", restore);
@@ -169,7 +182,7 @@ const PrintPreview = ({
   };
 
   return createPortal(
-    <div className="pv-portal">
+    <div className="pv-portal" ref={portalRef}>
       <div className="pv-toolbar">
         <div className="pv-toolbar__title">
           <FileText size={16} /> ตัวอย่างก่อนพิมพ์
@@ -187,7 +200,7 @@ const PrintPreview = ({
         <Button variant="danger" icon={<X size={14} />} onClick={onClose}>ปิด</Button>
       </div>
 
-      <div className="pv-scroll" ref={scrollRef}>
+      <div className="pv-scroll">
         {rendered.map((p, i) => (
           <div className="pv-page" key={i}>
             {watermark && showWatermark && (
@@ -342,14 +355,17 @@ const fileExt = (name: string) => {
   return m ? m[1].toUpperCase() : "";
 };
 
-const PrintAttachmentImage = ({ file, ratio }: { file: PrintAttachmentFile; ratio?: string }) => {
+// single = 1 รูปต่อแถว: กว้างเต็มพื้นที่เนื้อหา สูงตามสัดส่วนจริง (ไม่ขยายเกินขนาดต้นฉบับ)
+// grid (2+ คอลัมน์) = กรอบสัดส่วนคงที่ — ตอนวัดความสูงไม่ต้องโหลดรูป
+const PrintAttachmentImage = ({ file, ratio, single }: { file: PrintAttachmentFile; ratio?: string; single?: boolean }) => {
   const measuring = useContext(MeasureContext);
   const [failed, setFailed] = useState(false);
+  const frameCls = single ? "pv-att__frame pv-att__frame--auto" : "pv-att__frame";
   return (
     <figure className="pv-att__item">
-      <div className="pv-att__frame" style={ratio ? { aspectRatio: ratio } : undefined}>
-        {measuring ? null : file.url && !failed ? (
-          <img src={file.url} alt={file.name} loading="eager" onError={() => setFailed(true)} />
+      <div className={frameCls} style={!single && ratio ? { aspectRatio: ratio } : undefined}>
+        {measuring && !single ? null : file.url && !failed ? (
+          <img src={file.url} alt={measuring ? "" : file.name} loading="eager" onError={() => setFailed(true)} />
         ) : (
           <span className="pv-att__ph"><ImageOff size={20} aria-hidden />ไม่สามารถแสดงรูปได้</span>
         )}
@@ -359,16 +375,21 @@ const PrintAttachmentImage = ({ file, ratio }: { file: PrintAttachmentFile; rati
   );
 };
 
-export interface PrintAttachmentOptions { columns?: number; ratio?: string; }
+export interface PrintAttachmentOptions {
+  columns?: number;     // 1 = รูปใหญ่เต็มความกว้าง (ค่าเริ่มต้น) · 2+ = grid กรอบสัดส่วนคงที่
+  ratio?: string;       // สัดส่วนกรอบ ใช้เฉพาะ grid 2+ คอลัมน์ (ค่าเริ่มต้น 4 / 3)
+  heading?: ReactNode;  // หัวข้อ section — ผูกไว้กับ block แรกเพื่อไม่ให้หัวข้อค้างอยู่ท้ายหน้าเดี่ยว ๆ
+}
 
 // คืนเป็น block ต่อ 1 แถว — ส่งเข้า PrintPageDef.blocks เพื่อให้ขึ้นหน้าใหม่อัตโนมัติโดยรูปไม่ถูกตัด
-export const printAttachmentBlocks = (files: PrintAttachmentFile[], { columns = 2, ratio }: PrintAttachmentOptions = {}): ReactNode[] => {
+export const printAttachmentBlocks = (files: PrintAttachmentFile[], { columns = 1, ratio, heading }: PrintAttachmentOptions = {}): ReactNode[] => {
   const cols = Math.max(1, Math.floor(columns));
+  const single = cols === 1;
   const images = files.filter(isImageAttachment);
   const others = files.filter((f) => !isImageAttachment(f));
   const blocks: ReactNode[] = chunk(images, cols).map((row) => (
-    <div className="pv-att" style={{ gridTemplateColumns: `repeat(${cols},1fr)` }}>
-      {row.map((f) => <PrintAttachmentImage key={`${f.key}-${f.url ?? ""}`} file={f} ratio={ratio} />)}
+    <div className={single ? "pv-att pv-att--single" : "pv-att"} style={single ? undefined : { gridTemplateColumns: `repeat(${cols},1fr)` }}>
+      {row.map((f) => <PrintAttachmentImage key={`${f.key}-${f.url ?? ""}`} file={f} ratio={ratio} single={single} />)}
     </div>
   ));
   if (others.length > 0) {
@@ -383,6 +404,10 @@ export const printAttachmentBlocks = (files: PrintAttachmentFile[], { columns = 
         ))}
       </ul>,
     );
+  }
+  if (heading != null) {
+    if (blocks.length === 0) blocks.push(heading);
+    else blocks[0] = <>{heading}{blocks[0]}</>;
   }
   return blocks;
 };
