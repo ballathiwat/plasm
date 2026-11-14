@@ -189,7 +189,7 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
     const {
       receivedDate,
       sourceId,
-      bloodProductId,
+      plasmaType,
       bloodGroup,
       boxLabel,
       storageId,
@@ -198,15 +198,14 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
       editReason,
     } = req.body as Record<string, string | undefined>;
 
-    const resolvedProductId =
-      bloodProductId ||
-      (req.body.plasmaType
-        ? (
-            await prisma.extBloodProduct.findFirst({
-              where: { code: req.body.plasmaType },
-            })
-          )?.id
-        : undefined);
+    // ── resolve bloodProductId จาก plasmaType code (single source: master_plasma_types) ──
+    const resolvedProductId = plasmaType
+      ? (await prisma.extBloodProduct.findFirst({ where: { code: plasmaType } }))?.id
+      : undefined;
+    if (plasmaType && !resolvedProductId) {
+      res.status(400).json({ message: `ไม่พบชนิดเลือด: ${plasmaType}` });
+      return;
+    }
     // ── parse bags (รองรับทั้ง bags[] และ bags) ──
     const rawBags = req.body["bags[]"] ?? req.body.bags;
     const bags: string[] = rawBags
@@ -322,13 +321,23 @@ router.post(
       const {
         receivedDate,
         sourceId,
-        bloodProductId,
+        plasmaType,
         bloodGroup,
         storageId,
         status,
         deferApproval,
         editReason,
       } = req.body as Record<string, string | undefined>;
+
+      // ── resolve bloodProductId จาก plasmaType code ──
+      const resolvedProductId = plasmaType
+        ? (await prisma.extBloodProduct.findFirst({ where: { code: plasmaType } }))?.id
+        : undefined;
+      if (plasmaType && !resolvedProductId) {
+        res.status(400).json({ message: `ไม่พบชนิดเลือด: ${plasmaType}` });
+        return;
+      }
+
       // ── parse bags (รองรับทั้ง bags[] และ bags) ──
       const rawBags = req.body["bags[]"] ?? req.body.bags;
       const bags: string[] = rawBags
@@ -375,7 +384,7 @@ router.post(
         data: {
           receivedDate: receivedDate ? new Date(receivedDate) : undefined,
           sourceId,
-          bloodProductId,
+          bloodProductId: resolvedProductId,
           bloodGroup,
           storageId,
           status: status === "PENDING" ? "PENDING" : existing.status,

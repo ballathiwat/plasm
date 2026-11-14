@@ -121,18 +121,10 @@ export default function useExtForm() {
 
   const setField = useCallback(
     <K extends keyof ExtFormData>(key: K, val: ExtFormData[K]) => {
-      setForm((p) => {
-        const next = { ...p, [key]: val };
-        // auto-resolve bloodProductId เมื่อเลือก plasmaType
-        if (key === "plasmaType" && typeof val === "string") {
-          const found = bloodProducts.find((b) => b.code === val);
-          if (found) next.bloodProductId = found.id;
-        }
-        return next;
-      });
+      setForm((p) => ({ ...p, [key]: val }));
       setDirty(true);
     },
-    [bloodProducts],
+    [],
   );
   const setCommittee = (c: CommitteeDraft[]) => {
     setDirty(true);
@@ -245,7 +237,7 @@ export default function useExtForm() {
     setStepRaw(s);
   };
 
-  // หน้าที่ที่แนะนำตามชนิดเลือด
+  // หน้าที่ที่แนะนำตามชนิดเลือด (fallback: ถ้าเปิดเอกสารเก่าที่มีแค่ bloodProductId)
   const productCode =
     form.plasmaType ||
     bloodProducts.find((b) => b.id === form.bloodProductId)?.code ||
@@ -261,35 +253,22 @@ export default function useExtForm() {
 
   const buildFormData = (): FormData => {
     const fd = new FormData();
-    const matched = bloodProducts.find((b) => b.code === form.plasmaType);
-    const bloodProductId = form.bloodProductId || matched?.id || "";
     // ── safety-net: deduplicate bags before sending ──
     const uniqueBags = [...new Set(form.bags)];
     const data = {
       ...form,
       bags: uniqueBags,
-      bloodProductId,
       boxLabel: form.boxLabel || nextLabel,
     };
     Object.entries(data).forEach(([k, v]) => {
       if (k === "bags") (v as string[]).forEach((b) => fd.append("bags[]", b));
+      else if (k === "bloodProductId") { /* skip — backend resolves from plasmaType */ }
       else if (v !== undefined) fd.append(k, String(v));
     });
     fd.set("status", "DRAFT");
     attachments
       .filter((a) => a.file)
       .forEach((a) => fd.append("files", a.file!));
-
-    // debug — ลบทีหลังได้
-    console.log(
-      "bloodProducts loaded:",
-      bloodProducts.length,
-      "matched:",
-      matched?.code,
-      matched?.id,
-    );
-    console.log("bloodProductId sent:", fd.get("bloodProductId"));
-
     return fd;
   };
 
