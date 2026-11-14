@@ -54,6 +54,9 @@ const extBloodService = {
     apiAdapter.post<typeof data, ExtDocument>(`${EXT_DOCUMENTS}/${id}/export`, data),
 
   // Attachments
+  /** เพิ่มรูปหลังอนุมัติ (เฉพาะเอกสาร APPROVED) — field "files" */
+  uploadPostApprovalImages: (id: string, data: FormData) =>
+    apiAdapter.upload<ExtDocument>(`${EXT_DOCUMENTS}/${id}/attachments`, data),
   deleteAttachment: (id: string) => apiAdapter.delete<{ message: string }>(`${EXT_ATTACHMENTS}/${id}`),
 
   // Summary & Report

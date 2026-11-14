@@ -1,7 +1,7 @@
 // frontend/src/pages/ExtBlood/components/ExtTable.tsx
 import { Printer,Eye, CheckCircle, PackageOpen, Pencil, Trash2, RotateCcw } from 'lucide-react'
 import Button from '../../../components/common/Button'
-import { formatThaiDate, statusLabel, statusClass, bloodGroupClass } from '../services/extHelpers'
+import { formatThaiDate, statusLabel, statusClass, bloodGroupClass, isEditableStatus } from '../services/extHelpers'
 import { myPending, approvedCount, sortCommittee, canRecall, ROLE_LABEL } from '../services/committeeHelpers'
 import type { ExtDocument } from '../services/ExtBloodType'
 import ExtRowMenu, { type RowMenuItem } from './ExtRowMenu'
@@ -20,7 +20,7 @@ export interface ExtRowHandlers {
 export function rowActions(d: ExtDocument, h: Omit<ExtRowHandlers, 'documents'>) {
   const mine = myPending(d, h.userId)
   const canExport = d.status === 'APPROVED' && d.bagRemaining > 0
-  const canEdit = ['DRAFT', 'REJECTED'].includes(d.status) || (d.status === 'APPROVED' && !canExport)
+  const canEdit = isEditableStatus(d.status) // หลังส่งอนุมัติแล้วแก้ไขไม่ได้ (backend ล็อกเช่นกัน)
   const primary = mine ? { icon: <CheckCircle size={14} />, label: 'อนุมัติ', variant: 'success' as const, onClick: () => h.onApprove(d) }
     : canExport ? { icon: <PackageOpen size={14} />, label: 'นำออก', variant: 'outline' as const, onClick: () => h.onExport(d) }
     : canEdit ? { icon: <Pencil size={14} />, label: 'แก้ไข', variant: 'outline' as const, onClick: () => h.onEdit(d.id) }
@@ -28,7 +28,7 @@ export function rowActions(d: ExtDocument, h: Omit<ExtRowHandlers, 'documents'>)
   const more: RowMenuItem[] = []
   if (primary.label !== 'ดู') more.push({ icon: <Eye size={15} />, label: 'ดูรายละเอียด', onClick: () => h.onViewDetail(d) })
   if (canExport && primary.label !== 'นำออก') more.push({ icon: <PackageOpen size={15} />, label: 'นำออก', onClick: () => h.onExport(d) })
-  if (['DRAFT', 'APPROVED', 'REJECTED'].includes(d.status) && primary.label !== 'แก้ไข') more.push({ icon: <Pencil size={15} />, label: 'แก้ไข', onClick: () => h.onEdit(d.id) })
+  if (canEdit && primary.label !== 'แก้ไข') more.push({ icon: <Pencil size={15} />, label: 'แก้ไข', onClick: () => h.onEdit(d.id) })
   if (canRecall(d, h.userId, h.isAdmin)) more.push({ icon: <RotateCcw size={15} />, label: 'ดึงกลับเพื่อแก้ไข', onClick: () => h.onRecall(d) })
   more.push({ icon: <Printer size={15} />, label: 'พิมพ์เอกสาร', onClick: () => h.onPrint(d) })   // ⬅️ ใส่บรรทัดนี้ตรงนี้
   if (d.status === 'DRAFT') more.push({ icon: <Trash2 size={15} />, label: 'ลบเอกสารร่าง', onClick: () => h.onDelete(d), danger: true })

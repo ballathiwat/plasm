@@ -209,6 +209,10 @@
 .pv-att__ph { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 9px; color: #94a3b8; }
 .pv-att__item figcaption { font-size: 8px; color: #64748b; text-align: center; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* ป้ายรูปที่เพิ่มหลังอนุมัติ — ใช้กรอบ + ตัวหนา เพื่อให้อ่านออกเมื่อพิมพ์ขาวดำ */
+.pv-att__badge { display: inline-block; margin-right: 4px; padding: 0 4px; border: 0.5px solid #92400e; border-radius: 3px; font-weight: 700; color: #92400e; background: #fffbeb; }
+.pv-att__note { color: #64748b; font-weight: 400; }
+
 .pv-files { list-style: none; margin: 0 0 8px; padding: 0; border: 0.5px solid #e2e8f0; border-radius: 3px; position: relative; z-index: 1; }
 .pv-file { display: flex; align-items: center; gap: 6px; padding: 5px 8px; font-size: 10px; color: #334155; break-inside: avoid; page-break-inside: avoid; }
 .pv-file + .pv-file { border-top: 0.5px solid #e2e8f0; }

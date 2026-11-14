@@ -92,10 +92,19 @@ export default function ExtBloodPrint({ open, onClose, doc }: ExtBloodPrintProps
 
   if (doc.attachments?.length) {
     // รูป → แสดงรูปจริง, ไฟล์อื่น → ไอคอน + ชื่อไฟล์ · ใช้ blocks เพื่อขึ้นหน้าใหม่อัตโนมัติ
-    const files = doc.attachments.map((a) => ({ key: a.id, name: fixFileName(a.fileName), url: attachmentUrl(a), mimeType: a.fileType }))
+    // รูปก่อนอนุมัติมาก่อน แล้วตามด้วยรูปที่เพิ่มหลังอนุมัติ (ติดป้าย + ผู้อัปโหลด + วันเวลา)
+    const ordered = [...doc.attachments.filter((a) => !a.isPostApproval), ...doc.attachments.filter((a) => a.isPostApproval)]
+    const postN = doc.attachments.filter((a) => a.isPostApproval).length
+    const files = ordered.map((a) => ({
+      key: a.id, name: fixFileName(a.fileName), url: attachmentUrl(a), mimeType: a.fileType,
+      ...(a.isPostApproval ? {
+        badge: 'เพิ่มหลังอนุมัติ',
+        note: [a.uploadedBy?.name, a.createdAt ? formatThaiDateTime(a.createdAt) : null].filter(Boolean).join(' · ') || undefined,
+      } : {}),
+    }))
     pages.push({ title: 'ไฟล์แนบ', overflowSubtitle: '(ต่อ)', blocks: printAttachmentBlocks(files, {
       columns: ATTACH_COLUMNS,
-      heading: <PrintSection title="ไฟล์แนบ" hint={`${doc.attachments.length} ไฟล์`} />,
+      heading: <PrintSection title="ไฟล์แนบ" hint={`${doc.attachments.length} ไฟล์${postN ? ` (เพิ่มหลังอนุมัติ ${postN})` : ''}`} />,
     }) })
   }
 

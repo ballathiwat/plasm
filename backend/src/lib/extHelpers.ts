@@ -28,7 +28,7 @@ export const extDocInclude = {
   approver: userSel,
   createdBy: userSel,
   bags: { orderBy: { bagNumber: 'asc' as const } },
-  attachments: { orderBy: { createdAt: 'asc' as const } },
+  attachments: { orderBy: { createdAt: 'asc' as const }, include: { uploadedBy: userSel } },
   timeline: {
     orderBy: { createdAt: 'desc' as const },
     include: { user: userSel },
@@ -58,6 +58,9 @@ export function formatExtDoc(doc: any) {
     attachments: doc.attachments?.map((a: any) => ({
       id: a.id, fileName: a.fileName, fileType: a.fileType,
       fileSize: a.fileSize, filePath: a.filePath,
+      createdAt: iso(a.createdAt),
+      isPostApproval: a.isPostApproval ?? false,
+      uploadedBy: a.uploadedBy ?? null,
     })),
     timeline: doc.timeline?.map((t: any) => ({ ...t, createdAt: iso(t.createdAt) })),
     committee: doc.committee?.map((m: any) => ({
@@ -65,4 +68,28 @@ export function formatExtDoc(doc: any) {
       reason: m.reason ?? null, actedAt: iso(m.actedAt), user: m.user,
     })) ?? [],
   }
+}
+
+/** สถานะที่ยังแก้ไขข้อมูลเอกสารได้ */
+export const EXT_EDITABLE_STATUSES = ['DRAFT', 'REJECTED']
+export const isExtEditable = (status: string) => EXT_EDITABLE_STATUSES.includes(status)
+
+interface ExtDocParties {
+  createdById: string | null
+  verifierId: string | null
+  storerId: string | null
+  approverId: string | null
+}
+
+/**
+ * สิทธิ์เพิ่มรูปหลังอนุมัติ: ผู้สร้างเอกสาร, คณะกรรมการของเอกสาร, ADMIN
+ * (เอกสารแบบเดิมที่ไม่มีตาราง committee ใช้ verifier/storer/approver แทน)
+ */
+export async function canAddPostApprovalImage(
+  doc: ExtDocParties & { id: string },
+  user: { id: string; role: string },
+): Promise<boolean> {
+  if (user.role === 'ADMIN') return true
+  if ([doc.createdById, doc.verifierId, doc.storerId, doc.approverId].includes(user.id)) return true
+  return (await prisma.extCommittee.count({ where: { documentId: doc.id, userId: user.id } })) > 0
 }

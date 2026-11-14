@@ -43,6 +43,10 @@ export interface ExtAttachment {
   fileType: string
   fileSize: number
   filePath: string
+  createdAt?: string
+  /** true = รูปที่เพิ่มหลังเอกสารอนุมัติแล้ว */
+  isPostApproval?: boolean
+  uploadedBy?: { id: string; name: string; username?: string } | null
 }
 
 export interface ExtTimelineEntry {

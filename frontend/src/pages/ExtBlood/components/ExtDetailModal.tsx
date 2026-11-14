@@ -1,12 +1,13 @@
 // frontend/src/pages/ExtBlood/components/ExtDetailModal.tsx
 
-import { FileText, Paperclip, Clock, Users, Droplet, CheckCircle, PackageOpen, PackageCheck, ExternalLink, FileImage, File, Lock } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { FileText, Paperclip, Clock, Users, Droplet, CheckCircle, PackageOpen, PackageCheck, ExternalLink, FileImage, File, Lock, ImagePlus } from 'lucide-react'
 import Modal from '../../../components/common/Modal'
 import '../../../assets/styles/ext-blood-settings.css'
 import Button from '../../../components/common/Button'
-import { formatThaiDate, formatThaiDateTime, statusLabel, statusClass, bloodGroupClass, attachmentUrl as fileUrl, fixFileName as fixName } from '../services/extHelpers'
+import { formatThaiDate, formatThaiDateTime, statusLabel, statusClass, bloodGroupClass, attachmentUrl as fileUrl, fixFileName as fixName, canAddPostApprovalImage, POST_IMAGE_ACCEPT, POST_IMAGE_MAX_FILES } from '../services/extHelpers'
 import { sortCommittee, myPending, ROLE_LABEL } from '../services/committeeHelpers'
-import type { ExtDocument } from '../services/ExtBloodType'
+import type { ExtDocument, ExtAttachment } from '../services/ExtBloodType'
 
 const CM_LABEL = { DRAFT: 'ยังไม่ส่ง', PENDING: 'รออนุมัติ', APPROVED: 'อนุมัติแล้ว', REJECTED: 'ไม่อนุมัติ' } as const
 const fileSize = (b: number) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`)
@@ -28,9 +29,54 @@ interface Props {
   onClose: () => void
   onApprove: (doc: ExtDocument) => void
   onExport: (doc: ExtDocument) => void
+  /** เพิ่มรูปหลังอนุมัติ — คืนข้อความ error หรือ null เมื่อสำเร็จ */
+  onUploadImages: (doc: ExtDocument, files: File[]) => Promise<string | null>
 }
 
-export default function ExtDetailModal({ doc, userId, isAdmin = false, onClose, onApprove, onExport }: Props) {
+/** รายการไฟล์แนบ 1 แถว — post = รูปที่เพิ่มหลังอนุมัติ (ติดป้าย + ผู้อัปโหลด + วันเวลา) */
+function FileRow({ a, canOpen, post }: { a: ExtAttachment; canOpen: boolean; post?: boolean }) {
+  const name = fixName(a.fileName)
+  const body = (
+    <>
+      <span className="ext-file-link__icon">{fileIcon(a.fileType)}</span>
+      <span className="ext-file-link__main">
+        <span className="ext-file-link__name">{name}</span>
+        {post && (
+          <span className="ext-file-link__meta">
+            <span className="ext-file-link__badge">เพิ่มหลังอนุมัติ</span>
+            {[a.uploadedBy?.name, a.createdAt ? formatThaiDateTime(a.createdAt) : null].filter(Boolean).join(' · ')}
+          </span>
+        )}
+      </span>
+    </>
+  )
+  return canOpen ? (
+    <a className="ext-file-link" href={fileUrl(a)} target="_blank" rel="noopener noreferrer" aria-label={`เปิดไฟล์ ${name} ในแท็บใหม่`}>
+      {body}
+      <span className="ext-file-link__size">{fileSize(a.fileSize)}</span>
+      <ExternalLink size={14} className="ext-file-link__ext" aria-hidden />
+    </a>
+  ) : (
+    <div className="ext-file-link is-locked" aria-disabled="true">
+      {body}
+      <span className="ext-file-link__lock"><Lock size={14} aria-hidden /> เฉพาะผู้เกี่ยวข้อง</span>
+    </div>
+  )
+}
+
+export default function ExtDetailModal({ doc, userId, isAdmin = false, onClose, onApprove, onExport, onUploadImages }: Props) {
+  const fileInput = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const canUpload = canAddPostApprovalImage(doc, userId, isAdmin)
+  const preFiles = doc.attachments.filter((a) => !a.isPostApproval)
+  const postFiles = doc.attachments.filter((a) => a.isPostApproval)
+  const pickImages = async (list: FileList | null) => {
+    if (!list?.length) return
+    setUploading(true); setUploadError('')
+    const err = await onUploadImages(doc, Array.from(list))
+    setUploadError(err ?? ''); setUploading(false)
+  }
   const cm = sortCommittee(doc.committee)
   const canOpenFiles = isAdmin || [doc.createdById, doc.createdBy?.id, doc.verifier?.id, doc.storer?.id, doc.approver?.id].includes(userId) || cm.some((m) => m.userId === userId)
   const mine = !!myPending(doc, userId)
@@ -106,27 +152,34 @@ export default function ExtDetailModal({ doc, userId, isAdmin = false, onClose, 
           </ul>
         </div>
 
-        {doc.attachments.length > 0 && (
+        {preFiles.length > 0 && (
           <div className="ext-detail-section">
-            <h4 className="ext-detail-section-title"><Paperclip size={16} /> {`ไฟล์แนบ (${doc.attachments.length})`}</h4>
+            <h4 className="ext-detail-section-title"><Paperclip size={16} /> {`ไฟล์แนบ (${preFiles.length})`}</h4>
             <div className="ext-detail-files">
-              {doc.attachments.map((a) => (
-                canOpenFiles ? (
-                <a key={a.id} className="ext-file-link" href={fileUrl(a)} target="_blank" rel="noopener noreferrer" aria-label={`เปิดไฟล์ ${fixName(a.fileName)} ในแท็บใหม่`}>
-                  <span className="ext-file-link__icon">{fileIcon(a.fileType)}</span>
-                  <span className="ext-file-link__name">{fixName(a.fileName)}</span>
-                  <span className="ext-file-link__size">{fileSize(a.fileSize)}</span>
-                  <ExternalLink size={14} className="ext-file-link__ext" aria-hidden />
-                </a>
-              ) : (
-                <div key={a.id} className="ext-file-link is-locked" aria-disabled="true">
-                  <span className="ext-file-link__icon">{fileIcon(a.fileType)}</span>
-                  <span className="ext-file-link__name">{fixName(a.fileName)}</span>
-                  <span className="ext-file-link__lock"><Lock size={14} aria-hidden /> เฉพาะผู้เกี่ยวข้อง</span>
-                </div>
-              )
-              ))}
+              {preFiles.map((a) => <FileRow key={a.id} a={a} canOpen={canOpenFiles} />)}
             </div>
+          </div>
+        )}
+
+        {(postFiles.length > 0 || canUpload) && (
+          <div className="ext-detail-section">
+            <h4 className="ext-detail-section-title">
+              <ImagePlus size={16} /> {`รูปที่เพิ่มหลังอนุมัติ (${postFiles.length})`}
+              {canUpload && (
+                <span className="ext-post-upload">
+                  <Button variant="outline" size="sm" icon={<ImagePlus size={14} />} loading={uploading} disabled={uploading} onClick={() => fileInput.current?.click()}>อัปโหลดรูปเพิ่มเติม</Button>
+                  <input ref={fileInput} type="file" multiple accept={POST_IMAGE_ACCEPT} hidden aria-label="เลือกรูปที่จะเพิ่มหลังอนุมัติ"
+                    onChange={(e) => { const list = e.target.files; void pickImages(list).finally(() => { e.target.value = '' }) }} />
+                </span>
+              )}
+            </h4>
+            {canUpload && <p className="ext-post-upload__hint">{`รับเฉพาะรูป jpg, jpeg, png, webp — ไฟล์ละไม่เกิน 10 MB สูงสุด ${POST_IMAGE_MAX_FILES} รูปต่อครั้ง · เพิ่มแล้วลบไม่ได้ และไม่มีผลต่อสถานะการอนุมัติ`}</p>}
+            {uploadError && <p className="ext-post-upload__error" role="alert">{uploadError}</p>}
+            {postFiles.length > 0 && (
+              <div className="ext-detail-files">
+                {postFiles.map((a) => <FileRow key={a.id} a={a} canOpen={canOpenFiles} post />)}
+              </div>
+            )}
           </div>
         )}
 
