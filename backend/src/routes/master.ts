@@ -34,7 +34,7 @@ function codeMaster(
   });
 
   // ในฟังก์ชัน codeMaster — แก้ POST
-  router.post(path, async (req, res) => {
+  router.post(path, adminOnly, async (req, res) => {
     try {
       const code = norm(req.body.code);
       if (!code) {
@@ -201,7 +201,7 @@ router.get("/zones", async (_req, res) => {
   }
 });
 
-router.post("/zones", async (req, res) => {
+router.post("/zones", adminOnly, async (req, res) => {
   try {
     const name = String(req.body.name ?? "").trim();
     if (!name) {
@@ -254,7 +254,7 @@ router.patch("/zones/:id", adminOnly, async (req, res) => {
   }
 });
 
-router.post("/zones/:id/shelves", async (req, res) => {
+router.post("/zones/:id/shelves", adminOnly, async (req, res) => {
   try {
     const zoneId = req.params.id as string;
     const code = String(req.body.code ?? "")

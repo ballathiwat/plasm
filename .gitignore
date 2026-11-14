@@ -44,3 +44,5 @@ temp/
 /cache/
 *.tsbuildinfo
 backend_backup/
+*.bak
+.*-backup/

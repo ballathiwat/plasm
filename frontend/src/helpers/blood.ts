@@ -21,8 +21,10 @@ export const bloodBase = (code?: string | null): BloodBase | '' => {
 // "A" → "a", "AB" → "ab", "A+" → "a-pos", "A-" → "a-neg", "AB+" → "ab-pos"
 function toCssKey(code: string): string {
   return code.toLowerCase()
-    .replace(/\+/g, '-pos')
+    .replace(/[−]/g, '-')          // normalize Unicode minus → ASCII hyphen
+    .replace(/\+/g, '\0pos')       // temp placeholder to avoid double-replace
     .replace(/-/g, '-neg')
+    .replace(/\0pos/g, '-pos')
     .replace(/[^a-z0-9-]/g, '')
     || 'other'
 }

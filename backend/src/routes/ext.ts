@@ -87,10 +87,6 @@ router.get("/documents", async (req, res) => {
 router.get("/next-box-label", async (req, res) => {
   try {
     const plasmaType = String(req.query.plasmaType ?? "").trim();
-    if (!plasmaType) {
-      res.status(400).json({ message: "กรุณาเลือกชนิดพลาสมา" });
-      return;
-    }
     const bloodGroup = String(req.query.bloodGroup ?? "").trim();
 
     if (!plasmaType || !bloodGroup) {
@@ -113,14 +109,7 @@ router.get("/next-box-label", async (req, res) => {
     const maxNo = maxDoc
       ? parseInt(maxDoc.boxLabel.split("_").pop() ?? "0", 10) || 0
       : 0;
-    const boxLabel = `EX_${plasmaType}_${bloodGroup}_${year}_${String(maxNo + 1).padStart(5, "0")}`;
-
-    const maxExisting = maxDoc
-      ? parseInt(maxDoc.boxLabel.split("_").pop() ?? "0", 10) || 0
-      : 0;
-
-    const nextNo = maxExisting + 1;
-    const label = `EX_${plasmaType}_${bloodGroup}_${year}_${String(nextNo).padStart(5, "0")}`;
+    const label = `EX_${plasmaType}_${bloodGroup}_${year}_${String(maxNo + 1).padStart(5, "0")}`;
 
     res.json({ label, year });
   } catch (e) {
@@ -212,7 +201,6 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
     const bags: string[] = rawBags
       ? Array.isArray(rawBags) ? rawBags : [rawBags]
       : [];
-    console.log("[EXT CREATE] bags received:", bags.length, "items:", bags);
 
     // ── validate required fields (ข้ามเมื่อเป็น DRAFT) ──
     const isDraft = status !== "PENDING";
@@ -239,7 +227,6 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
       const uniqueBags = [...new Set(bags)];
       if (uniqueBags.length !== bags.length) {
         const dupesInArray = bags.filter((b, i) => bags.indexOf(b) !== i);
-        console.log("[EXT CREATE] REJECTED: duplicate bags in array:", dupesInArray);
         res.status(400).json({
           message: `เลขถุงซ้ำกันในรายการ: ${[...new Set(dupesInArray)].join(", ")}`,
         });
@@ -268,7 +255,7 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
     const doc = await prisma.extDocument.create({
       data: {
         docNumber,
-        receivedDate: new Date(receivedDate),
+        receivedDate: receivedDate ? new Date(receivedDate) : new Date(),
         sourceId,
         bloodProductId: resolvedProductId,
         bloodGroup,
@@ -334,7 +321,6 @@ router.post(
       const bags: string[] = rawBags
         ? Array.isArray(rawBags) ? rawBags : [rawBags]
         : [];
-      console.log("[EXT UPDATE]", req.params.id, "bags received:", bags.length, "items:", bags);
       const files = (req.files as Express.Multer.File[]) || [];
 
       // ── เช็คเลขถุงซ้ำภายในรายการเดียวกัน ──
@@ -342,7 +328,6 @@ router.post(
         const uniqueBags = [...new Set(bags)];
         if (uniqueBags.length !== bags.length) {
           const dupesInArray = bags.filter((b, i) => bags.indexOf(b) !== i);
-          console.log("[EXT UPDATE] REJECTED: duplicate bags in array:", dupesInArray);
           res.status(400).json({
             message: `เลขถุงซ้ำกันในรายการ: ${[...new Set(dupesInArray)].join(", ")}`,
           });
@@ -497,6 +482,27 @@ router.post("/documents/:id/sign", async (req, res) => {
 router.post("/documents/:id/unsign", async (req, res) => {
   try {
     const { role } = req.body;
+    const userId = req.user!.id;
+
+    // ── authorization: ต้องเป็นเจ้าของลายเซ็นนั้น หรือ ADMIN ──
+    const existing = await prisma.extDocument.findUnique({
+      where: { id: req.params.id },
+      select: { verifierId: true, storerId: true, approverId: true },
+    });
+    if (!existing) {
+      res.status(404).json({ message: "ไม่พบเอกสาร" });
+      return;
+    }
+    const signerMap: Record<string, string | null> = {
+      verifier: existing.verifierId,
+      storer: existing.storerId,
+      approver: existing.approverId,
+    };
+    if (req.user!.role !== "ADMIN" && signerMap[role] !== userId) {
+      res.status(403).json({ message: "ไม่มีสิทธิ์ยกเลิกลายเซ็นนี้" });
+      return;
+    }
+
     const data: any = {};
     if (role === "verifier") {
       data.verifierId = null;
@@ -594,33 +600,46 @@ router.post("/documents/:id/reject", async (req, res) => {
 router.post("/documents/batch-approve", async (req, res) => {
   try {
     const { ids, pin } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ message: "กรุณาเลือกเอกสารอย่างน้อย 1 รายการ" });
+      return;
+    }
+    if (ids.length > 50) {
+      res.status(400).json({ message: "เลือกได้สูงสุด 50 รายการต่อครั้ง" });
+      return;
+    }
     const result = await verifyPin(req.user!.id, pin);
     if (!result.ok) {
       res.status(401).json({ message: "PIN ไม่ถูกต้อง", ...result });
       return;
     }
 
-    let count = 0;
-    for (const id of ids) {
-      await prisma.extDocument.updateMany({
-        where: { id, status: "PENDING" },
-        data: {
-          status: "APPROVED",
-          approverId: req.user!.id,
-          approvedAt: new Date(),
-          approverPin: true,
-        },
-      });
-      await prisma.extTimeline.create({
-        data: {
-          documentId: id,
-          action: "อนุมัติ",
-          detail: "อนุมัติเอกสาร (batch)",
-          userId: req.user!.id,
-        },
-      });
-      count++;
-    }
+    const count = await prisma.$transaction(async (tx) => {
+      let n = 0;
+      for (const id of ids) {
+        const updated = await tx.extDocument.updateMany({
+          where: { id, status: "PENDING" },
+          data: {
+            status: "APPROVED",
+            approverId: req.user!.id,
+            approvedAt: new Date(),
+            approverPin: true,
+          },
+        });
+        if (updated.count > 0) {
+          await tx.extTimeline.create({
+            data: {
+              documentId: id,
+              action: "อนุมัติ",
+              detail: "อนุมัติเอกสาร (batch)",
+              userId: req.user!.id,
+            },
+          });
+          n++;
+        }
+      }
+      return n;
+    });
     res.json({ count });
   } catch (e) {
     fail(res, e, "POST /ext/documents/batch-approve");
@@ -630,28 +649,41 @@ router.post("/documents/batch-approve", async (req, res) => {
 router.post("/documents/batch-reject", async (req, res) => {
   try {
     const { ids, reason, pin } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ message: "กรุณาเลือกเอกสารอย่างน้อย 1 รายการ" });
+      return;
+    }
+    if (ids.length > 50) {
+      res.status(400).json({ message: "เลือกได้สูงสุด 50 รายการต่อครั้ง" });
+      return;
+    }
     const result = await verifyPin(req.user!.id, pin);
     if (!result.ok) {
       res.status(401).json({ message: "PIN ไม่ถูกต้อง", ...result });
       return;
     }
 
-    let count = 0;
-    for (const id of ids) {
-      await prisma.extDocument.updateMany({
-        where: { id, status: "PENDING" },
-        data: { status: "REJECTED", rejectReason: reason },
-      });
-      await prisma.extTimeline.create({
-        data: {
-          documentId: id,
-          action: "ไม่อนุมัติ",
-          detail: `ไม่อนุมัติ (batch): ${reason}`,
-          userId: req.user!.id,
-        },
-      });
-      count++;
-    }
+    const count = await prisma.$transaction(async (tx) => {
+      let n = 0;
+      for (const id of ids) {
+        const updated = await tx.extDocument.updateMany({
+          where: { id, status: "PENDING" },
+          data: { status: "REJECTED", rejectReason: reason },
+        });
+        if (updated.count > 0) {
+          await tx.extTimeline.create({
+            data: {
+              documentId: id,
+              action: "ไม่อนุมัติ",
+              detail: `ไม่อนุมัติ (batch): ${reason}`,
+              userId: req.user!.id,
+            },
+          });
+          n++;
+        }
+      }
+      return n;
+    });
     res.json({ count });
   } catch (e) {
     fail(res, e, "POST /ext/documents/batch-reject");
@@ -671,39 +703,41 @@ router.post("/documents/:id/export", async (req, res) => {
       return;
     }
 
-    const exp = await prisma.extExport.create({
-      data: {
-        documentId: req.params.id,
-        reasonId,
-        exportDate: new Date(date),
-        note: note || null,
-        userId: req.user!.id,
-      },
-    });
-
-    await prisma.extBag.updateMany({
-      where: { id: { in: bagIds }, documentId: req.params.id },
-      data: { status: "EXPORTED", exportedAt: new Date(), exportId: exp.id },
-    });
-
-    // Check if all bags exported → mark document EXPORTED
-    const remaining = await prisma.extBag.count({
-      where: { documentId: req.params.id, status: "IN_STOCK" },
-    });
-    if (remaining === 0) {
-      await prisma.extDocument.update({
-        where: { id: req.params.id },
-        data: { status: "EXPORTED" },
+    await prisma.$transaction(async (tx) => {
+      const exp = await tx.extExport.create({
+        data: {
+          documentId: req.params.id,
+          reasonId,
+          exportDate: date ? new Date(date) : new Date(),
+          note: note || null,
+          userId: req.user!.id,
+        },
       });
-    }
 
-    await prisma.extTimeline.create({
-      data: {
-        documentId: req.params.id,
-        action: "นำออก",
-        detail: `นำออก ${bagIds.length} ถุง`,
-        userId: req.user!.id,
-      },
+      await tx.extBag.updateMany({
+        where: { id: { in: bagIds }, documentId: req.params.id },
+        data: { status: "EXPORTED", exportedAt: new Date(), exportId: exp.id },
+      });
+
+      // Check if all bags exported → mark document EXPORTED
+      const remaining = await tx.extBag.count({
+        where: { documentId: req.params.id, status: "IN_STOCK" },
+      });
+      if (remaining === 0) {
+        await tx.extDocument.update({
+          where: { id: req.params.id },
+          data: { status: "EXPORTED" },
+        });
+      }
+
+      await tx.extTimeline.create({
+        data: {
+          documentId: req.params.id,
+          action: "นำออก",
+          detail: `นำออก ${bagIds.length} ถุง`,
+          userId: req.user!.id,
+        },
+      });
     });
 
     const doc = await prisma.extDocument.findUnique({
@@ -810,6 +844,29 @@ router.get("/attachments/:id/file", async (req, res) => {
 
 router.delete("/attachments/:id", async (req, res) => {
   try {
+    // ── authorization: ต้องเป็นผู้เกี่ยวข้องกับเอกสาร หรือ ADMIN ──
+    const att = await prisma.extAttachment.findUnique({
+      where: { id: req.params.id },
+      include: {
+        document: {
+          select: { id: true, createdById: true, verifierId: true, storerId: true, approverId: true },
+        },
+      },
+    });
+    if (!att) {
+      res.status(404).json({ message: "ไม่พบไฟล์แนบ" });
+      return;
+    }
+    const uid = req.user!.id;
+    const d = att.document;
+    const isRelated =
+      req.user!.role === "ADMIN" ||
+      [d.createdById, d.verifierId, d.storerId, d.approverId].includes(uid);
+    if (!isRelated) {
+      res.status(403).json({ message: "ไม่มีสิทธิ์ลบไฟล์แนบนี้" });
+      return;
+    }
+
     await prisma.extAttachment.delete({ where: { id: req.params.id } });
     res.json({ message: "ลบไฟล์แนบสำเร็จ" });
   } catch (e) {

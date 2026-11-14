@@ -18,9 +18,9 @@ interface Props {
 }
 
 const actionMap: Record<string, { icon: typeof Package; label: string; color: string }> = {
-  store:    { icon: Package,     label: 'จัดเก็บ',  color: '#16A34A' },
-  withdraw: { icon: PackageOpen, label: 'นำออก',    color: '#DC2626' },
-  edit:     { icon: Pencil,      label: 'แก้ไข',    color: '#D97706' },
+  store:    { icon: Package,     label: 'จัดเก็บ',  color: 'var(--color-success)' },
+  withdraw: { icon: PackageOpen, label: 'นำออก',    color: 'var(--color-danger)' },
+  edit:     { icon: Pencil,      label: 'แก้ไข',    color: 'var(--color-warning)' },
 }
 
 export default function LogTable({ entries, loading, pagination, onPageChange, onPageSizeChange }: Props) {

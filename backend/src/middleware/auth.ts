@@ -27,7 +27,7 @@ const TOKEN_TTL_MS = 8 * 60 * 60 * 1000 // 8 ชม. ให้ตรงกับ
 
 export const authCookieOptions = {
   httpOnly: true,
-  secure: process.env.COOKIE_SECURE === 'true',
+  secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict' as const,
   path: '/',
 }

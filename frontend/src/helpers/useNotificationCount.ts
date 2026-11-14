@@ -85,9 +85,8 @@ export default function useNotificationCount(): NotificationData & { refetch: ()
   // หยุด poll เมื่อ tab ไม่ active
   useEffect(() => {
     const onVis = () => {
-      if (document.hidden) {
-        if (timerRef.current) clearInterval(timerRef.current)
-      } else {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+      if (!document.hidden) {
         fetchAll()
         timerRef.current = setInterval(fetchAll, POLL_INTERVAL)
       }
