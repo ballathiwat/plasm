@@ -359,7 +359,7 @@ model ExtBag {
   document ExtDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
   export   ExtExport?  @relation(fields: [exportId], references: [id])
 
-  @@index([bagNumber])
+  @@unique([bagNumber])
   @@map("ext_bags")
 }
 

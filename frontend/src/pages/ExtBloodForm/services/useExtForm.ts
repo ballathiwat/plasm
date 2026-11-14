@@ -95,7 +95,7 @@ export default function useExtForm() {
           bloodGroup: doc.bloodGroup,
           boxLabel: doc.boxLabel,
           storageId: doc.storage.id,
-          bags: doc.bags.map((b) => b.bagNumber),
+          bags: [...new Set(doc.bags.map((b) => b.bagNumber))],
           deferApproval: doc.deferApproval,
           plasmaType: (doc as any).plasmaType || doc.bloodProduct.code || "",
         });
@@ -263,8 +263,11 @@ export default function useExtForm() {
     const fd = new FormData();
     const matched = bloodProducts.find((b) => b.code === form.plasmaType);
     const bloodProductId = form.bloodProductId || matched?.id || "";
+    // ── safety-net: deduplicate bags before sending ──
+    const uniqueBags = [...new Set(form.bags)];
     const data = {
       ...form,
+      bags: uniqueBags,
       bloodProductId,
       boxLabel: form.boxLabel || nextLabel,
     };

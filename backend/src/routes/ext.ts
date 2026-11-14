@@ -17,6 +17,14 @@ import fs from "fs";
 const router = Router();
 const fail = (res: any, e: unknown, tag: string) => {
   console.error(tag, e);
+  // Prisma unique constraint violation (P2002)
+  if (
+    typeof e === "object" && e !== null && "code" in e &&
+    (e as any).code === "P2002"
+  ) {
+    res.status(409).json({ message: "เลขถุงเลือดซ้ำในระบบ (DB constraint)" });
+    return;
+  }
   res.status(500).json({ message: "เกิดข้อผิดพลาด" });
 };
 
@@ -199,19 +207,12 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
             })
           )?.id
         : undefined);
-    console.log(
-      "DEBUG req.body keys:",
-      Object.keys(req.body),
-      "bags[]:",
-      req.body["bags[]"] || req.body.bags,
-      "bags:",
-      req.body.bags,
-    );
-    const bags: string[] = Array.isArray(req.body["bags[]"] || req.body.bags)
-      ? req.body["bags[]"] || req.body.bags
-      : (req.body["bags[]"] ?? req.body.bags) || req.body.bags
-        ? [req.body["bags[]"] || req.body.bags]
-        : [];
+    // ── parse bags (รองรับทั้ง bags[] และ bags) ──
+    const rawBags = req.body["bags[]"] ?? req.body.bags;
+    const bags: string[] = rawBags
+      ? Array.isArray(rawBags) ? rawBags : [rawBags]
+      : [];
+    console.log("[EXT CREATE] bags received:", bags.length, "items:", bags);
 
     // ── validate required fields (ข้ามเมื่อเป็น DRAFT) ──
     const isDraft = status !== "PENDING";
@@ -238,6 +239,7 @@ router.post("/documents", extUpload.array("files", 10), async (req, res) => {
       const uniqueBags = [...new Set(bags)];
       if (uniqueBags.length !== bags.length) {
         const dupesInArray = bags.filter((b, i) => bags.indexOf(b) !== i);
+        console.log("[EXT CREATE] REJECTED: duplicate bags in array:", dupesInArray);
         res.status(400).json({
           message: `เลขถุงซ้ำกันในรายการ: ${[...new Set(dupesInArray)].join(", ")}`,
         });
@@ -327,11 +329,12 @@ router.post(
         deferApproval,
         editReason,
       } = req.body as Record<string, string | undefined>;
-      const bags: string[] = Array.isArray(req.body["bags[]"] || req.body.bags)
-        ? req.body["bags[]"] || req.body.bags
-        : (req.body["bags[]"] ?? req.body.bags) || req.body.bags
-          ? [req.body["bags[]"] || req.body.bags]
-          : [];
+      // ── parse bags (รองรับทั้ง bags[] และ bags) ──
+      const rawBags = req.body["bags[]"] ?? req.body.bags;
+      const bags: string[] = rawBags
+        ? Array.isArray(rawBags) ? rawBags : [rawBags]
+        : [];
+      console.log("[EXT UPDATE]", req.params.id, "bags received:", bags.length, "items:", bags);
       const files = (req.files as Express.Multer.File[]) || [];
 
       // ── เช็คเลขถุงซ้ำภายในรายการเดียวกัน ──
@@ -339,6 +342,7 @@ router.post(
         const uniqueBags = [...new Set(bags)];
         if (uniqueBags.length !== bags.length) {
           const dupesInArray = bags.filter((b, i) => bags.indexOf(b) !== i);
+          console.log("[EXT UPDATE] REJECTED: duplicate bags in array:", dupesInArray);
           res.status(400).json({
             message: `เลขถุงซ้ำกันในรายการ: ${[...new Set(dupesInArray)].join(", ")}`,
           });
