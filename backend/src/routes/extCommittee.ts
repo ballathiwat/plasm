@@ -63,8 +63,10 @@ router.put('/documents/:id/committee', async (req, res) => {
     if (members.some((m) => !m?.userId || !COMMITTEE_ROLES.includes(m.role))) { res.status(400).json({ message: 'ข้อมูลคณะกรรมการไม่ถูกต้อง' }); return }
     const keys = members.map((m) => `${m.userId}::${m.role}`)
     if (new Set(keys).size !== members.length) { res.status(400).json({ message: 'มีหน้าที่ซ้ำกัน (คนเดียวกัน + หน้าที่เดียวกัน)' }); return }
-    const found = await prisma.user.count({ where: { id: { in: members.map((m) => m.userId) }, active: true } })
-    if (found !== members.length) { res.status(400).json({ message: 'มีผู้ใช้ที่ไม่พบหรือถูกปิดใช้งาน' }); return }
+    // 1 คนมีได้หลายหน้าที่ → นับผู้ใช้แบบไม่ซ้ำ ไม่เช่นนั้นจะแจ้ง "ไม่พบผู้ใช้" ผิด ๆ
+    const uniqueUids = [...new Set(members.map((m) => m.userId))]
+    const found = await prisma.user.count({ where: { id: { in: uniqueUids }, active: true } })
+    if (found !== uniqueUids.length) { res.status(400).json({ message: 'มีผู้ใช้ที่ไม่พบหรือถูกปิดใช้งาน' }); return }
 
     await prisma.$transaction([
       prisma.extCommittee.deleteMany({ where: { documentId: id } }),
