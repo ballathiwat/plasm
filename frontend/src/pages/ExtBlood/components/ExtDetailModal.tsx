@@ -4,15 +4,11 @@ import { FileText, Paperclip, Clock, Users, Droplet, CheckCircle, PackageOpen, P
 import Modal from '../../../components/common/Modal'
 import '../../../assets/styles/ext-blood-settings.css'
 import Button from '../../../components/common/Button'
-import { formatThaiDate, formatThaiDateTime, statusLabel, statusClass, bloodGroupClass } from '../services/extHelpers'
+import { formatThaiDate, formatThaiDateTime, statusLabel, statusClass, bloodGroupClass, attachmentUrl as fileUrl, fixFileName as fixName } from '../services/extHelpers'
 import { sortCommittee, myPending, ROLE_LABEL } from '../services/committeeHelpers'
-import type { ExtDocument, ExtAttachment } from '../services/ExtBloodType'
+import type { ExtDocument } from '../services/ExtBloodType'
 
 const CM_LABEL = { DRAFT: 'ยังไม่ส่ง', PENDING: 'รออนุมัติ', APPROVED: 'อนุมัติแล้ว', REJECTED: 'ไม่อนุมัติ' } as const
-const API_URL = import.meta.env.VITE_API_URL || ''
-const fixName = (n: string) => { try { return /[\u00c0-\u00ff][\u0080-\u00bf]/.test(n) ? decodeURIComponent(escape(n)) : n } catch { return n } }
-
-const fileUrl = (a: ExtAttachment) => `${API_URL}/api/v1/ext/attachments/${a.id}/file`
 const fileSize = (b: number) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`)
 const fileIcon = (t: string) => (t?.startsWith('image/') ? <FileImage size={16} /> : t === 'application/pdf' ? <FileText size={16} /> : <File size={16} />)
 

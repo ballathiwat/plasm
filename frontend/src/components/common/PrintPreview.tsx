@@ -4,6 +4,8 @@
 // ============================================================
 
 import {
+  createContext,
+  useContext,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -13,7 +15,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { FileText, Printer, X } from "lucide-react";
+import { File, FileText, ImageOff, Printer, X } from "lucide-react";
 import Button from "./Button";
 import Switch from "./Switch";
 import '../../assets/styles/components/print-preview.css'
@@ -32,6 +34,28 @@ export interface PrintPageDef {
 const PAGE_H_MM = 296;
 const PAGE_PAD_MM = 24;
 const SAFETY_MM = 1.5;
+const IMG_WAIT_MS = 15000;
+
+// true เมื่อ render อยู่ใน container ที่ใช้วัดความสูง (ซ่อน) — ใช้กันไม่ให้โหลดรูปซ้ำ 2 รอบ
+const MeasureContext = createContext(false);
+
+// รอให้ <img> ทุกรูปใน root โหลดเสร็จ (หรือ error) ก่อนสั่งพิมพ์ — มี timeout กันค้าง
+const waitForImages = (root: HTMLElement | null): Promise<void> => {
+  const pending = Array.from(root?.querySelectorAll("img") ?? []).filter((img) => !img.complete);
+  if (pending.length === 0) return Promise.resolve();
+  return new Promise((resolve) => {
+    let left = pending.length;
+    const timer = window.setTimeout(resolve, IMG_WAIT_MS);
+    const done = () => {
+      left -= 1;
+      if (left === 0) { window.clearTimeout(timer); resolve(); }
+    };
+    pending.forEach((img) => {
+      img.addEventListener("load", done, { once: true });
+      img.addEventListener("error", done, { once: true });
+    });
+  });
+};
 
 export interface PrintPreviewProps {
   open:      boolean;
@@ -60,6 +84,8 @@ const PrintPreview = ({
 }: PrintPreviewProps) => {
   const [showWatermark, setShowWatermark] = useState(true);
   const measureRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [preparing, setPreparing] = useState(false);
   const [heights, setHeights] = useState<number[][] | null>(null);
   const [env, setEnv] = useState<{ headerH: number; availPx: number } | null>(null);
   const hasFlow = pages.some((pg) => pg.blocks);
@@ -130,7 +156,11 @@ const PrintPreview = ({
 
   if (!open) return null;
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    if (preparing) return;
+    setPreparing(true);
+    try { await waitForImages(scrollRef.current); } finally { setPreparing(false); }
+    if (!scrollRef.current) return; // ปิดพรีวิวไปแล้วระหว่างรอรูป
     const prev = document.title;
     const restore = () => { document.title = prev; window.removeEventListener("afterprint", restore); };
     window.addEventListener("afterprint", restore);
@@ -151,11 +181,13 @@ const PrintPreview = ({
             <Switch checked={showWatermark} onChange={setShowWatermark} label="ลายน้ำ" size="sm" />
           </div>
         )}
-        <Button variant="primary" icon={<Printer size={14} />} onClick={handlePrint}>พิมพ์ / บันทึก PDF</Button>
+        <Button variant="primary" icon={<Printer size={14} />} loading={preparing} onClick={handlePrint}>
+          {preparing ? "กำลังโหลดรูป…" : "พิมพ์ / บันทึก PDF"}
+        </Button>
         <Button variant="danger" icon={<X size={14} />} onClick={onClose}>ปิด</Button>
       </div>
 
-      <div className="pv-scroll">
+      <div className="pv-scroll" ref={scrollRef}>
         {rendered.map((p, i) => (
           <div className="pv-page" key={i}>
             {watermark && showWatermark && (
@@ -184,9 +216,11 @@ const PrintPreview = ({
             <div><h1>{title}</h1>{subtitle && <small>{subtitle}</small>}</div>
             <div className="pv-hd__no"><span>{docNoLabel}</span><b>{docNo}</b></div>
           </div>
-          {pages.map((pg, pi) => pg.blocks?.map((b, bi) => (
-            <div key={`${pi}-${bi}`} data-blk={pi} style={{ display: "flow-root" }}>{b}</div>
-          )))}
+          <MeasureContext.Provider value={true}>
+            {pages.map((pg, pi) => pg.blocks?.map((b, bi) => (
+              <div key={`${pi}-${bi}`} data-blk={pi} style={{ display: "flow-root" }}>{b}</div>
+            )))}
+          </MeasureContext.Provider>
         </div>
       )}
     </div>,
@@ -283,3 +317,75 @@ export const PrintPhotoGrid = ({ photos, emptyText = "ไม่มีรูป�
       ))}
     </div>
   );
+
+// ── ไฟล์แนบ: รูป → <img> (grid), ไฟล์อื่น → ไอคอน + ชื่อไฟล์ ──────────
+export interface PrintAttachmentFile {
+  key: string | number;
+  name: string;              // ชื่อไฟล์ที่แสดง (ไม่ใช่ path)
+  url?: string;              // URL ที่เปิดได้จริง (resolve มาแล้วจากฝั่งผู้เรียก)
+  mimeType?: string | null;
+}
+
+const IMAGE_MIME = new Set(["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"]);
+const IMAGE_EXT = /\.(jpe?g|png|gif|webp)$/i;
+const stripQuery = (u: string) => u.split(/[?#]/)[0];
+
+// ดู MIME type ก่อน — ถ้าไม่มี (หรือเป็น octet-stream) ค่อยดูนามสกุลจากชื่อไฟล์/URL
+export const isImageAttachment = (f: Pick<PrintAttachmentFile, "name" | "url" | "mimeType">): boolean => {
+  const mime = f.mimeType?.trim().toLowerCase();
+  if (mime && mime !== "application/octet-stream") return IMAGE_MIME.has(mime);
+  return IMAGE_EXT.test(f.name) || (!!f.url && IMAGE_EXT.test(stripQuery(f.url)));
+};
+
+const fileExt = (name: string) => {
+  const m = /\.([a-z0-9]{1,5})$/i.exec(name);
+  return m ? m[1].toUpperCase() : "";
+};
+
+const PrintAttachmentImage = ({ file, ratio }: { file: PrintAttachmentFile; ratio?: string }) => {
+  const measuring = useContext(MeasureContext);
+  const [failed, setFailed] = useState(false);
+  return (
+    <figure className="pv-att__item">
+      <div className="pv-att__frame" style={ratio ? { aspectRatio: ratio } : undefined}>
+        {measuring ? null : file.url && !failed ? (
+          <img src={file.url} alt={file.name} loading="eager" onError={() => setFailed(true)} />
+        ) : (
+          <span className="pv-att__ph"><ImageOff size={20} aria-hidden />ไม่สามารถแสดงรูปได้</span>
+        )}
+      </div>
+      <figcaption title={file.name}>{file.name}</figcaption>
+    </figure>
+  );
+};
+
+export interface PrintAttachmentOptions { columns?: number; ratio?: string; }
+
+// คืนเป็น block ต่อ 1 แถว — ส่งเข้า PrintPageDef.blocks เพื่อให้ขึ้นหน้าใหม่อัตโนมัติโดยรูปไม่ถูกตัด
+export const printAttachmentBlocks = (files: PrintAttachmentFile[], { columns = 2, ratio }: PrintAttachmentOptions = {}): ReactNode[] => {
+  const cols = Math.max(1, Math.floor(columns));
+  const images = files.filter(isImageAttachment);
+  const others = files.filter((f) => !isImageAttachment(f));
+  const blocks: ReactNode[] = chunk(images, cols).map((row) => (
+    <div className="pv-att" style={{ gridTemplateColumns: `repeat(${cols},1fr)` }}>
+      {row.map((f) => <PrintAttachmentImage key={`${f.key}-${f.url ?? ""}`} file={f} ratio={ratio} />)}
+    </div>
+  ));
+  if (others.length > 0) {
+    blocks.push(
+      <ul className="pv-files">
+        {others.map((f) => (
+          <li className="pv-file" key={f.key}>
+            {/pdf|word|document|text/i.test(f.mimeType ?? "") || /\.(pdf|docx?|txt)$/i.test(f.name) ? <FileText size={14} aria-hidden /> : <File size={14} aria-hidden />}
+            <span className="pv-file__name">{f.name}</span>
+            {fileExt(f.name) && <span className="pv-file__ext">{fileExt(f.name)}</span>}
+          </li>
+        ))}
+      </ul>,
+    );
+  }
+  return blocks;
+};
+
+export const PrintAttachments = ({ files, emptyText = "ไม่มีไฟล์แนบ", ...opts }: { files: PrintAttachmentFile[]; emptyText?: string } & PrintAttachmentOptions) =>
+  files.length === 0 ? <PrintNote>{emptyText}</PrintNote> : <>{printAttachmentBlocks(files, opts).map((b, i) => <Fragment key={i}>{b}</Fragment>)}</>;
