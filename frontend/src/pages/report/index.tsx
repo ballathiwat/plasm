@@ -23,9 +23,9 @@ function TypeTotalCards({ data, selectedType }: { data: ReportData; selectedType
   }
 
   const cards = [
-    { label: 'จัดเก็บ', value: totalStored, color: '#16A34A', bg: '#F0FDF4', icon: Package },
-    { label: 'นำออก', value: totalWithdrawn, color: '#DC2626', bg: '#FEF2F2', icon: PackageOpen },
-    { label: 'คงเหลือในสต็อก', value: totalStock, color: '#2563EB', bg: '#EFF6FF', icon: Archive },
+    { label: 'จัดเก็บ', value: totalStored, color: 'var(--color-success)', bg: 'var(--success-surface, #F0FDF4)', icon: Package },
+    { label: 'นำออก', value: totalWithdrawn, color: 'var(--color-danger)', bg: 'var(--danger-surface, #FEF2F2)', icon: PackageOpen },
+    { label: 'คงเหลือในสต็อก', value: totalStock, color: 'var(--primary)', bg: 'var(--primary-light)', icon: Archive },
   ]
 
   return (

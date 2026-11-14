@@ -48,7 +48,7 @@ axiosInstance.interceptors.response.use(
 
     const errorMessages: Record<number, string> = {
       400: data?.message ?? "Bad Request",
-      401: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
+      401: data?.message ?? "ไม่ได้รับอนุญาต",
       403: "ไม่มีสิทธิ์เข้าถึง",
       404: "ไม่พบข้อมูลที่ร้องขอ",
       409: data?.message ?? "ข้อมูลซ้ำ",

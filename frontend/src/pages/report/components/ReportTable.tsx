@@ -115,12 +115,12 @@ export default function ReportTable({ data, selectedType }: Props) {
                 </td>
                 <td style={td}>
                   {row.stored > 0
-                    ? <span style={{ color: '#16A34A', fontWeight: 600 }}>+{row.stored}</span>
+                    ? <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>+{row.stored}</span>
                     : <span style={{ color: 'var(--text-disabled, #A1A1AA)' }}>0</span>}
                 </td>
                 <td style={td}>
                   {row.withdrawn > 0
-                    ? <span style={{ color: '#DC2626', fontWeight: 600 }}>-{row.withdrawn}</span>
+                    ? <span style={{ color: 'var(--color-danger)', fontWeight: 600 }}>-{row.withdrawn}</span>
                     : <span style={{ color: 'var(--text-disabled, #A1A1AA)' }}>0</span>}
                 </td>
                 <td style={td}>
@@ -135,10 +135,10 @@ export default function ReportTable({ data, selectedType }: Props) {
               <td style={{ ...td, textAlign: 'left', paddingLeft: 20, fontWeight: 700, borderBottom: 'none' }}>
                 รวม {selectedType}
               </td>
-              <td style={{ ...td, fontWeight: 700, borderBottom: 'none', color: '#16A34A' }}>
+              <td style={{ ...td, fontWeight: 700, borderBottom: 'none', color: 'var(--color-success)' }}>
                 +{totalStored}
               </td>
-              <td style={{ ...td, fontWeight: 700, borderBottom: 'none', color: '#DC2626' }}>
+              <td style={{ ...td, fontWeight: 700, borderBottom: 'none', color: 'var(--color-danger)' }}>
                 -{totalWithdrawn}
               </td>
               <td style={{ ...td, fontWeight: 700, borderBottom: 'none', fontSize: 15 }}>
