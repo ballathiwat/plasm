@@ -51,3 +51,9 @@ backend_backup/
 backend/uploads/**
 !backend/uploads/ext/
 !backend/uploads/ext/.gitkeep
+
+# ไฟล์สำรอง / dump / patch — ห้าม commit (ใช้ git history หรือ branch แทน)
+*.bak-*
+*.bak.*
+repomix-output*
+*.patch
