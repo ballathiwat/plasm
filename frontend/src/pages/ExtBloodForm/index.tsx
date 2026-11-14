@@ -56,8 +56,7 @@ export default function ExtBloodFormPage() {
 
   return (
     <div className={`ext-form-page${h.step === 2 ? ' ext-form-page--review' : ''}`} style={{ animation: 'plasm-fade-in 0.2s ease' }}>
-      <ConfirmModal open={leave} type="danger" title="ออกจากหน้านี้?" message="ข้อมูลที่กรอกและถุงที่สแกนไว้จะหายไป หากต้องการเก็บไว้ ให้กด บันทึกร่าง ก่อน"
-        confirmText="ออกโดยไม่บันทึก" cancelText="อยู่ต่อ" onClose={() => setLeave(false)} onConfirm={() => navigate('/ext-blood')} />
+      <ConfirmModal open={leave} type="danger" title="ออกจากหน้านี้?" message="ข้อมูลที่กรอกและถุงที่สแกนไว้จะหายไป หากยังไม่ได้บันทึก" confirmText="ออกโดยไม่บันทึก" cancelText="อยู่ต่อ" onClose={() => setLeave(false)} onConfirm={() => navigate('/ext-blood')} />
       <ConfirmModal open={confirmSend} type="warning" title="คณะกรรมการยังไม่ครบตามที่แนะนำ"
         message={`ไม่มี ${h.missingRoles.map((r) => ROLE_LABEL[r]).join(', ')} — ยืนยันส่งให้คณะกรรมการ ${h.committee.length} คนหรือไม่?`}
         confirmText="ยืนยันส่ง" cancelText="กลับไปเพิ่มรายชื่อ" onClose={() => setConfirmSend(false)} onConfirm={() => { setConfirmSend(false); h.submit() }} />
@@ -97,10 +96,10 @@ export default function ExtBloodFormPage() {
               <TL icon={<FileText size={16} />} title="ข้อมูลการรับ" done={infoDone} hint={infoDone ? 'ครบแล้ว' : `เหลือ ${h.infoLeft} ช่อง`}
                 aside={boxLabel && <>หมายเลขกล่อง <b style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{boxLabel}</b></>}>
                 <div className="ext-form-content">
-                  <ExtFormReceiveInfo form={h.form} setField={h.setField} sources={h.sources} storages={h.storages} errors={fieldErr} />
+                  <ExtFormReceiveInfo form={h.form} setField={h.setField} sources={h.sources} storages={h.storages} bloodProducts={h.bloodProducts} errors={fieldErr} />
                 </div>
               </TL>
-              <TL icon={<ScanBarcode size={16} />} title="สแกนถุงเลือด" done={h.form.bags.length > 0} hint={h.form.bags.length ? `${h.form.bags.length} ถุง` : 'สแกนอย่างน้อย 1 ถุง'}>
+              <TL icon={<ScanBarcode size={16} />} title="สแกนถุงเลือด" done={h.form.bags.length > 0} hint={h.form.bags.length ? `${h.form.bags.length} ถุง` : 'สแกนถุงเลือดอย่างน้อย 1 ถุง'}>
                 <div className="ext-form-content">
                   <ExtFormBagInput bags={h.form.bags} bagInput={h.bagInput} setBagInput={h.setBagInput} addBag={h.addBag} removeBag={h.removeBag} bagError={h.bagError} showError={h.tried} />
                 </div>
@@ -127,7 +126,7 @@ export default function ExtBloodFormPage() {
               {([
                 ['วันที่รับ', formatThaiDate(h.form.receivedDate)],
                 ['สถานที่ส่ง', sourceName],
-                ['ชนิด / หมู่เลือด', <span key="g" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{h.form.plasmaType}{h.form.bloodGroup && <span className={`blood-badge ${bloodGroupClass(h.form.bloodGroup)}`} style={{ padding: '1px 8px', fontSize: 12 }}>{h.form.bloodGroup}</span>}</span>],
+                ['ชนิด / หมู่เลือด', <span key="g" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{h.form.plasmaType}{h.form.bloodGroup && <span className={`ext-blood-badge ${bloodGroupClass(h.form.bloodGroup)}`}>{h.form.bloodGroup}</span>}</span>],
                 ['ตำแหน่งจัดเก็บ', storageName],
                 ['หมายเลขกล่อง', boxLabel && <span key="b" style={{ fontFamily: 'var(--font-mono)' }}>{boxLabel}</span>],
                 ['ถุงเลือด', `${h.form.bags.length} ถุง`],
@@ -139,7 +138,7 @@ export default function ExtBloodFormPage() {
           </div>
           <ExtFormCommittee productCode={h.form.plasmaType} committee={h.committee} setCommittee={h.setCommittee} users={h.users}
             suggestedRoles={h.suggestedRoles} missingRoles={h.missingRoles} />
-          <p className="ext-muted" style={{ fontSize: 12, margin: '0 0 8px' }}>กดส่งแล้ว เอกสารจะบันทึกเป็น "รออนุมัติ" ทันที และเปลี่ยนเป็น "อนุมัติแล้ว" อัตโนมัติเมื่อคณะกรรมการอนุมัติครบ</p>
+          <p className="ext-muted" style={{ fontSize: 12, margin: '0 0 8px' }}>กดส่งแล้ว เอกสารจะบันทึกเป็น "รออนุมัติ" ทันที</p>
           <ExtFormFooter saving={h.saving} members={h.committee.length} onBack={() => h.setStep(1)} onSaveDraft={h.saveDraft} onSubmit={trySubmit} />
         </div>
       )}

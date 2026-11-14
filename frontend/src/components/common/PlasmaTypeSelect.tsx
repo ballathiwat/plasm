@@ -1,21 +1,29 @@
 // frontend/src/components/common/PlasmaTypeSelect.tsx
 //
-// Dropdown ชนิดเลือด — ดึงข้อมูลจาก API อัตโนมัติ (ผ่าน usePlasmaTypes)
+// Dropdown ชนิดเลือด — รายการตัวเลือกมาจากฐานข้อมูล master plasma-types.
+// ถ้า parent ส่ง products มา จะส่ง product ID ที่มี code ตรงกันกลับไปด้วย
 //
 // Usage:
 //   <PlasmaTypeSelect value={type} onChange={setType} />
-//   <PlasmaTypeSelect value={type} onChange={setType} allLabel="ทุกชนิด" />
-//   <PlasmaTypeSelect value={type} onChange={setType} showAll={false} />
+//   <PlasmaTypeSelect value={type} onChange={setType} products={products} />
 
 import { useMemo } from 'react'
 import SelectDropdown, { type OptionType } from './SelectDropdown'
 import usePlasmaTypes from '../../helpers/usePlasmaTypes'
 
+export interface PlasmaTypeProduct {
+  id: string
+  code: string
+  name?: string
+}
+
 export interface PlasmaTypeSelectProps {
   /** Selected value (plasma code e.g. "FFP", "Cryo", "" for all) */
   value: string
-  /** Callback — returns plasma code or "" */
-  onChange: (value: string) => void
+  /** Callback — returns plasma code and, when available, the matching product ID */
+  onChange: (value: string, productId?: string) => void
+  /** Optional list used only to resolve an ID; dropdown choices always come from master plasma-types. */
+  products?: PlasmaTypeProduct[]
   /** Label above dropdown */
   label?: string
   /** Placeholder text */
@@ -43,6 +51,7 @@ const findOption = (opts: OptionType[], v: string): OptionType | null =>
 export default function PlasmaTypeSelect({
   value,
   onChange,
+  products,
   label = 'ชนิดเลือด',
   placeholder = 'เลือกชนิด...',
   showAll = true,
@@ -63,7 +72,9 @@ export default function PlasmaTypeSelect({
   }, [plasmaTypes, showAll, allLabel])
 
   const handleChange = (opt: OptionType | null) => {
-    onChange(opt?.value ?? '')
+    const code = opt?.value ?? ''
+    const productId = products?.find((product) => product.code === code)?.id
+    onChange(code, productId)
   }
 
   return (
