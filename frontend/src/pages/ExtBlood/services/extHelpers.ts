@@ -81,3 +81,10 @@ export function validatePostImages(files: File[]): string | null {
   if (tooBig) return `ไฟล์ "${tooBig.name}" ใหญ่เกิน 10 MB`
   return null
 }
+
+/** ลบเอกสารร่างได้เฉพาะผู้สร้างเอกสารหรือ ADMIN — backend ตรวจซ้ำอีกชั้น */
+export const canDeleteDraft = (doc: ExtDocument, userId: string, isAdmin: boolean) =>
+  doc.status === 'DRAFT' && (isAdmin || doc.createdById === userId || doc.createdBy?.id === userId)
+
+/** ADMIN ลบไฟล์แนบของเอกสารที่อนุมัติแล้วได้ (จัดการรูปที่อัปโหลดผิด) — backend ตรวจซ้ำอีกชั้น */
+export const canAdminDeleteAttachment = (doc: ExtDocument, isAdmin: boolean) => isAdmin && doc.status === 'APPROVED'

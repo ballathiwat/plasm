@@ -1,7 +1,7 @@
 // frontend/src/pages/ExtBlood/components/ExtTable.tsx
 import { Printer,Eye, CheckCircle, PackageOpen, Pencil, Trash2, RotateCcw } from 'lucide-react'
 import Button from '../../../components/common/Button'
-import { formatThaiDate, statusLabel, statusClass, bloodGroupClass, isEditableStatus } from '../services/extHelpers'
+import { formatThaiDate, statusLabel, statusClass, bloodGroupClass, isEditableStatus, canDeleteDraft } from '../services/extHelpers'
 import { myPending, approvedCount, sortCommittee, canRecall, ROLE_LABEL } from '../services/committeeHelpers'
 import type { ExtDocument } from '../services/ExtBloodType'
 import ExtRowMenu, { type RowMenuItem } from './ExtRowMenu'
@@ -31,7 +31,7 @@ export function rowActions(d: ExtDocument, h: Omit<ExtRowHandlers, 'documents'>)
   if (canEdit && primary.label !== 'แก้ไข') more.push({ icon: <Pencil size={15} />, label: 'แก้ไข', onClick: () => h.onEdit(d.id) })
   if (canRecall(d, h.userId, h.isAdmin)) more.push({ icon: <RotateCcw size={15} />, label: 'ดึงกลับเพื่อแก้ไข', onClick: () => h.onRecall(d) })
   more.push({ icon: <Printer size={15} />, label: 'พิมพ์เอกสาร', onClick: () => h.onPrint(d) })   // ⬅️ ใส่บรรทัดนี้ตรงนี้
-  if (d.status === 'DRAFT') more.push({ icon: <Trash2 size={15} />, label: 'ลบเอกสารร่าง', onClick: () => h.onDelete(d), danger: true })
+  if (canDeleteDraft(d, h.userId, h.isAdmin)) more.push({ icon: <Trash2 size={15} />, label: 'ลบเอกสารร่าง', onClick: () => h.onDelete(d), danger: true })
   return { mine, primary, more }
 }
 

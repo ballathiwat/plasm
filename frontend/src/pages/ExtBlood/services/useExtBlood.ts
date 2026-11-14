@@ -142,6 +142,21 @@ export default function useExtBlood() {
     }
   }
 
+  /** ADMIN ลบไฟล์แนบของเอกสารที่อนุมัติแล้ว — คืนข้อความ error หรือ null เมื่อสำเร็จ */
+  const handleDeleteAttachment = async (doc: ExtDocument, attachmentId: string): Promise<string | null> => {
+    try {
+      await extBloodService.deleteAttachment(attachmentId)
+      const updated = await extBloodService.getDocument(doc.id)
+      setDetailDoc(updated)
+      setDocuments((p) => p.map((d) => (d.id === updated.id ? updated : d)))
+      say({ type: 'success', msg: `ลบไฟล์แนบใน ${updated.docNumber} แล้ว` })
+      return null
+    } catch (e: unknown) {
+      console.error('deleteAttachment', e)
+      return (e as { message?: string })?.message || 'ลบไฟล์แนบไม่สำเร็จ'
+    }
+  }
+
   return {
     user, documents, summary, counts, totalPages, totalItems,
     sources, storages, bloodProducts, exportReasons,
@@ -151,6 +166,6 @@ export default function useExtBlood() {
     setActiveTab, setFilter, setPage,
     toggleSelect, toggleSelectAll, clearSelection,
     openDetail, closeDetail, openApprove, closeApprove, openExport, closeExport,
-    refresh, handleDecide, handleBatchApprove, handleRecall, handleDelete, handleExportBags, handleUploadPostImages,
+    refresh, handleDecide, handleBatchApprove, handleRecall, handleDelete, handleExportBags, handleUploadPostImages, handleDeleteAttachment,
   }
 }

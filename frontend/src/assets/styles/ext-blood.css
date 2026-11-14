@@ -87,6 +87,11 @@
 .ext-file-link__main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
 .ext-file-link__meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--text-secondary);}
 .ext-file-link__badge{display:inline-flex;align-items:center;padding:1px 8px;border-radius:99px;font-size:11px;font-weight:600;background:var(--warning-surface);color:var(--warning-ink);white-space:nowrap;}
+.ext-file-row{display:flex;align-items:stretch;gap:6px;}
+.ext-file-row>.ext-file-link{flex:1;min-width:0;}
+.ext-file-row__del{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:0;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);color:var(--danger-ink);cursor:pointer;transition:border-color .15s,background .15s;}
+.ext-file-row__del:hover{border-color:var(--danger-ink);background:var(--danger-surface);}
+.ext-file-row__del:focus-visible{outline:2px solid var(--danger-ink);outline-offset:2px;}
 .ext-post-upload{margin-left:auto;text-transform:none;letter-spacing:0;}
 .ext-post-upload__hint{margin:0 0 8px;font-size:12px;color:var(--text-secondary);}
 .ext-post-upload__error{margin:0 0 8px;font-size:13px;font-weight:500;color:var(--danger-ink);}
