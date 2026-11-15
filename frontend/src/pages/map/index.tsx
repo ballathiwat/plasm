@@ -27,6 +27,7 @@ const MapPage = () => {
     totalUnits,
     loading,
     filtering,
+    filterError,
     filters,
     hasFilter,
     setBlood,
@@ -81,20 +82,10 @@ const MapPage = () => {
         <p
           style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}
         >
-          ภาพรวมตำแหน่งจัดเก็บพลาสมา · {hasFilter ? "ตามตัวกรอง" : "รวม"}{" "}
-          {totalBoxes} กล่อง · {totalUnits} units
+          ภาพรวมตำแหน่งจัดเก็บพลาสมา · รวม {totalBoxes} กล่อง · {totalUnits}{" "}
+          units
         </p>
       </div>
-
-      {/* ตัวกรอง: หมู่เลือด + ชนิดเลือด (มีผลทั้งสองแท็บ) */}
-      <MapFilterBar
-        filters={filters}
-        hasFilter={hasFilter}
-        filtering={filtering}
-        onBloodChange={setBlood}
-        onTypeChange={setType}
-        onClear={clearFilters}
-      />
 
       {error && (
         <div className="map-error" role="alert">
@@ -102,7 +93,6 @@ const MapPage = () => {
         </div>
       )}
 
-      <div className={`map-content${filtering ? " map-content--busy" : ""}`}>
 
       {/* Summary cards */}
       <div
@@ -202,8 +192,25 @@ const MapPage = () => {
           </div>
         ))}
 
-      {/* Tab content: เก่าสุด / ใหม่สุด */}
-      {tab === "age" && bloodAgeMap.length === 0 && (
+      {/* ตัวกรอง: หมู่เลือด + ชนิดเลือด — เฉพาะแท็บ เก่าสุด / ใหม่สุด */}
+      {tab === "age" && (
+      <MapFilterBar
+        filters={filters}
+        hasFilter={hasFilter}
+        filtering={filtering}
+        onBloodChange={setBlood}
+        onTypeChange={setType}
+        onClear={clearFilters}
+      />
+      )}
+      {tab === "age" && filterError && (
+        <div className="map-error" role="alert">
+          {filterError}
+        </div>
+      )}
+
+      <div className={`map-content${filtering ? " map-content--busy" : ""}`}>
+      {tab === "age" && !filtering && bloodAgeMap.length === 0 && (
         <div className="map-empty">
           {hasFilter
             ? "ไม่พบกล่องตามหมู่เลือด / ชนิดเลือดที่เลือก"
@@ -231,6 +238,9 @@ const MapPage = () => {
               <thead>
                 <tr style={{ borderBottom: "2px solid var(--border)" }}>
                   <th style={{ padding: "8px 12px", textAlign: "left" }}>
+                    ชนิดเลือด
+                  </th>
+                  <th style={{ padding: "8px 12px", textAlign: "left" }}>
                     กรุ๊ป
                   </th>
                   <th style={{ padding: "8px 12px", textAlign: "left" }}>
@@ -244,9 +254,12 @@ const MapPage = () => {
               <tbody>
                 {bloodAgeMap.map((row: BloodGroupAgeInfo) => (
                   <tr
-                    key={row.blood}
+                    key={`${row.type}|${row.blood}`}
                     style={{ borderBottom: "1px solid var(--border)" }}
                   >
+                    <td style={{ padding: "8px 12px", fontWeight: 600 }}>
+                      {row.type}
+                    </td>
                     <td style={{ padding: "8px 12px" }}>
                       <span
                         className="blood-badge"
