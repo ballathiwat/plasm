@@ -23,3 +23,116 @@ button.map-shelf-tile:focus-visible { outline: 2px solid var(--primary); outline
   border: 1px solid var(--stock-danger); border-radius: var(--radius-md, 8px); color: var(--stock-danger);
 }
 @media (prefers-reduced-motion: reduce) { .map-content { transition: none; } }
+
+/* ── โครงหน้า ── */
+.map-page { animation: plasm-fade-in .2s ease; }
+.map-page__header { margin-bottom: 16px; }
+.map-page__title { margin: 0; font-size: 20px; font-weight: 700; }
+.map-page__desc { margin: 4px 0 0; font-size: 13px; color: var(--text-secondary); }
+.map-zone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 16px; }
+
+/* ── แท็บ ── */
+.map-tabs { display: flex; margin-bottom: 16px; border-bottom: 2px solid var(--border); overflow-x: auto; }
+.map-tab {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 20px; margin-bottom: -2px;
+  font: inherit; font-size: 14px; font-weight: 500; white-space: nowrap; color: var(--text-secondary);
+  background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: color .15s, border-color .15s;
+}
+.map-tab > span { display: inline-flex; }
+.map-tab:hover { color: var(--text-primary); }
+.map-tab--active, .map-tab--active:hover { font-weight: 700; color: var(--primary); border-bottom-color: var(--primary); }
+.map-tab:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+
+/* ── การ์ดสรุป ภายใน / ภายนอก ── */
+.map-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 12px; margin-bottom: 16px; }
+.map-summary__card {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md, 8px); box-shadow: var(--shadow-sm);
+}
+.map-summary__icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 40px;
+  border-radius: var(--radius-md, 8px);
+}
+.map-summary__icon--in { background: var(--primary-surface); color: var(--primary-ink); }
+.map-summary__icon--ex { background: var(--group-other-surface); color: var(--group-other-ink); }
+.map-summary__body { min-width: 0; }
+.map-summary__label { font-size: 12px; color: var(--text-secondary); }
+.map-summary__value { margin-top: 2px; font-size: 14px; color: var(--text-secondary); }
+.map-summary__value b { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.map-summary__sep { margin: 0 2px; }
+.map-summary__pending { font-size: 20px; font-weight: 700; }
+
+/* ── ตัวเลือกคลัง ภายใน / ภายนอก (MapSourceToggle) ── */
+.map-source__label { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.map-source__group {
+  display: inline-flex; gap: 2px; padding: 2px;
+  background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-md, 8px);
+}
+.map-source__option {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 14px;
+  font: inherit; text-align: left; color: var(--text-secondary);
+  background: none; border: 1px solid transparent; border-radius: var(--radius-sm, 6px); cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+.map-source__option:hover { color: var(--text-primary); }
+.map-source__option--checked, .map-source__option--checked:hover {
+  background: var(--surface); border-color: var(--primary); color: var(--primary-ink); box-shadow: var(--shadow-sm);
+}
+.map-source__option:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.map-source__icon { display: inline-flex; }
+.map-source__text { display: flex; flex-direction: column; line-height: 1.25; }
+.map-source__name { font-size: 13px; font-weight: 600; }
+.map-source__hint { font-size: 11px; color: var(--text-secondary); }
+
+/* ── ตัวกรอง: ปุ่มชิดขวา + บรรทัดสถานะ ── */
+.map-filter .map-filter__actions { margin-left: auto; }
+.map-filter__status { display: flex; align-items: center; gap: 6px; }
+.map-filter__status svg { flex: none; }
+
+/* ── ตาราง เก่าสุด / ใหม่สุด ── */
+.map-age {
+  padding: 8px 20px 12px; overflow-x: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg, 10px); box-shadow: var(--shadow-sm);
+}
+.map-age__table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
+.map-age__col-type { width: 80px; }
+.map-age__col-blood { width: 72px; }
+.map-age__col-stock { width: 130px; }
+.map-age__table th, .map-age__table td { padding: 10px 12px; text-align: left; vertical-align: top; }
+.map-age__table thead th {
+  font-size: 12px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; border-bottom: 2px solid var(--border);
+}
+.map-age__table tbody tr + tr > * { border-top: 1px solid var(--border); }
+.map-age__table tbody th { font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+.map-age__table .map-age__num { text-align: right; }
+.map-age__dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; }
+.map-age__dot--oldest { background: var(--text-primary); }
+.map-age__dot--newest { background: var(--border-strong); }
+.map-age__blood { padding: 3px 10px; font-size: 12px; }
+.map-age__stock-main { font-weight: 600; color: var(--text-primary); }
+.map-age__sub { font-size: 12px; line-height: 1.6; color: var(--text-secondary); }
+.map-age__line { display: flex; align-items: flex-start; gap: 4px; }
+.map-age__line svg { flex: none; margin-top: 3px; }
+.map-age__line span { min-width: 0; overflow-wrap: anywhere; }
+.map-age__box-label { font-weight: 700; line-height: 1.6; color: var(--text-primary); overflow-wrap: anywhere; }
+.map-age__doc { margin-left: 8px; font-family: var(--font-mono); font-size: 11px; font-weight: 400; color: var(--text-secondary); }
+.map-age__date { font-weight: 700; color: var(--text-primary); }
+
+/* ── การ์ดต่อแถว (container < 900px) ── */
+.map-age-cards { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.map-age-card {
+  padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg, 10px); box-shadow: var(--shadow-sm);
+}
+.map-age-card__head { display: flex; align-items: center; gap: 8px; }
+.map-age-card__type { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.map-age-card__stock { margin-left: auto; text-align: right; font-size: 13px; }
+.map-age-card__part { margin-top: 10px; padding: 10px 12px; background: var(--surface-raised); border-radius: var(--radius-md, 8px); }
+.map-age-card__title { margin-bottom: 4px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+
+.map-empty p { margin: 0 0 12px; }
+.map-empty p:last-child { margin-bottom: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .map-page { animation: none; }
+  .map-tab, .map-source__option { transition: none; }
+}
