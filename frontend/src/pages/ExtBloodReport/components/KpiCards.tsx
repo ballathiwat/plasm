@@ -1,9 +1,9 @@
 // frontend/src/pages/ExtBloodReport/components/KpiCards.tsx
 //
-// KPI 4 ใบ + เปรียบเทียบกับช่วงก่อนหน้า (ความยาวเท่ากัน)
+// KPI 3 ใบ + เปรียบเทียบกับช่วงก่อนหน้า (ความยาวเท่ากัน)
 
-import { Building2, ClipboardCheck, Droplets, FlaskConical, Minus, type LucideIcon } from 'lucide-react'
-import { fmtInt, fmtLiters, formatThaiRange } from '../services/reportHelpers'
+import { Building2, ClipboardCheck, Droplets, Minus, type LucideIcon } from 'lucide-react'
+import { fmtInt, formatThaiRange } from '../services/reportHelpers'
 import type { ReportKpi, ReportRange } from '../services/ReportType'
 
 interface Props {
@@ -22,7 +22,6 @@ interface CardDef {
 
 const CARDS: CardDef[] = [
   { key: 'bags', label: 'ถุงทั้งหมด', unit: 'ถุง', icon: Droplets, format: fmtInt },
-  { key: 'volumeMl', label: 'ปริมาตรรวม', unit: 'ลิตร', icon: FlaskConical, format: fmtLiters },
   { key: 'sources', label: 'แหล่งที่มา', unit: 'แห่ง', icon: Building2, format: fmtInt },
   { key: 'receipts', label: 'ครั้งที่รับ', unit: 'ครั้ง', icon: ClipboardCheck, format: fmtInt },
 ]

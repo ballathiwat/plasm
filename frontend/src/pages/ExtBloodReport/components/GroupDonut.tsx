@@ -1,9 +1,9 @@
 // frontend/src/pages/ExtBloodReport/components/GroupDonut.tsx
 //
-// Donut สัดส่วนหมู่เลือด ABO — คลิกชิ้น/legend = toggle ตัวกรองหมู่เลือด
+// Donut สัดส่วนหมู่เลือด (ตาม code ของ master) — คลิกชิ้น/legend = toggle ตัวกรองหมู่เลือด
 
 import type { CSSProperties, KeyboardEvent } from 'react'
-import { ABO_ORDER, aboColor, fmtInt, fmtPct } from '../services/reportHelpers'
+import { aboColor, compareBloodGroup, fmtInt, fmtPct } from '../services/reportHelpers'
 import type { GroupItem } from '../services/ReportType'
 
 interface Props {
@@ -21,9 +21,7 @@ const cssVars = (vars: Record<string, string>) => vars as CSSProperties
 
 export default function GroupDonut({ groups, selected, onToggle }: Props) {
   // เรียง A, B, O, AB แล้วตามด้วยหมู่อื่น (ถ้ามี)
-  const known = ABO_ORDER.map((abo) => groups.find((g) => g.abo === abo)).filter((g): g is GroupItem => !!g)
-  const others = groups.filter((g) => !(ABO_ORDER as string[]).includes(g.abo))
-  const items = [...known, ...others]
+  const items = [...groups].sort((a, b) => compareBloodGroup(a.abo, b.abo))
 
   const total = items.reduce((s, g) => s + g.bags, 0)
   const rhNeg = items.reduce((s, g) => s + g.rhNegBags, 0)
