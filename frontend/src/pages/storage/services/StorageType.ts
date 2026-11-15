@@ -4,9 +4,6 @@
 
 import type { BoxStatus } from '../../../types/models'
 
-/** ชนิดของค่าที่เพิ่มได้ทันทีจากฟอร์มจัดเก็บ */
-export type QuickAddKind = 'type' | 'blood' | 'zone' | 'shelf'
-
 export interface StorageBoxItem {
   id: string
   boxLabel: string

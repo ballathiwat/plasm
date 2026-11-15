@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import useStorage from './services/useStorage'
 import BarcodeLabel from './components/BarcodeLabel'
-import StorageQuickAdd from './components/StorageQuickAdd'
 import RackSlotPicker from './components/RackSlotPicker'
 import StorageUnitScanner from './components/StorageUnitScanner'
 import StorageSummaryCard from './components/StorageSummaryCard'
@@ -30,6 +29,8 @@ import '../../assets/styles/storage.css'
 
 const WIDE_MIN = 860
 const BOX_NAME_MAX = 60
+/** ชนิดเลือด หมู่เลือด ห้อง/ตู้ และชั้นวาง เพิ่มได้ที่เมนูตั้งค่าเท่านั้น */
+const NO_OPTIONS = 'ไม่พบข้อมูล — เพิ่มได้ที่เมนูตั้งค่า'
 const pick = (opts: OptionType[], v: string) => opts.find((o) => o.value === v) ?? null
 
 /** กว้างพอสำหรับ 2 คอลัมน์หรือไม่ — วัดจาก container (ไม่ใช่ viewport เพราะ sidebar ย่อ/ขยายได้) */
@@ -171,16 +172,10 @@ const StorageCreatePage = () => {
           <TimelineSection icon={<Package size={16} />} title="ข้อมูลกล่อง" done={parts[0]} hint={parts[0] ? 'ครบแล้ว' : `เหลือ ${infoLeft} ช่อง`}>
             <div className="ext-form-content">
               <div className="sto-create__grid">
-                <div>
-                  <SelectDropdown label="ชนิดเลือด" required placeholder="เลือกชนิดเลือด" options={typeO} value={pick(typeO, s.form.type)}
-                    onChange={(o) => s.handleFormChange('type', o?.value ?? '')} isClearable={false} error={err.type} />
-                  <StorageQuickAdd placeholder="ชนิดใหม่ เช่น FFP" onAdd={(v) => s.handleQuickAdd('type', v)} />
-                </div>
-                <div>
-                  <SelectDropdown label="หมู่เลือด" required placeholder="เลือกหมู่เลือด" options={bloodO} value={pick(bloodO, s.form.blood)}
-                    onChange={(o) => s.handleFormChange('blood', o?.value ?? '')} isClearable={false} error={err.blood} />
-                  <StorageQuickAdd placeholder="หมู่เลือดใหม่" uppercase onAdd={(v) => s.handleQuickAdd('blood', v)} />
-                </div>
+                <SelectDropdown label="ชนิดเลือด" required placeholder="เลือกชนิดเลือด" options={typeO} value={pick(typeO, s.form.type)}
+                  onChange={(o) => s.handleFormChange('type', o?.value ?? '')} isClearable={false} error={err.type} noOptionsMessage={NO_OPTIONS} />
+                <SelectDropdown label="หมู่เลือด" required placeholder="เลือกหมู่เลือด" options={bloodO} value={pick(bloodO, s.form.blood)}
+                  onChange={(o) => s.handleFormChange('blood', o?.value ?? '')} isClearable={false} error={err.blood} noOptionsMessage={NO_OPTIONS} />
                 <DateInput label="วันที่เก็บ" required value={s.form.collectionDate} max={todayISO()}
                   onChange={(iso) => s.handleFormChange('collectionDate', iso)} error={err.collectionDate} />
                 <FormInput label="ชื่อกล่อง (ไม่บังคับ)" placeholder="เช่น กล่องสำรองฉุกเฉิน" maxLength={BOX_NAME_MAX}
@@ -192,17 +187,11 @@ const StorageCreatePage = () => {
           <TimelineSection icon={<MapPin size={16} />} title="ตำแหน่งจัดเก็บ" done={parts[1]} hint={s.locationLabel || 'เลือกห้อง/ตู้ ชั้นวาง และช่องที่จะวางกล่อง'}>
             <div className="ext-form-content">
               <div className="sto-create__grid">
-                <div>
-                  <SelectDropdown label="ห้อง/ตู้" required placeholder="เลือกห้อง/ตู้" options={zoneO} value={pick(zoneO, s.form.zoneId)}
-                    onChange={(o) => s.handleFormChange('zoneId', o?.value ?? '')} isClearable={false} isSearchable={false} error={err.zoneId} />
-                  <StorageQuickAdd placeholder="ชื่อห้อง/ตู้ใหม่" maxLength={40} onAdd={(v) => s.handleQuickAdd('zone', v)} />
-                </div>
-                <div>
-                  <SelectDropdown label="ชั้นวาง" required placeholder={s.form.zoneId ? 'เลือกชั้นวาง' : 'เลือกห้อง/ตู้ก่อน'} options={shelfO} value={pick(shelfO, s.form.shelf)}
-                    onChange={(o) => s.handleFormChange('shelf', o?.value ?? '')} disabled={!s.form.zoneId} isClearable={false} isSearchable={false}
-                    error={s.form.zoneId ? err.shelf : undefined} />
-                  <StorageQuickAdd placeholder="รหัสชั้นวางใหม่" uppercase disabled={!s.form.zoneId} onAdd={(v) => s.handleQuickAdd('shelf', v)} />
-                </div>
+                <SelectDropdown label="ห้อง/ตู้" required placeholder="เลือกห้อง/ตู้" options={zoneO} value={pick(zoneO, s.form.zoneId)}
+                  onChange={(o) => s.handleFormChange('zoneId', o?.value ?? '')} isClearable={false} isSearchable={false} error={err.zoneId} noOptionsMessage={NO_OPTIONS} />
+                <SelectDropdown label="ชั้นวาง" required placeholder={s.form.zoneId ? 'เลือกชั้นวาง' : 'เลือกห้อง/ตู้ก่อน'} options={shelfO} value={pick(shelfO, s.form.shelf)}
+                  onChange={(o) => s.handleFormChange('shelf', o?.value ?? '')} disabled={!s.form.zoneId} isClearable={false} isSearchable={false}
+                  error={s.form.zoneId ? err.shelf : undefined} noOptionsMessage={NO_OPTIONS} />
               </div>
 
               {s.form.shelf && (s.isRackZone ? (

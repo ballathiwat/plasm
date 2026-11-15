@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import storageService from './StorageService'
 import type {
-  MasterOptions, QuickAddKind, RackSlotMap, StorageBoxItem, StorageFormData,
+  MasterOptions, RackSlotMap, StorageBoxItem, StorageFormData,
 } from './StorageType'
 import type { ToastState } from '../../../components/common/Toast'
 import type { BarcodeLabelData } from '../components/BarcodeLabel'
@@ -178,48 +178,6 @@ export default function useStorage() {
     if (field === 'zoneId' || field === 'shelf') setRackPosition(null)
   }
 
-  // ── เพิ่มชนิด/หมู่เลือด/สถานที่/ชั้นวางใหม่ทันทีหน้างาน แล้วเลือกให้เลย ──
-  const handleQuickAdd = async (kind: QuickAddKind, value: string): Promise<boolean> => {
-    const v = value.trim()
-    if (!v) return false
-
-    try {
-      let patch: Partial<StorageFormData>
-      let msg: string
-
-      if (kind === 'type') {
-        const created = await storageService.createPlasmaType(v)
-        patch = { type: created.code }
-        msg = `เพิ่มชนิด "${created.code}" สำเร็จ`
-      } else if (kind === 'blood') {
-        const created = await storageService.createBloodType(v)
-        patch = { blood: created.code }
-        msg = `เพิ่มหมู่เลือด "${created.code}" สำเร็จ`
-      } else if (kind === 'zone') {
-        const created = await storageService.createZone(v)
-        // สถานที่ใหม่ยังไม่มีชั้นวาง → เคลียร์ชั้นไว้ให้เพิ่มต่อ
-        patch = { zoneId: created.id, shelf: '' }
-        msg = `เพิ่มสถานที่ "${created.name}" สำเร็จ — เพิ่มชั้นวางต่อได้เลย`
-      } else {
-        if (!form.zoneId) {
-          setToast({ type: 'error', msg: 'กรุณาเลือกสถานที่ก่อนเพิ่มชั้นวาง' })
-          return false
-        }
-        const created = await storageService.createShelf(form.zoneId, v)
-        patch = { shelf: created.code }
-        msg = `เพิ่มชั้น "${created.code}" สำเร็จ`
-      }
-
-      await loadMaster()
-      setForm((f) => ({ ...f, ...patch }))
-      setToast({ type: 'success', msg })
-      return true
-    } catch (err) {
-      setToast({ type: 'error', msg: errorMessage(err, 'เกิดข้อผิดพลาด') })
-      return false
-    }
-  }
-
   // ── สแกนถุง: ตรวจรูปแบบ → ซ้ำในกล่อง → ซ้ำในระบบ (/units/check) ──
   const setUnitInput = (v: string) => {
     setUnitInputState(v)
@@ -367,7 +325,7 @@ export default function useStorage() {
   return {
     // ข้อมูลหลัก + ฟอร์ม
     master, form, nextLabel, availableShelves, zoneName: zone?.name ?? '',
-    handleFormChange, handleQuickAdd,
+    handleFormChange,
     // rack
     isRackZone, rackLevel, setRackLevel, rackPosition, setRackPosition, freeSlots, occupantLabel,
     // สแกนถุง
