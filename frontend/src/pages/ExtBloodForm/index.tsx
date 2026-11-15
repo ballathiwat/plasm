@@ -1,7 +1,7 @@
 // frontend/src/pages/ExtBloodForm/index.tsx — 2 ขั้น: ข้อมูลและถุงเลือด → คณะกรรมการอนุมัติ
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2, AlertTriangle, FileText, ScanBarcode, Paperclip, Check, ChevronRight, ChevronDown, Save, Pencil, ClipboardCheck } from 'lucide-react'
+import { ArrowLeft, Loader2, AlertTriangle, FileText, ScanBarcode, Paperclip, ChevronRight, ChevronDown, Save, Pencil, ClipboardCheck } from 'lucide-react'
 import Button from '../../components/common/Button'
 import { ConfirmModal } from '../../components/common/Modal'
 import useExtForm from './services/useExtForm'
@@ -12,22 +12,11 @@ import ExtFormAttachments from './components/ExtFormAttachments'
 import ExtFormCommittee from './components/ExtFormCommittee'
 import ExtFormFooter from './components/ExtFormFooter'
 import ExtFormSummary from './components/ExtFormSummary'
+import TL from '../../components/shared/TimelineSection'
 import { ROLE_LABEL } from '../ExtBlood/services/committeeHelpers'
 import { formatThaiDate, bloodGroupClass } from '../ExtBlood/services/extHelpers'
 import '../../assets/styles/ext-blood-form.css'
 import '../../assets/styles/ext-committee.css'
-
-function TL({ icon, title, done, hint, aside, last, children }: { icon: ReactNode; title: string; done: boolean; hint: string; aside?: ReactNode; last?: boolean; children: ReactNode }) {
-  return (
-    <section className={`ext-tl ${done ? 'is-done' : ''}`} aria-label={`${title} — ${done ? 'ครบแล้ว' : 'ยังไม่ครบ'}`}>
-      <div className="ext-tl__rail"><span className="ext-tl__dot">{done ? <Check size={16} strokeWidth={3} /> : icon}</span>{!last && <span className="ext-tl__line" />}</div>
-      <div style={{ minWidth: 0 }}>
-        <div className="ext-tl__head"><span className="ext-tl__title">{title}</span><span className="ext-tl__hint">{hint}</span>{aside && <span className="ext-tl__aside">{aside}</span>}</div>
-        {children}
-      </div>
-    </section>
-  )
-}
 
 export default function ExtBloodFormPage() {
   const navigate = useNavigate()

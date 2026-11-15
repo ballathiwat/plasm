@@ -24,6 +24,8 @@ export interface OptionType {
 
 interface BaseProps {
   label?: string
+  /** แสดง * หลัง label (ช่องบังคับ) */
+  required?: boolean
   placeholder?: string
   disabled?: boolean
   error?: string
@@ -58,6 +60,7 @@ export type SelectDropdownProps = SingleSelectProps | MultiSelectProps
 export default function SelectDropdown(props: SelectDropdownProps) {
   const {
     label,
+    required = false,
     placeholder = 'เลือก...',
     disabled = false,
     error,
@@ -126,7 +129,7 @@ export default function SelectDropdown(props: SelectDropdownProps) {
 
   return (
     <div className={wrapperClass}>
-      {label && <label className="plasm-select-label">{label}</label>}
+      {label && <label className={`plasm-select-label${required ? ' plasm-select-label--required' : ''}`}>{label}</label>}
 
       <Select<OptionType, boolean, GroupBase<OptionType>>
         classNamePrefix="plasm-select"
@@ -143,6 +146,7 @@ export default function SelectDropdown(props: SelectDropdownProps) {
         loadingMessage={() => 'กำลังค้นหา...'}
         onInputChange={isAsync ? handleInputChange : undefined}
         aria-label={label}
+        aria-required={required || undefined}
         aria-invalid={!!error}
       />
 

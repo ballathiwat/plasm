@@ -151,3 +151,8 @@
   margin-top: 4px;
   font-family: var(--font-family, "IBM Plex Sans Thai", system-ui, sans-serif);
 }
+
+.plasm-dp-label--required::after {
+  content: ' *';
+  color: var(--stock-danger);
+}
