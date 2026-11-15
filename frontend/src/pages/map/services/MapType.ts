@@ -28,7 +28,7 @@ export interface MapZoneRaw {
   shelves: { id: string; code: string; active: boolean }[]
 }
 
-// ── ตัวกรองของหน้า (ค่าว่าง = ทั้งหมด) ──
+// ── ตัวกรองของแท็บ "เก่าสุด / ใหม่สุด" (ค่าว่าง = ทั้งหมด) ──
 export interface MapFilters {
   /** รหัสหมู่เลือดจาก master เช่น "A", "AB" */
   blood: string
@@ -71,7 +71,9 @@ export const ROOM_LAYOUT: { shelf: string; row: number; col: number; label: stri
   { shelf: 'R1', row: 2, col: 2, label: 'R1' },
 ]
 
+/** 1 แถว = ชนิดเลือด + หมู่เลือด (ไม่ปนกล่องต่างชนิดกัน) */
 export interface BloodGroupAgeInfo {
+  type: string
   blood: string
   oldest: { boxLabel: string; zoneName: string; shelf: string; collectionDate: string } | null
   newest: { boxLabel: string; zoneName: string; shelf: string; collectionDate: string } | null

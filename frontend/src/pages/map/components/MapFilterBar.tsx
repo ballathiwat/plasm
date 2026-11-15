@@ -1,7 +1,7 @@
 // ============================================================
 //  src/pages/map/components/MapFilterBar.tsx
-//  ตัวกรองของหน้าแผนผัง — หมู่เลือด + ชนิดเลือด
-//  มีผลทั้งแท็บ "แผนผัง" และ "เก่าสุด / ใหม่สุด"
+//  ตัวกรองของแท็บ "เก่าสุด / ใหม่สุด" — หมู่เลือด + ชนิดเลือด
+//  ไม่มีผลกับแท็บ "แผนผัง" และการ์ดสรุป
 // ============================================================
 
 import { X } from 'lucide-react'
@@ -28,7 +28,7 @@ export default function MapFilterBar({
   onClear,
 }: Props) {
   return (
-    <div className="plasm-filter" role="search" aria-label="กรองแผนผังจัดเก็บ">
+    <div className="plasm-filter" role="search" aria-label="กรองกล่องเก่าสุด / ใหม่สุด">
       <div className="plasm-filter__item">
         <BloodGroupSelect
           value={filters.blood}
