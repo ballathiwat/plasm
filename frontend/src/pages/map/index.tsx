@@ -28,10 +28,13 @@ const MapPage = () => {
     loading,
     filtering,
     filterError,
-    filters,
+    draft,
     hasFilter,
+    isDirty,
+    canClear,
     setBlood,
     setType,
+    applyFilters,
     clearFilters,
     error,
   } = useMap();
@@ -195,11 +198,13 @@ const MapPage = () => {
       {/* ตัวกรอง: หมู่เลือด + ชนิดเลือด — เฉพาะแท็บ เก่าสุด / ใหม่สุด */}
       {tab === "age" && (
       <MapFilterBar
-        filters={filters}
-        hasFilter={hasFilter}
+        draft={draft}
+        isDirty={isDirty}
+        canClear={canClear}
         filtering={filtering}
         onBloodChange={setBlood}
         onTypeChange={setType}
+        onSearch={applyFilters}
         onClear={clearFilters}
       />
       )}
