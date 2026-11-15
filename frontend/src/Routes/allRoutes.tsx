@@ -6,6 +6,7 @@ import { Navigate } from 'react-router-dom'
 
 import DashboardPage from '../pages/dashboard'
 import StoragePage from '../pages/storage'
+import StorageCreatePage from '../pages/storage/StorageCreatePage'
 import WithdrawPage from '../pages/withdraw'
 import SearchPage from '../pages/search'
 import MapPage from '../pages/map'
@@ -30,6 +31,7 @@ export interface RouteConfig {
 const authProtectedRoutes: RouteConfig[] = [
   { path: '/', component: <DashboardPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/storage', component: <StoragePage />, roles: ['ADMIN', 'STAFF'] },
+  { path: '/storage/new', component: <StorageCreatePage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/withdraw', component: <WithdrawPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/search', component: <SearchPage />, roles: ['ADMIN', 'STAFF'] },
   { path: '/map', component: <MapPage />, roles: ['ADMIN', 'STAFF'] },

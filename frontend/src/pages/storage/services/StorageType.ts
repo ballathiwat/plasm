@@ -116,3 +116,71 @@ export interface UnitRemovalRecord {
   userName: string | null
   removedAt: string
 }
+
+// ── หน้ารายการกล่อง (/storage) ──
+
+/** สถานะกล่องที่คำนวณจาก unit: เก็บอยู่ครบ / นำออกบางส่วน / นำออกหมดแล้ว */
+export type BoxState = 'STORED' | 'PARTIAL' | 'EMPTY'
+export type StorageTab = 'ALL' | BoxState
+
+export interface StorageUnitItem {
+  unitNumber: string
+  status: 'stored' | 'withdrawn'
+}
+
+/** แถวของ GET /boxes?view=list */
+export interface StorageListItem extends StorageBoxItem {
+  unitItems: StorageUnitItem[]
+  unitCount: number
+  storedCount: number
+  state: BoxState
+  /** เลข unit ที่ตรงกับคำค้น (เมื่อค้นเจอจากเลข unit ไม่ใช่หมายเลข/ชื่อกล่อง) */
+  matchedUnit: string | null
+}
+
+export interface StorageListFilter {
+  search?: string
+  dateFrom?: string
+  dateTo?: string
+  zoneId?: string
+  type?: string
+  blood?: string
+}
+
+export interface StorageListQuery extends StorageListFilter {
+  state?: BoxState
+  page: number
+  pageSize: number
+}
+
+export interface PaginatedListResponse {
+  data: StorageListItem[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+/** GET /boxes/summary */
+export interface StorageSummary {
+  all: number
+  stored: number
+  partial: number
+  empty: number
+  unitsStored: number
+}
+
+/** PATCH /boxes/:id/location — ห้อง rack ต้องส่ง level + position */
+export interface MoveBoxPayload {
+  zoneId: string
+  shelf: string
+  level?: number
+  position?: number
+}
+
+/** กล่องที่วางอยู่ในช่องของ rack: level → position → กล่อง */
+export interface RackSlotBox {
+  boxId: string
+  boxLabel: string
+}
+export type RackSlotMap = Record<number, Record<number, RackSlotBox>>

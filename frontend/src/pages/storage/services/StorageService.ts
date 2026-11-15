@@ -4,13 +4,15 @@
 
 import apiAdapter from '../../../helpers/http/apiAdapter'
 import {
-  GET_BOXES, POST_BOX, GET_UNIT_CHECK, MASTER_REMOVAL_REASONS, GET_RACK,
+  GET_BOXES, GET_BOX_SUMMARY, POST_BOX, GET_UNIT_CHECK, MASTER_REMOVAL_REASONS, GET_RACK,
   MASTER_PLASMA_TYPES, MASTER_BLOOD_TYPES, MASTER_ZONES,
 } from '../../../helpers/url_helper'
 import type {
   StorageBoxItem, CreateBoxPayload, MasterCode, MasterShelf, MasterZone,
   PaginatedBoxResponse, UnitCheckResult,
   UnitRemovalInput, UnitRemovalRecord, RemovalReasonOption,
+  StorageListFilter, StorageListQuery, PaginatedListResponse, StorageSummary,
+  MoveBoxPayload, RackSlotMap,
 } from './StorageType'
 
 const storageService = {
@@ -100,6 +102,53 @@ const storageService = {
       { zoneId, shelf }
     )
   },
+
+  // ── หน้ารายการกล่อง (/storage) ──
+
+  /** GET /boxes?view=list&page=&pageSize=&state=&q=&type=&blood=&zoneId=&dateFrom=&dateTo= */
+  listBoxes: (query: StorageListQuery) =>
+    apiAdapter.get<PaginatedListResponse>(GET_BOXES, {
+      view: 'list',
+      page: query.page,
+      pageSize: query.pageSize,
+      state: query.state,
+      ...filterParams(query),
+    }),
+
+  /** GET /boxes/summary — จำนวนกล่องแยกสถานะ + จำนวน unit ที่ยังจัดเก็บ */
+  getBoxSummary: (filter: StorageListFilter = {}) =>
+    apiAdapter.get<StorageSummary>(GET_BOX_SUMMARY, filterParams(filter)),
+
+  /** PATCH /boxes/:id/location — ย้ายกล่อง (ห้อง rack ส่ง level + position ด้วย) */
+  moveBox: (boxId: string, data: MoveBoxPayload) =>
+    apiAdapter.patch<MoveBoxPayload, StorageBoxItem>(`${GET_BOXES}/${boxId}/location`, data),
+
+  /** GET /master/zones/:zoneId/racks/:shelf — กล่องที่วางอยู่ในแต่ละช่อง (ชั้น → ช่อง → กล่อง) */
+  getRackSlots: async (zoneId: string, shelf: string): Promise<RackSlotMap> => {
+    const r = await apiAdapter.get<{
+      levels: { level: number; slots: Record<string, { id: string; boxLabel: string }> }[]
+    }>(`${GET_RACK}/${zoneId}/racks/${encodeURIComponent(shelf)}`)
+    const out: RackSlotMap = {}
+    for (const l of r.levels) {
+      out[l.level] = {}
+      for (const [position, box] of Object.entries(l.slots)) {
+        out[l.level][Number(position)] = { boxId: box.id, boxLabel: box.boxLabel }
+      }
+    }
+    return out
+  },
+}
+
+/** ตัวกรองของหน้ารายการ → query string (ค่าว่างไม่ส่ง) */
+function filterParams(f: StorageListFilter) {
+  return {
+    q: f.search || undefined,
+    type: f.type || undefined,
+    blood: f.blood || undefined,
+    zoneId: f.zoneId || undefined,
+    dateFrom: f.dateFrom || undefined,
+    dateTo: f.dateTo || undefined,
+  }
 }
 
 export default storageService
