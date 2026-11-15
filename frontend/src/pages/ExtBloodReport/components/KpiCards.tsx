@@ -1,8 +1,8 @@
 // frontend/src/pages/ExtBloodReport/components/KpiCards.tsx
 //
-// KPI 3 ใบ + เปรียบเทียบกับช่วงก่อนหน้า (ความยาวเท่ากัน)
+// KPI 3 ใบ (ไอคอนสีประจำการ์ดด้านซ้าย) + เปรียบเทียบกับช่วงก่อนหน้า (ความยาวเท่ากัน)
 
-import { Building2, ClipboardCheck, Droplets, Minus, type LucideIcon } from 'lucide-react'
+import { Building2, Droplets, FileText, Minus, type LucideIcon } from 'lucide-react'
 import { fmtInt, formatThaiRange } from '../services/reportHelpers'
 import type { ReportKpi, ReportRange } from '../services/ReportType'
 
@@ -17,13 +17,16 @@ interface CardDef {
   label: string
   unit: string
   icon: LucideIcon
-  format: (n: number) => string
+  /** สีไอคอนของการ์ด — ตรงกับ .rpt-kpi--blue|violet|green */
+  tone: 'blue' | 'violet' | 'green'
+  /** true = แสดงจำนวนของช่วงก่อนหน้าแทน % เปลี่ยนแปลง */
+  showPrevCount?: boolean
 }
 
 const CARDS: CardDef[] = [
-  { key: 'bags', label: 'ถุงทั้งหมด', unit: 'ถุง', icon: Droplets, format: fmtInt },
-  { key: 'sources', label: 'แหล่งที่มา', unit: 'แห่ง', icon: Building2, format: fmtInt },
-  { key: 'receipts', label: 'ครั้งที่รับ', unit: 'ครั้ง', icon: ClipboardCheck, format: fmtInt },
+  { key: 'bags', label: 'ถุงที่รับทั้งหมด', unit: 'ถุง', icon: Droplets, tone: 'blue' },
+  { key: 'sources', label: 'แหล่งที่มา', unit: 'แห่ง', icon: Building2, tone: 'violet', showPrevCount: true },
+  { key: 'receipts', label: 'ครั้งที่รับ (เอกสาร)', unit: 'ครั้ง', icon: FileText, tone: 'green' },
 ]
 
 function Delta({ cur, prev }: { cur: number; prev: number }) {
@@ -61,15 +64,21 @@ export default function KpiCards({ kpi, prev, range }: Props) {
       {CARDS.map((c) => {
         const Icon = c.icon
         return (
-          <div key={c.key} className="rpt-kpi" title={prevLabel}>
-            <div className="rpt-kpi__head">
-              <span className="rpt-kpi__icon"><Icon size={16} aria-hidden="true" /></span>
-              <span className="rpt-kpi__label">{c.label}</span>
+          <div key={c.key} className={`rpt-kpi rpt-kpi--${c.tone}`} title={prevLabel}>
+            <span className="rpt-kpi__icon"><Icon size={20} aria-hidden="true" /></span>
+            <div className="rpt-kpi__body">
+              <div className="rpt-kpi__value">
+                {fmtInt(kpi[c.key])} <span className="rpt-kpi__unit">{c.unit}</span>
+              </div>
+              <div className="rpt-kpi__label">{c.label}</div>
+              {c.showPrevCount ? (
+                <span className="rpt-kpi__delta rpt-kpi__delta--flat">
+                  ช่วงก่อนหน้า {fmtInt(prev[c.key])} {c.unit}
+                </span>
+              ) : (
+                <Delta cur={kpi[c.key]} prev={prev[c.key]} />
+              )}
             </div>
-            <div className="rpt-kpi__value">
-              {c.format(kpi[c.key])} <span className="rpt-kpi__unit">{c.unit}</span>
-            </div>
-            <Delta cur={kpi[c.key]} prev={prev[c.key]} />
           </div>
         )
       })}
