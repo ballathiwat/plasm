@@ -69,13 +69,21 @@ export default function useMap() {
       const shelves: ShelfSummary[] = codes.map((shelf) => {
         const shelfBoxes = zoneBoxes.filter((b) => b.shelf === shelf);
         const byBlood: Record<string, number> = {};
+        const byBloodBoxes: Record<string, number> = {};
         let totalUnits = 0;
         for (const b of shelfBoxes) {
           const count = unitCount(b);
           byBlood[b.blood] = (byBlood[b.blood] || 0) + count;
+          byBloodBoxes[b.blood] = (byBloodBoxes[b.blood] || 0) + 1;
           totalUnits += count;
         }
-        return { shelf, totalBoxes: shelfBoxes.length, totalUnits, byBlood };
+        return {
+          shelf,
+          totalBoxes: shelfBoxes.length,
+          totalUnits,
+          byBlood,
+          byBloodBoxes,
+        };
       });
 
       summaries.push({

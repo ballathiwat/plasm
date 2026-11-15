@@ -1,11 +1,13 @@
 // ============================================================
 //  src/pages/map/components/MapZoneCard.tsx
-//  การ์ดสถานที่ 1 แห่ง render ตาม master (ห้อง/ตู้/สถานที่ใหม่ใด ๆ)
+//  ผังของสถานที่ 1 แห่ง render ตาม master (ห้อง/ตู้/สถานที่ใหม่ใด ๆ)
 //  - legacyKey 'ROOM' → ผังพื้นห้อง 3x3 + ชั้นที่ไม่อยู่ในผังแสดงต่อท้าย
 //  - สถานที่อื่น      → รายการชั้นเรียงลง
+//  ป้ายสี = จำนวน "กล่อง" แยกหมู่เลือด (ไม่ใช่ units)
 // ============================================================
 
 import { useNavigate } from 'react-router-dom'
+import { DoorOpen } from 'lucide-react'
 import type { ShelfSummary, ZoneSummary } from '../services/MapType'
 import { ROOM_LAYOUT, ROOM_LEGACY_KEY } from '../services/MapType'
 import { bloodBase } from '../../../helpers/blood'
@@ -17,32 +19,37 @@ interface Props {
   bloodOrder: string[]
 }
 
-const cardStyle: React.CSSProperties = {
-  background: 'var(--surface, #fff)',
-  border: '1px solid var(--border, #E4E4E7)',
-  borderRadius: 'var(--radius-lg, 10px)',
-  padding: 24,
-  boxShadow: 'var(--shadow-sm)',
-}
+const num = (n: number) => n.toLocaleString('th-TH')
+const stockText = (boxes: number, units: number) => `${num(boxes)} กล่อง · ${num(units)} units`
 
-function BloodBadges({ shelf, bloodOrder }: { shelf: ShelfSummary; bloodOrder: string[] }) {
-  const codes = Object.keys(shelf.byBlood)
-    .filter((g) => shelf.byBlood[g] > 0)
+/** หมู่เลือดที่มีกล่อง เรียงตามลำดับ master */
+const bloodCodes = (shelf: ShelfSummary, bloodOrder: string[]) =>
+  Object.keys(shelf.byBloodBoxes)
+    .filter((g) => shelf.byBloodBoxes[g] > 0)
     .sort((a, b) => bloodOrder.indexOf(a) - bloodOrder.indexOf(b))
 
+/** "กล่องแยกหมู่เลือด: A 3 กล่อง, B 1 กล่อง" */
+const bloodSummary = (shelf: ShelfSummary, bloodOrder: string[]) => {
+  const codes = bloodCodes(shelf, bloodOrder)
+  if (codes.length === 0) return ''
+  return `กล่องแยกหมู่เลือด: ${codes.map((g) => `${g} ${num(shelf.byBloodBoxes[g])} กล่อง`).join(', ')}`
+}
+
+function BloodBadges({ shelf, bloodOrder, labelled }: { shelf: ShelfSummary; bloodOrder: string[]; labelled: boolean }) {
+  const codes = bloodCodes(shelf, bloodOrder)
+  if (codes.length === 0) return null
+
   return (
-    <>
+    <div
+      className="map-blood-badges"
+      {...(labelled ? { role: 'group', 'aria-label': bloodSummary(shelf, bloodOrder) } : {})}
+    >
       {codes.map((g) => (
-        <span
-          key={g}
-          className="blood-badge"
-          data-blood={bloodBase(g)}
-          style={{ fontSize: 10, padding: '2px 6px' }}
-        >
-          {g}:{shelf.byBlood[g]}
+        <span key={g} className="blood-badge map-blood-badges__item" data-blood={bloodBase(g)}>
+          {g} · {num(shelf.byBloodBoxes[g])}
         </span>
       ))}
-    </>
+    </div>
   )
 }
 
@@ -50,32 +57,21 @@ function BloodBadges({ shelf, bloodOrder }: { shelf: ShelfSummary; bloodOrder: s
 function ShelfTile({ code, shelf, bloodOrder }: { code: string; shelf: ShelfSummary | undefined; bloodOrder: string[] }) {
   const navigate = useNavigate()
   const hasBoxes = !!shelf && shelf.totalBoxes > 0
+  const summary = shelf ? bloodSummary(shelf, bloodOrder) : ''
 
   return (
     <button
       type="button"
-      className="map-shelf-tile"
+      className={`map-shelf-tile${hasBoxes ? ' map-shelf-tile--filled' : ''}`}
       onClick={() => navigate(rackUrl(code))}
-      aria-label={`เปิด rack ${code}${shelf ? ` · ${shelf.totalBoxes} กล่อง ${shelf.totalUnits} units` : ' · ว่าง'}`}
-      style={{
-        border: `1px solid ${hasBoxes ? 'var(--primary, #2563EB)' : 'var(--border, #E4E4E7)'}`,
-        background: hasBoxes ? 'var(--group-a-surface, #DBEAFE)' : 'var(--surface-raised, #F4F4F5)',
-      }}
+      aria-label={`เปิด rack ${code}${shelf ? ` · ${stockText(shelf.totalBoxes, shelf.totalUnits)}` : ' · ว่าง'}${summary ? ` · ${summary}` : ''}`}
     >
-      <div style={{
-        fontSize: 15, fontWeight: 700, marginBottom: 6,
-        color: hasBoxes ? 'var(--primary)' : 'var(--text-secondary)',
-      }}>
-        {code}
+      <div className="map-shelf-tile__code">{code}</div>
+      <div className="map-shelf-tile__stock">
+        {shelf ? stockText(shelf.totalBoxes, shelf.totalUnits) : 'ว่าง'}
       </div>
-      <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 8 }}>
-        {shelf ? `${shelf.totalBoxes} กล่อง · ${shelf.totalUnits} u` : 'ว่าง'}
-      </div>
-      {shelf && (
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          <BloodBadges shelf={shelf} bloodOrder={bloodOrder} />
-        </div>
-      )}
+      {/* ปุ่มมี aria-label ครบแล้ว → ป้ายสีไม่ต้องมี label ซ้ำ */}
+      {shelf && <BloodBadges shelf={shelf} bloodOrder={bloodOrder} labelled={false} />}
       <span className="map-shelf-tile__open">เปิด rack ›</span>
     </button>
   )
@@ -89,20 +85,12 @@ function RoomBody({ zone, bloodOrder }: Props) {
 
   return (
     <>
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10,
-        maxWidth: 480, margin: '0 auto',
-      }}>
+      <div className="map-room">
         {ROOM_LAYOUT.map((cell, idx) => {
           if (cell.label === 'ประตู') {
             return (
-              <div key={idx} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: 16, borderRadius: 'var(--radius-md, 8px)',
-                border: '2px dashed var(--border, #E4E4E7)',
-                color: 'var(--text-secondary)', fontSize: 13, fontWeight: 500,
-              }}>
-                🚪 ประตู
+              <div key={idx} className="map-room__door">
+                <DoorOpen size={16} aria-hidden="true" /> ประตู
               </div>
             )
           }
@@ -112,12 +100,12 @@ function RoomBody({ zone, bloodOrder }: Props) {
       </div>
 
       {extras.length > 0 && (
-        <div style={{ maxWidth: 480, margin: '20px auto 0' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
-            ชั้นอื่น ๆ
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-            {extras.map((s) => <ShelfTile key={s.shelf} code={s.shelf} shelf={s} bloodOrder={bloodOrder} />)}
+        <div className="map-room__extras">
+          <div className="map-room__extras-title">ชั้นอื่น ๆ</div>
+          <div className="map-room">
+            {extras.map((s) => (
+              <ShelfTile key={s.shelf} code={s.shelf} shelf={s} bloodOrder={bloodOrder} />
+            ))}
           </div>
         </div>
       )}
@@ -128,73 +116,47 @@ function RoomBody({ zone, bloodOrder }: Props) {
 // ── รายการชั้นเรียงลง ──
 function ListBody({ zone, bloodOrder }: Props) {
   if (zone.shelves.length === 0) {
-    return <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>ยังไม่มีชั้นวาง</div>
+    return <div className="map-zone__note">ยังไม่มีชั้นวาง</div>
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {zone.shelves.map((shelf) => {
-        const hasBoxes = shelf.totalBoxes > 0
-        return (
-          <div
-            key={shelf.shelf}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: 8, flexWrap: 'wrap', padding: '14px 18px',
-              borderRadius: 'var(--radius-md, 8px)',
-              border: `1px solid ${hasBoxes ? 'var(--primary, #2563EB)' : 'var(--border, #E4E4E7)'}`,
-              background: hasBoxes ? 'var(--group-a-surface, #DBEAFE)' : 'var(--surface-raised, #F4F4F5)',
-            }}
-          >
-            <div>
-              <span style={{
-                fontSize: 15, fontWeight: 700,
-                color: hasBoxes ? 'var(--primary)' : 'var(--text-secondary)',
-              }}>
-                {shelf.shelf}
-              </span>
-              <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 12 }}>
-                {shelf.totalBoxes} กล่อง · {shelf.totalUnits} units
-              </span>
-            </div>
-            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              <BloodBadges shelf={shelf} bloodOrder={bloodOrder} />
-            </div>
+    <ul className="map-shelf-list">
+      {zone.shelves.map((shelf) => (
+        <li
+          key={shelf.shelf}
+          className={`map-shelf-row${shelf.totalBoxes > 0 ? ' map-shelf-row--filled' : ''}`}
+        >
+          <div>
+            <span className="map-shelf-row__code">{shelf.shelf}</span>
+            <span className="map-shelf-row__stock">{stockText(shelf.totalBoxes, shelf.totalUnits)}</span>
           </div>
-        )
-      })}
-    </div>
+          <BloodBadges shelf={shelf} bloodOrder={bloodOrder} labelled />
+        </li>
+      ))}
+    </ul>
   )
 }
 
 export default function MapZoneCard({ zone, bloodOrder }: Props) {
-  return (
-    <div style={{ ...cardStyle, opacity: zone.active ? 1 : 0.7 }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: 20, gap: 8, flexWrap: 'wrap',
-      }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>
-          {zone.name}
-          {!zone.active && (
-            <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-secondary)', marginLeft: 8 }}>
-              (ปิดใช้งาน)
-            </span>
-          )}
-        </h3>
-        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-          {zone.totalBoxes} กล่อง · {zone.totalUnits} units
-        </span>
-      </div>
-      {zone.legacyKey === ROOM_LEGACY_KEY && (
-        <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '-12px 0 16px' }}>
-          คลิกที่ rack เพื่อดูกล่องในแต่ละชั้น (ชั้น 1–5)
-        </p>
-      )}
+  const isRoom = zone.legacyKey === ROOM_LEGACY_KEY
 
-      {zone.legacyKey === ROOM_LEGACY_KEY
-        ? <RoomBody zone={zone} bloodOrder={bloodOrder} />
-        : <ListBody zone={zone} bloodOrder={bloodOrder} />}
-    </div>
+  return (
+    <section className={`map-zone${zone.active ? '' : ' map-zone--inactive'}`} aria-label={`ผัง ${zone.name}`}>
+      <div className="map-zone__head">
+        <div className="map-zone__heading">
+          <h3 className="map-zone__name">
+            {zone.name}
+            {!zone.active && <span className="map-zone__inactive">(ปิดใช้งาน)</span>}
+          </h3>
+          <p className="map-zone__note">
+            {isRoom && 'คลิกที่ rack เพื่อดูกล่องในแต่ละชั้น (ชั้น 1–5) · '}
+            ป้ายสี = จำนวนกล่องแยกหมู่เลือด
+          </p>
+        </div>
+        <span className="map-zone__total">{stockText(zone.totalBoxes, zone.totalUnits)}</span>
+      </div>
+
+      {isRoom ? <RoomBody zone={zone} bloodOrder={bloodOrder} /> : <ListBody zone={zone} bloodOrder={bloodOrder} />}
+    </section>
   )
 }

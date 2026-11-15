@@ -1,15 +1,20 @@
 /* src/pages/map/map.css */
+/* ── ช่อง rack ในผังห้อง (ShelfTile) ── */
 .map-shelf-tile {
-  display: block; width: 100%; padding: 14px; text-align: left; font: inherit; color: inherit;
-  border-radius: var(--radius-md, 8px); transition: box-shadow .15s, transform .15s;
+  display: block; width: 100%; padding: 14px; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-md, 8px);
+  transition: box-shadow .15s, transform .15s;
 }
-button.map-shelf-tile { cursor: pointer; }
-button.map-shelf-tile:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-button.map-shelf-tile:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.map-shelf-tile__open { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 600; color: var(--primary); }
+.map-shelf-tile--filled { background: var(--primary-surface); border-color: var(--primary); }
+.map-shelf-tile:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.map-shelf-tile:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.map-shelf-tile__code { margin-bottom: 6px; font-size: 15px; font-weight: 700; color: var(--text-secondary); }
+.map-shelf-tile--filled .map-shelf-tile__code { color: var(--primary-ink); }
+.map-shelf-tile__stock { margin-bottom: 8px; font-size: 12px; color: var(--text-secondary); }
+.map-shelf-tile__open { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 600; color: var(--primary-ink); }
 @media (prefers-reduced-motion: reduce) {
-  button.map-shelf-tile { transition: none; }
-  button.map-shelf-tile:hover { transform: none; }
+  .map-shelf-tile { transition: none; }
+  .map-shelf-tile:hover { transform: none; }
 }
 
 /* ── ตัวกรอง (MapFilterBar) ── */
@@ -29,7 +34,6 @@ button.map-shelf-tile:focus-visible { outline: 2px solid var(--primary); outline
 .map-page__header { margin-bottom: 16px; }
 .map-page__title { margin: 0; font-size: 20px; font-weight: 700; }
 .map-page__desc { margin: 4px 0 0; font-size: 13px; color: var(--text-secondary); }
-.map-zone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 16px; }
 
 /* ── แท็บ ── */
 .map-tabs { display: flex; margin-bottom: 16px; border-bottom: 2px solid var(--border); overflow-x: auto; }
@@ -136,3 +140,79 @@ button.map-shelf-tile:focus-visible { outline: 2px solid var(--primary); outline
   .map-page { animation: none; }
   .map-tab, .map-source__option { transition: none; }
 }
+
+/* ── ตัวเลือกสถานที่จัดเก็บ (MapZonePicker) ── */
+.map-zones {
+  margin-bottom: 16px; padding: 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg, 10px); box-shadow: var(--shadow-sm);
+}
+.map-zones__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
+.map-zones__heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
+.map-zones__title { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.map-zones__count { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.map-zones__toggle {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 4px;
+  font-size: 13px; color: var(--text-secondary); cursor: pointer;
+}
+.map-zones__toggle input { width: 18px; height: 18px; margin: 0; accent-color: var(--primary); cursor: pointer; }
+.map-zones__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 6px; }
+.map-zones__empty { margin: 8px 0 0; font-size: 12px; color: var(--text-secondary); }
+
+.map-zone-opt {
+  display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 44px; padding: 6px 10px;
+  font: inherit; text-align: left; color: var(--text-primary); cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md, 8px);
+  transition: background-color .15s, border-color .15s;
+}
+.map-zone-opt:hover { border-color: var(--border-strong); }
+.map-zone-opt--checked, .map-zone-opt--checked:hover { background: var(--primary-surface); border-color: var(--primary); }
+.map-zone-opt:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.map-zone-opt__mark {
+  display: inline-flex; align-items: center; justify-content: center; flex: none; width: 16px; height: 16px;
+  color: var(--surface); border: 1px solid var(--border-strong); border-radius: 50%;
+}
+.map-zone-opt--checked .map-zone-opt__mark { background: var(--primary); border-color: var(--primary); }
+.map-zone-opt__main { display: flex; flex: 1; flex-direction: column; gap: 5px; min-width: 0; }
+.map-zone-opt__row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.map-zone-opt__name { flex: 1; min-width: 0; overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.map-zone-opt--checked .map-zone-opt__name { color: var(--primary-ink); }
+.map-zone-opt__boxes { flex: none; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.map-zone-opt__bar { display: block; height: 4px; overflow: hidden; background: var(--surface-raised); border-radius: var(--radius-full, 99px); }
+.map-zone-opt--checked .map-zone-opt__bar { background: var(--surface); }
+.map-zone-opt__bar-fill { display: block; height: 100%; background: var(--primary); border-radius: inherit; }
+
+/* ── ผังของสถานที่ที่เลือก (MapZoneCard) ── */
+.map-zone {
+  padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg, 10px); box-shadow: var(--shadow-sm);
+}
+.map-zone--inactive { opacity: .7; }
+.map-zone__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; margin-bottom: 16px; }
+.map-zone__heading { min-width: 0; }
+.map-zone__name { margin: 0; font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.map-zone__inactive { margin-left: 8px; font-size: 11px; font-weight: 500; color: var(--text-secondary); }
+.map-zone__note { margin: 4px 0 0; font-size: 12px; color: var(--text-secondary); }
+.map-zone__total { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; }
+
+.map-room { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 480px; margin: 0 auto; }
+.map-room__door {
+  display: flex; align-items: center; justify-content: center; gap: 6px; padding: 16px;
+  font-size: 13px; font-weight: 500; color: var(--text-secondary);
+  border: 2px dashed var(--border); border-radius: var(--radius-md, 8px);
+}
+.map-room__extras { max-width: 480px; margin: 20px auto 0; }
+.map-room__extras-title { margin-bottom: 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+
+.map-shelf-list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.map-shelf-row {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 18px;
+  background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-md, 8px);
+}
+.map-shelf-row--filled { background: var(--primary-surface); border-color: var(--primary); }
+.map-shelf-row__code { font-size: 15px; font-weight: 700; color: var(--text-secondary); }
+.map-shelf-row--filled .map-shelf-row__code { color: var(--primary-ink); }
+.map-shelf-row__stock { margin-left: 12px; font-size: 12px; color: var(--text-secondary); }
+
+.map-blood-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.map-blood-badges__item { padding: 2px 8px; font-size: 11px; white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) { .map-zone-opt { transition: none; } }
