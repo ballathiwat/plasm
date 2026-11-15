@@ -4,12 +4,18 @@
 
 import apiAdapter from '../../../helpers/http/apiAdapter'
 import { GET_BOXES, MASTER_ZONES } from '../../../helpers/url_helper'
-import type { MapBoxRaw, MapZoneRaw } from './MapType'
+import type { MapBoxRaw, MapFilters, MapZoneRaw } from './MapType'
 
 const mapService = {
-  /** GET /boxes?status=stored → aggregate by zone + shelf */
-  getStoredBoxes: async (): Promise<MapBoxRaw[]> => {
-    return await apiAdapter.get<MapBoxRaw[]>(GET_BOXES, { status: 'stored' })
+  /**
+   * GET /boxes?status=stored[&blood=A][&type=FFP] → aggregate by zone + shelf
+   * กรองที่ backend — ไม่ส่ง blood/type เมื่อเลือก "ทั้งหมด"
+   */
+  getStoredBoxes: async (filters: MapFilters): Promise<MapBoxRaw[]> => {
+    const params: Record<string, string> = { status: 'stored' }
+    if (filters.blood) params.blood = filters.blood
+    if (filters.type) params.type = filters.type
+    return await apiAdapter.get<MapBoxRaw[]>(GET_BOXES, params)
   },
 
   /** GET /master/zones → สถานที่ + ชั้นวางทั้งหมด (รวมที่ปิดใช้งาน) */

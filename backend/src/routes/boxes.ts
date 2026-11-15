@@ -132,7 +132,9 @@ router.get("/", async (req, res) => {
     const { blood, location, status, page, pageSize } = req.query;
 
     const where: Prisma.BoxWhereInput = {};
-    if (blood) where.blood = (blood as string).toUpperCase();
+    // blood ส่งซ้ำหลายค่า (?blood=A&blood=B) → ไม่ใช่ string → ถือว่าไม่กรอง แทนที่จะ 500
+    const bloodCode = queryText(blood).toUpperCase();
+    if (bloodCode) where.blood = bloodCode;
     if (location)
       where.zone = { legacyKey: (location as string).toUpperCase() };
     if (status) where.status = (status as string).toUpperCase() as Prisma.BoxWhereInput["status"];

@@ -11,3 +11,14 @@ button.map-shelf-tile:focus-visible { outline: 2px solid var(--primary); outline
   button.map-shelf-tile { transition: none; }
   button.map-shelf-tile:hover { transform: none; }
 }
+
+/* ── ตัวกรอง (MapFilterBar) ── */
+.map-filter__status { flex-basis: 100%; min-height: 16px; font-size: 12px; color: var(--text-secondary); }
+.map-content { transition: opacity .15s; }
+.map-content--busy { opacity: .55; pointer-events: none; }
+.map-empty { padding: 40px; text-align: center; color: var(--text-secondary); font-size: 13px; }
+.map-error {
+  margin-bottom: 16px; padding: 10px 14px; font-size: 13px;
+  border: 1px solid var(--stock-danger); border-radius: var(--radius-md, 8px); color: var(--stock-danger);
+}
+@media (prefers-reduced-motion: reduce) { .map-content { transition: none; } }

@@ -11,7 +11,9 @@ import type {
   ShelfSummary,
   ZoneSummary,
   BloodGroupAgeInfo,
+  MapFilters,
 } from "./MapType";
+import { EMPTY_MAP_FILTERS } from "./MapType";
 
 const unitCount = (b: MapBoxRaw) =>
   Array.isArray(b.units) ? b.units.length : 0;
@@ -19,21 +21,63 @@ const unitCount = (b: MapBoxRaw) =>
 export default function useMap() {
   const [boxes, setBoxes] = useState<MapBoxRaw[]>([]);
   const [zones, setZones] = useState<MapZoneRaw[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<MapFilters>(EMPTY_MAP_FILTERS);
+  const [zonesLoading, setZonesLoading] = useState(true);
+  const [boxesLoading, setBoxesLoading] = useState(true);
+  const [boxesReady, setBoxesReady] = useState(false);
+  const [error, setError] = useState("");
   const masterBlood = useBloodTypes();
 
+  // สถานที่ + ชั้นวาง — โหลดครั้งเดียว ไม่ขึ้นกับตัวกรอง
   useEffect(() => {
-    Promise.all([mapService.getStoredBoxes(), mapService.getZones()])
-      .then(([b, z]) => {
-        setBoxes(b);
-        setZones(z);
+    let alive = true;
+    mapService
+      .getZones()
+      .then((z) => {
+        if (alive) setZones(z);
       })
       .catch(() => {
-        setBoxes([]);
-        setZones([]);
+        if (alive) setError("โหลดข้อมูลสถานที่จัดเก็บไม่สำเร็จ");
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (alive) setZonesLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
+
+  // กล่องที่จัดเก็บอยู่ — ดึงใหม่จาก API ทุกครั้งที่ตัวกรองเปลี่ยน
+  // alive กันผลลัพธ์ของคำขอเก่าเขียนทับคำขอล่าสุด (เปลี่ยนตัวกรองเร็ว ๆ)
+  useEffect(() => {
+    let alive = true;
+    setBoxesLoading(true);
+    mapService
+      .getStoredBoxes(filters)
+      .then((b) => {
+        if (!alive) return;
+        setBoxes(b);
+        setError("");
+      })
+      .catch(() => {
+        if (!alive) return;
+        setBoxes([]);
+        setError("โหลดข้อมูลกล่องไม่สำเร็จ กรุณาลองใหม่");
+      })
+      .finally(() => {
+        if (!alive) return;
+        setBoxesLoading(false);
+        setBoxesReady(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [filters]);
+
+  const setBlood = (blood: string) => setFilters((f) => ({ ...f, blood }));
+  const setType = (type: string) => setFilters((f) => ({ ...f, type }));
+  const clearFilters = () => setFilters(EMPTY_MAP_FILTERS);
+  const hasFilter = filters.blood !== "" || filters.type !== "";
 
   const zoneSummaries = useMemo<ZoneSummary[]>(() => {
     const summaries: ZoneSummary[] = [];
@@ -143,6 +187,15 @@ export default function useMap() {
     bloodAgeMap,
     totalBoxes,
     totalUnits,
-    loading,
+    filters,
+    hasFilter,
+    setBlood,
+    setType,
+    clearFilters,
+    error,
+    /** โหลดครั้งแรก (ทั้งหน้า) */
+    loading: zonesLoading || !boxesReady,
+    /** กำลังดึงข้อมูลใหม่หลังเปลี่ยนตัวกรอง */
+    filtering: boxesReady && boxesLoading,
   };
 }
