@@ -13,6 +13,7 @@ button.map-shelf-tile:focus-visible { outline: 2px solid var(--primary); outline
 }
 
 /* ── ตัวกรอง (MapFilterBar) ── */
+.map-filter__actions { display: flex; gap: 8px; }
 .map-filter__status { flex-basis: 100%; min-height: 16px; font-size: 12px; color: var(--text-secondary); }
 .map-content { transition: opacity .15s; }
 .map-content--busy { opacity: .55; pointer-events: none; }

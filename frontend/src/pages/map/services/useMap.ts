@@ -26,7 +26,12 @@ export default function useMap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   // filteredBoxes = ผลจาก API ตามตัวกรอง → ใช้เฉพาะแท็บ "เก่าสุด / ใหม่สุด"
+  // draft   = ค่าที่เลือกอยู่ในฟอร์ม (ยังไม่เรียก API)
+  // filters = ค่าที่กด "ค้นหา" แล้ว → ใช้ดึงข้อมูลและแสดงผล
+  const [draft, setDraft] = useState<MapFilters>(EMPTY_MAP_FILTERS);
   const [filters, setFilters] = useState<MapFilters>(EMPTY_MAP_FILTERS);
+  // เพิ่มค่าทุกครั้งที่กด "ค้นหา" → ค้นหาด้วยค่าเดิมซ้ำก็ดึงข้อมูลใหม่
+  const [searchSeq, setSearchSeq] = useState(0);
   const [filteredBoxes, setFilteredBoxes] = useState<MapBoxRaw[]>([]);
   const [filtering, setFiltering] = useState(false);
   const [filterError, setFilterError] = useState("");
@@ -59,8 +64,8 @@ export default function useMap() {
     };
   }, []);
 
-  // ดึงใหม่จาก API เมื่อตัวกรองเปลี่ยน — ไม่มีตัวกรองใช้ boxes ชุดเดิม ไม่ต้องยิงซ้ำ
-  // alive กันผลลัพธ์ของคำขอเก่าเขียนทับคำขอล่าสุด (เปลี่ยนตัวกรองเร็ว ๆ)
+  // ดึงจาก API เฉพาะเมื่อกด "ค้นหา" — ไม่มีตัวกรองใช้ boxes ชุดเดิม ไม่ต้องยิงซ้ำ
+  // alive กันผลลัพธ์ของคำขอเก่าเขียนทับคำขอล่าสุด
   useEffect(() => {
     if (!hasFilter) {
       setFiltering(false);
@@ -87,11 +92,24 @@ export default function useMap() {
     return () => {
       alive = false;
     };
-  }, [filters, hasFilter]);
+  }, [filters, hasFilter, searchSeq]);
 
-  const setBlood = (blood: string) => setFilters((f) => ({ ...f, blood }));
-  const setType = (type: string) => setFilters((f) => ({ ...f, type }));
-  const clearFilters = () => setFilters(EMPTY_MAP_FILTERS);
+  // เปลี่ยนค่าในฟอร์ม → เก็บใน draft เท่านั้น
+  const setBlood = (blood: string) => setDraft((d) => ({ ...d, blood }));
+  const setType = (type: string) => setDraft((d) => ({ ...d, type }));
+  /** กด "ค้นหา" → นำ draft ไปใช้จริง */
+  const applyFilters = () => {
+    setFilters(draft);
+    setSearchSeq((n) => n + 1);
+  };
+  /** กด "ล้างค่า" → ล้างทั้งฟอร์มและผลลัพธ์ กลับไปแสดงทั้งหมด */
+  const clearFilters = () => {
+    setDraft(EMPTY_MAP_FILTERS);
+    setFilters(EMPTY_MAP_FILTERS);
+  };
+  /** ฟอร์มมีค่าที่ยังไม่ได้กด "ค้นหา" */
+  const isDirty = draft.blood !== filters.blood || draft.type !== filters.type;
+  const canClear = hasFilter || draft.blood !== "" || draft.type !== "";
 
   const zoneSummaries = useMemo<ZoneSummary[]>(() => {
     const summaries: ZoneSummary[] = [];
@@ -216,10 +234,13 @@ export default function useMap() {
     bloodAgeMap,
     totalBoxes,
     totalUnits,
-    filters,
+    draft,
     hasFilter,
+    isDirty,
+    canClear,
     setBlood,
     setType,
+    applyFilters,
     clearFilters,
     error,
     filterError,
