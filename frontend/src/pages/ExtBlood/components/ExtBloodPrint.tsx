@@ -108,5 +108,5 @@ export default function ExtBloodPrint({ open, onClose, doc }: ExtBloodPrintProps
     }) })
   }
 
-  return <PrintPreview open={open} onClose={onClose} docNo={doc.docNumber} title="บันทึกรับเลือดจากภายนอก" subtitle="External Blood Receiving" docNoLabel="เลขที่เอกสาร" watermark="PLASM" watermarkSub="External Blood" pages={pages} />
+  return <PrintPreview open={open} onClose={onClose} docNo={doc.docNumber} title="บันทึกรับเลือดจากภายนอก" subtitle="External Blood Receiving" docNoLabel="เลขที่เอกสาร" watermark="BLIS" watermarkSub="External Blood" pages={pages} />
 }
