@@ -1,5 +1,5 @@
 // src/index.ts
-// Plasm Backend — Express + Prisma + PostgreSQL
+// BLIS Backend — Express + Prisma + PostgreSQL
 
 import 'dotenv/config'
 import express from 'express'
@@ -64,6 +64,6 @@ app.use('/api/v1/ext', authGuard, extRoutes)
 
 // ===== Start =====
 app.listen(PORT, () => {
-  console.log(`🚀 Plasm backend running at http://localhost:${PORT}`)
+  console.log(`🚀 BLIS backend running at http://localhost:${PORT}`)
   console.log(`📋 API base: http://localhost:${PORT}/api/v1`)
 })

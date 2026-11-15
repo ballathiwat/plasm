@@ -23,7 +23,7 @@ export default function TopBar({
   activeModule, userName, userRole, onNavigate,
   notificationCount = 0, approvalCount = 0, stockAlerts = [], userId = '',
 }: TopBarProps) {
-  const title = PAGE_TITLES[activeModule] || 'Plasm'
+  const title = PAGE_TITLES[activeModule] || 'BLIS'
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 

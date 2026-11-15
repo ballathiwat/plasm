@@ -19,7 +19,7 @@ interface Props {
 
 export default function ChangePasswordForm({ form, saving, errors, onChange, onSubmit }: Props) {
   return (
-    <ProfileCard icon={<Lock size={18} />} title="เปลี่ยนรหัสผ่าน" desc="รหัสผ่านที่ใช้เข้าสู่ระบบ Plasm">
+    <ProfileCard icon={<Lock size={18} />} title="เปลี่ยนรหัสผ่าน" desc="รหัสผ่านที่ใช้เข้าสู่ระบบ BLIS">
       <FormInput label="รหัสผ่านเดิม" type="password" required placeholder="กรอกรหัสผ่านปัจจุบัน"
         value={form.currentPassword} onChange={(v) => onChange('currentPassword', v)} error={errors.currentPassword} autoComplete="current-password" />
       <FormInput label="รหัสผ่านใหม่" type="password" required placeholder="กรอกรหัสผ่านใหม่"
