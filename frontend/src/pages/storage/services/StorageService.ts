@@ -8,7 +8,7 @@ import {
   MASTER_PLASMA_TYPES, MASTER_BLOOD_TYPES, MASTER_ZONES,
 } from '../../../helpers/url_helper'
 import type {
-  StorageBoxItem, CreateBoxPayload, MasterCode, MasterShelf, MasterZone,
+  StorageBoxItem, CreateBoxPayload, MasterCode, MasterZone,
   PaginatedBoxResponse, UnitCheckResult,
   UnitRemovalInput, UnitRemovalRecord, RemovalReasonOption,
   StorageListFilter, StorageListQuery, PaginatedListResponse, StorageSummary,
@@ -77,23 +77,6 @@ const storageService = {
   listPlasmaTypes: () => apiAdapter.get<MasterCode[]>(MASTER_PLASMA_TYPES),
   listBloodTypes: () => apiAdapter.get<MasterCode[]>(MASTER_BLOOD_TYPES),
   listZones: () => apiAdapter.get<MasterZone[]>(MASTER_ZONES),
-
-  // ── เพิ่มข้อมูลหลักหน้างาน (backend เปิดให้ STAFF เพิ่มได้ แต่เปิด/ปิดใช้งานได้เฉพาะ ADMIN) ──
-  /** POST /master/plasma-types */
-  createPlasmaType: (code: string) =>
-    apiAdapter.post<{ code: string }, MasterCode>(MASTER_PLASMA_TYPES, { code }),
-
-  /** POST /master/blood-types  (backend แปลงเป็นตัวพิมพ์ใหญ่ให้) */
-  createBloodType: (code: string) =>
-    apiAdapter.post<{ code: string }, MasterCode>(MASTER_BLOOD_TYPES, { code }),
-
-  /** POST /master/zones */
-  createZone: (name: string) =>
-    apiAdapter.post<{ name: string }, MasterZone>(MASTER_ZONES, { name }),
-
-  /** POST /master/zones/:id/shelves  (backend แปลงเป็นตัวพิมพ์ใหญ่ให้) */
-  createShelf: (zoneId: string, code: string) =>
-    apiAdapter.post<{ code: string }, MasterShelf>(`${MASTER_ZONES}/${zoneId}/shelves`, { code }),
 
     /** PATCH /boxes/:id/location — แก้ไขตำแหน่งจัดเก็บ */
   updateBoxLocation: async (boxId: string, zoneId: string, shelf: string): Promise<StorageBoxItem> => {
