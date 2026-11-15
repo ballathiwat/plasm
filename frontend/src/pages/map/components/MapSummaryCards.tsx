@@ -18,13 +18,13 @@ const num = (n: number) => n.toLocaleString('th-TH')
 
 function Card({ mod, icon, label, children }: { mod: 'in' | 'ex'; icon: ReactNode; label: string; children: ReactNode }) {
   return (
-    <div className="map-summary__card">
-      <span className={`map-summary__icon map-summary__icon--${mod}`} aria-hidden="true">
+    <div className={`map-summary__card map-summary__card--${mod}`}>
+      <span className="map-summary__icon" aria-hidden="true">
         {icon}
       </span>
       <div className="map-summary__body">
-        <div className="map-summary__label">{label}</div>
         <div className="map-summary__value">{children}</div>
+        <div className="map-summary__label">{label}</div>
       </div>
     </div>
   )
@@ -34,15 +34,15 @@ export default function MapSummaryCards({ inBoxes, inUnits, ext }: Props) {
   return (
     <div className="map-summary">
       <Card mod="in" icon={<Warehouse size={20} />} label="ภายใน · กล่องพลาสมา">
-        <b>{num(inBoxes)}</b> กล่อง <span className="map-summary__sep">·</span> <b>{num(inUnits)}</b> units
+        <b className="map-summary__main">{num(inBoxes)}</b> กล่อง · <b>{num(inUnits)}</b> units
       </Card>
       <Card mod="ex" icon={<Truck size={20} />} label="ภายนอก · รับจากภายนอก">
         {ext ? (
           <>
-            <b>{num(ext.boxes)}</b> กล่อง <span className="map-summary__sep">·</span> <b>{num(ext.bags)}</b> ถุง
+            <b className="map-summary__main">{num(ext.boxes)}</b> กล่อง · <b>{num(ext.bags)}</b> ถุง
           </>
         ) : (
-          <span className="map-summary__pending">–</span>
+          <b className="map-summary__main">–</b>
         )}
       </Card>
     </div>

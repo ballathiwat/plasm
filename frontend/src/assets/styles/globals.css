@@ -51,6 +51,9 @@
   --primary-surface: #EFF6FF;
   --primary-ink: #1D4ED8;
   --border-strong: #A1A1AA;
+  /* เลือดจากภายนอก (ext) — แยกจาก --group-b เพราะสีหมู่เลือดเปลี่ยนตาม master ได้ */
+  --external: #DB2777;
+  --external-surface: #FCE7F3;
   /* Stock status */
   --stock-normal: #10B981;
   --stock-warning: #F59E0B;
@@ -195,6 +198,8 @@ a:hover { color: var(--primary-hover); }
   --primary-surface: #172554;
   --primary-ink: #93C5FD;
   --border-strong: #52525B;
+  --external: #F9A8D4;
+  --external-surface: #500724;
 }
 
 /* ══════════════════════════════════════════
