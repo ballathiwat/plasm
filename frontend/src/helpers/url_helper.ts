@@ -17,6 +17,7 @@ export const GET_BOXES = `${API}/boxes`
 export const GET_BOX_DETAIL = `${API}/boxes`       // + /:id
 export const POST_BOX = `${API}/boxes`
 export const PATCH_BOX_WITHDRAW = `${API}/boxes`    // + /:id/withdraw
+export const GET_BOX_SUMMARY = `${API}/boxes/summary` // ?q=&type=&zoneId=&dateFrom=&dateTo=&blood=
 export const GET_BOX_SEARCH = `${API}/boxes/search` // ?q= (กล่อง + unit ที่จัดเก็บอยู่)
 export const POST_BOX_WITHDRAW_UNITS = `${API}/boxes` // + /:id/withdraw  { units: string[] }
 

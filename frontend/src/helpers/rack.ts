@@ -55,3 +55,7 @@ export function rackUrl(shelf: string, level?: number | null, position?: number 
 
 /** ทำความสะอาดเลข unit จากเครื่องสแกน */
 export const cleanUnit = (v: string) => v.trim().toUpperCase()
+
+/** รูปแบบเลข unit: ตัวอักษร/ตัวเลข 5–16 ตัว เช่น U001234 */
+export const UNIT_PATTERN = /^[A-Z0-9]{5,16}$/
+export const UNIT_FORMAT_ERROR = 'เลข Unit ต้องเป็นตัวอักษร/ตัวเลข 5–16 ตัว เช่น U001234'

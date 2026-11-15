@@ -1,6 +1,7 @@
 // src/routes/boxes.ts
 
 import { Router } from "express";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { boxDto, zoneSelect } from "../lib/boxDto";
 import {
@@ -40,25 +41,110 @@ const bkkYear = () =>
 const formatLabel = (type: string, blood: string, year: number, no: number) =>
   `${type}_${blood}_${year}_${String(no).padStart(5, "0")}`;
 
+// ---- ตัวกรองของหน้ารายการกล่อง (ใช้ร่วมกันระหว่าง GET /boxes และ GET /boxes/summary) ----
+type BoxState = "STORED" | "PARTIAL" | "EMPTY";
+const BOX_STATES: readonly BoxState[] = ["STORED", "PARTIAL", "EMPTY"];
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+const queryText = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
+
+/** yyyy-MM-dd → Date (UTC) · ค่าว่าง → null · รูปแบบผิด → 400 */
+const parseDateParam = (v: unknown, name: string): Date | null => {
+  const text = queryText(v);
+  if (!text) return null;
+  const date = new Date(`${text}T00:00:00.000Z`);
+  if (!ISO_DATE.test(text) || Number.isNaN(date.getTime())) {
+    throw new HttpError(400, `${name} ต้องเป็นรูปแบบ yyyy-MM-dd`);
+  }
+  return date;
+};
+
+/**
+ * สถานะกล่องสำหรับหน้ารายการ — คำนวณจาก unit ในกล่อง
+ *   EMPTY   = ไม่เหลือ unit ที่จัดเก็บ (หรือกล่องถูกปิดแล้ว)
+ *   PARTIAL = ยังมี unit จัดเก็บ และมี unit ที่นำออกไปแล้ว
+ *   STORED  = unit ทุกถุงยังจัดเก็บอยู่
+ */
+const stateWhere = (state: BoxState): Prisma.BoxWhereInput => {
+  if (state === "EMPTY") {
+    return { OR: [{ status: "WITHDRAWN" }, { units: { none: { status: "STORED" } } }] };
+  }
+  const hasStored: Prisma.BoxWhereInput = {
+    status: "STORED",
+    units: { some: { status: "STORED" } },
+  };
+  return state === "PARTIAL"
+    ? { ...hasStored, AND: [{ units: { some: { status: "WITHDRAWN" } } }] }
+    : { ...hasStored, AND: [{ units: { none: { status: "WITHDRAWN" } } }] };
+};
+
+const boxState = (status: string, stored: number, total: number): BoxState =>
+  status === "WITHDRAWN" || stored === 0 ? "EMPTY" : stored < total ? "PARTIAL" : "STORED";
+
+/** ตัวกรองจาก query (ไม่รวม state) — q ค้นจากหมายเลขกล่อง ชื่อกล่อง และเลข unit */
+const listFilters = (query: Record<string, unknown>): Prisma.BoxWhereInput[] => {
+  const and: Prisma.BoxWhereInput[] = [];
+
+  const q = queryText(query.q).slice(0, 60);
+  if (q) {
+    and.push({
+      OR: [
+        { boxLabel: { contains: q, mode: "insensitive" } },
+        { boxName: { contains: q, mode: "insensitive" } },
+        { units: { some: { unitNumber: { contains: q, mode: "insensitive" } } } },
+      ],
+    });
+  }
+
+  const type = queryText(query.type);
+  if (type) and.push({ type });
+  const zoneId = queryText(query.zoneId);
+  if (zoneId) and.push({ zoneId });
+
+  const from = parseDateParam(query.dateFrom, "dateFrom");
+  const to = parseDateParam(query.dateTo, "dateTo");
+  if (from && to && from > to) {
+    throw new HttpError(400, "dateFrom ต้องไม่เกิน dateTo");
+  }
+  if (from || to) {
+    and.push({
+      collectionDate: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) },
+    });
+  }
+  return and;
+};
+
+/** state จาก query — ค่าว่าง = ไม่กรอง · ค่าที่ไม่รู้จัก → 400 */
+const parseState = (v: unknown): BoxState | null => {
+  const text = queryText(v).toUpperCase();
+  if (!text) return null;
+  const state = BOX_STATES.find((s) => s === text);
+  if (!state) throw new HttpError(400, "state ต้องเป็น STORED, PARTIAL หรือ EMPTY");
+  return state;
+};
+
 // ===== GET /api/v1/boxes =====
+// ตัวกรองเดิม: blood, location, status, page, pageSize
+// ตัวกรองเพิ่ม (หน้ารายการกล่อง): q, type, zoneId, dateFrom, dateTo, state
+// view=list → เพิ่ม unitItems (เลข unit + สถานะ), unitCount, storedCount, state, matchedUnit
 router.get("/", async (req, res) => {
   try {
     const { blood, location, status, page, pageSize } = req.query;
 
-    const where: Record<string, unknown> = {};
+    const where: Prisma.BoxWhereInput = {};
     if (blood) where.blood = (blood as string).toUpperCase();
     if (location)
       where.zone = { legacyKey: (location as string).toUpperCase() };
-    if (status) where.status = (status as string).toUpperCase();
+    if (status) where.status = (status as string).toUpperCase() as Prisma.BoxWhereInput["status"];
+
+    const and = listFilters(req.query);
+    const state = parseState(req.query.state);
+    if (state) and.push(stateWhere(state));
+    if (and.length > 0) where.AND = and;
 
     const onlyStored = String(status ?? "").toUpperCase() === "STORED";
-
-    const mapBox = (b: any) => ({
-      ...boxDto(b),
-      units: b.units
-        .filter((u: any) => !onlyStored || u.status === "STORED")
-        .map((u: any) => u.unitNumber),
-    });
+    const listView = queryText(req.query.view) === "list";
+    const q = queryText(req.query.q).toLowerCase();
 
     const include = {
       zone: zoneSelect,
@@ -67,20 +153,49 @@ router.get("/", async (req, res) => {
         orderBy: [{ seq: "asc" as const }, { createdAt: "asc" as const }],
       },
     };
+    const findBoxes = (paging: { take?: number; skip?: number }) =>
+      prisma.box.findMany({ where, include, orderBy: { storedAt: "desc" }, ...paging });
+    type BoxRow = Awaited<ReturnType<typeof findBoxes>>[number];
+
+    const mapBox = (b: BoxRow) => {
+      const base = {
+        ...boxDto(b),
+        units: b.units
+          .filter((u) => !onlyStored || u.status === "STORED")
+          .map((u) => u.unitNumber),
+      };
+      if (!listView) return base;
+
+      const storedCount = b.units.filter((u) => u.status === "STORED").length;
+      // ค้นเจอจากเลข unit (ไม่ใช่จากหมายเลข/ชื่อกล่อง) → บอกว่าเจอ unit ไหน
+      const hitBox =
+        b.boxLabel.toLowerCase().includes(q) ||
+        (b.boxName ?? "").toLowerCase().includes(q);
+      const matched =
+        q && !hitBox
+          ? b.units.find((u) => u.unitNumber.toLowerCase().includes(q))
+          : undefined;
+
+      return {
+        ...base,
+        unitItems: b.units.map((u) => ({
+          unitNumber: u.unitNumber,
+          status: u.status.toLowerCase(),
+        })),
+        unitCount: b.units.length,
+        storedCount,
+        state: boxState(b.status, storedCount, b.units.length),
+        matchedUnit: matched?.unitNumber ?? null,
+      };
+    };
 
     // ถ้าส่ง page → paginated response, ถ้าไม่ส่ง → array เดิม (backward compat)
     if (page) {
-      const pageNum = Math.max(1, Number(page));
-      const size = Math.min(100, Math.max(1, Number(pageSize || 20)));
+      const pageNum = Math.max(1, Number(page) || 1);
+      const size = Math.min(100, Math.max(1, Number(pageSize || 20) || 20));
 
       const [boxes, total] = await Promise.all([
-        prisma.box.findMany({
-          where,
-          include,
-          orderBy: { storedAt: "desc" },
-          take: size,
-          skip: (pageNum - 1) * size,
-        }),
+        findBoxes({ take: size, skip: (pageNum - 1) * size }),
         prisma.box.count({ where }),
       ]);
 
@@ -92,16 +207,37 @@ router.get("/", async (req, res) => {
         totalPages: Math.ceil(total / size),
       });
     } else {
-      const boxes = await prisma.box.findMany({
-        where,
-        include,
-        orderBy: { storedAt: "desc" },
-      });
+      const boxes = await findBoxes({});
       res.json(boxes.map(mapBox));
     }
   } catch (error) {
-    console.error("GET /boxes error:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาด" });
+    sendHttpError(res, error, "GET /boxes error:");
+  }
+});
+
+// ===== GET /api/v1/boxes/summary =====
+// จำนวนกล่องแยกตามสถานะ + จำนวน unit ที่ยังจัดเก็บ (รับตัวกรองชุดเดียวกับ GET /boxes ยกเว้น state)
+// ต้องอยู่ก่อน /:id
+router.get("/summary", async (req, res) => {
+  try {
+    const and = listFilters(req.query);
+    const scoped = (extra: Prisma.BoxWhereInput): Prisma.BoxWhereInput => ({
+      AND: [...and, extra],
+    });
+
+    const [all, stored, partial, empty, unitsStored] = await Promise.all([
+      prisma.box.count({ where: { AND: and } }),
+      prisma.box.count({ where: scoped(stateWhere("STORED")) }),
+      prisma.box.count({ where: scoped(stateWhere("PARTIAL")) }),
+      prisma.box.count({ where: scoped(stateWhere("EMPTY")) }),
+      prisma.unit.count({
+        where: { status: "STORED", box: scoped({ status: "STORED" }) },
+      }),
+    ]);
+
+    res.json({ all, stored, partial, empty, unitsStored });
+  } catch (error) {
+    sendHttpError(res, error, "GET /boxes/summary error:");
   }
 });
 
