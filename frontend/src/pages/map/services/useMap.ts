@@ -5,14 +5,11 @@
 import { useState, useEffect, useMemo } from "react";
 import mapService from "./MapService";
 import useBloodTypes from "../../../helpers/useBloodTypes";
-import usePlasmaTypes from "../../../helpers/usePlasmaTypes";
 import type {
   MapBoxRaw,
   MapZoneRaw,
   ShelfSummary,
   ZoneSummary,
-  BloodGroupAgeInfo,
-  MapFilters,
 } from "./MapType";
 import { EMPTY_MAP_FILTERS } from "./MapType";
 
@@ -21,23 +18,12 @@ const unitCount = (b: MapBoxRaw) =>
 
 export default function useMap() {
   // boxes = กล่องที่จัดเก็บอยู่ทั้งหมด → ใช้กับแผนผัง + การ์ดสรุป (ไม่ขึ้นกับตัวกรอง)
+  // ตัวกรองของแท็บ "เก่าสุด / ใหม่สุด" อยู่ที่ useMapAge
   const [boxes, setBoxes] = useState<MapBoxRaw[]>([]);
   const [zones, setZones] = useState<MapZoneRaw[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  // filteredBoxes = ผลจาก API ตามตัวกรอง → ใช้เฉพาะแท็บ "เก่าสุด / ใหม่สุด"
-  // draft   = ค่าที่เลือกอยู่ในฟอร์ม (ยังไม่เรียก API)
-  // filters = ค่าที่กด "ค้นหา" แล้ว → ใช้ดึงข้อมูลและแสดงผล
-  const [draft, setDraft] = useState<MapFilters>(EMPTY_MAP_FILTERS);
-  const [filters, setFilters] = useState<MapFilters>(EMPTY_MAP_FILTERS);
-  // เพิ่มค่าทุกครั้งที่กด "ค้นหา" → ค้นหาด้วยค่าเดิมซ้ำก็ดึงข้อมูลใหม่
-  const [searchSeq, setSearchSeq] = useState(0);
-  const [filteredBoxes, setFilteredBoxes] = useState<MapBoxRaw[]>([]);
-  const [filtering, setFiltering] = useState(false);
-  const [filterError, setFilterError] = useState("");
   const masterBlood = useBloodTypes();
-  const masterTypes = usePlasmaTypes();
-  const hasFilter = filters.blood !== "" || filters.type !== "";
 
   useEffect(() => {
     let alive = true;
@@ -63,53 +49,6 @@ export default function useMap() {
       alive = false;
     };
   }, []);
-
-  // ดึงจาก API เฉพาะเมื่อกด "ค้นหา" — ไม่มีตัวกรองใช้ boxes ชุดเดิม ไม่ต้องยิงซ้ำ
-  // alive กันผลลัพธ์ของคำขอเก่าเขียนทับคำขอล่าสุด
-  useEffect(() => {
-    if (!hasFilter) {
-      setFiltering(false);
-      setFilterError("");
-      return;
-    }
-    let alive = true;
-    setFiltering(true);
-    mapService
-      .getStoredBoxes(filters)
-      .then((b) => {
-        if (!alive) return;
-        setFilteredBoxes(b);
-        setFilterError("");
-      })
-      .catch(() => {
-        if (!alive) return;
-        setFilteredBoxes([]);
-        setFilterError("โหลดข้อมูลตามตัวกรองไม่สำเร็จ กรุณาลองใหม่");
-      })
-      .finally(() => {
-        if (alive) setFiltering(false);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [filters, hasFilter, searchSeq]);
-
-  // เปลี่ยนค่าในฟอร์ม → เก็บใน draft เท่านั้น
-  const setBlood = (blood: string) => setDraft((d) => ({ ...d, blood }));
-  const setType = (type: string) => setDraft((d) => ({ ...d, type }));
-  /** กด "ค้นหา" → นำ draft ไปใช้จริง */
-  const applyFilters = () => {
-    setFilters(draft);
-    setSearchSeq((n) => n + 1);
-  };
-  /** กด "ล้างค่า" → ล้างทั้งฟอร์มและผลลัพธ์ กลับไปแสดงทั้งหมด */
-  const clearFilters = () => {
-    setDraft(EMPTY_MAP_FILTERS);
-    setFilters(EMPTY_MAP_FILTERS);
-  };
-  /** ฟอร์มมีค่าที่ยังไม่ได้กด "ค้นหา" */
-  const isDirty = draft.blood !== filters.blood || draft.type !== filters.type;
-  const canClear = hasFilter || draft.blood !== "" || draft.type !== "";
 
   const zoneSummaries = useMemo<ZoneSummary[]>(() => {
     const summaries: ZoneSummary[] = [];
@@ -160,92 +99,18 @@ export default function useMap() {
     return list;
   }, [masterBlood, boxes]);
 
-  // กล่องเก่าสุด / ใหม่สุด แยกตาม "ชนิดเลือด + หมู่เลือด"
-  // (เดิมแยกตามหมู่เลือดอย่างเดียว ทำให้เก่าสุดเป็น FFP แต่ใหม่สุดเป็น IFFP ได้)
-  const bloodAgeMap = useMemo<BloodGroupAgeInfo[]>(() => {
-    const source = hasFilter ? filteredBoxes : boxes;
-    const map = new Map<
-      string,
-      { type: string; blood: string; oldest: MapBoxRaw; newest: MapBoxRaw }
-    >();
-
-    for (const b of source) {
-      const key = `${b.type}|${b.blood}`;
-      const entry = map.get(key);
-      if (!entry) {
-        map.set(key, { type: b.type, blood: b.blood, oldest: b, newest: b });
-        continue;
-      }
-
-      // เก่าสุด: วันที่น้อยกว่า หรือ วันที่เท่ากันแต่เลขลำดับน้อยกว่า
-      if (
-        b.collectionDate < entry.oldest.collectionDate ||
-        (b.collectionDate === entry.oldest.collectionDate &&
-          b.boxLabel < entry.oldest.boxLabel)
-      )
-        entry.oldest = b;
-
-      // ใหม่สุด: วันที่มากกว่า หรือ วันที่เท่ากันแต่เลขลำดับมากกว่า
-      if (
-        b.collectionDate > entry.newest.collectionDate ||
-        (b.collectionDate === entry.newest.collectionDate &&
-          b.boxLabel > entry.newest.boxLabel)
-      )
-        entry.newest = b;
-    }
-
-    const zoneNames: Record<string, string> = {};
-    for (const z of zones) zoneNames[z.id] = z.name;
-
-    // เรียงตามลำดับ master (ชนิดเลือด → หมู่เลือด) · ค่าที่ไม่อยู่ใน master ต่อท้าย
-    const rank = (list: string[], v: string) => {
-      const i = list.indexOf(v);
-      return i === -1 ? list.length : i;
-    };
-    const fmt = (b: MapBoxRaw) => ({
-      boxLabel: b.boxLabel,
-      zoneName: b.zoneName || zoneNames[b.zoneId] || "",
-      shelf: b.shelf,
-      collectionDate: b.collectionDate,
-    });
-
-    return [...map.values()]
-      .sort(
-        (x, y) =>
-          rank(masterTypes, x.type) - rank(masterTypes, y.type) ||
-          x.type.localeCompare(y.type) ||
-          rank(bloodOrder, x.blood) - rank(bloodOrder, y.blood) ||
-          x.blood.localeCompare(y.blood),
-      )
-      .map((e) => ({
-        type: e.type,
-        blood: e.blood,
-        oldest: fmt(e.oldest),
-        newest: fmt(e.newest),
-      }));
-  }, [boxes, filteredBoxes, hasFilter, zones, bloodOrder, masterTypes]);
-
   const totalBoxes = zoneSummaries.reduce((s, z) => s + z.totalBoxes, 0);
   const totalUnits = zoneSummaries.reduce((s, z) => s + z.totalUnits, 0);
 
   return {
     zones: zoneSummaries,
+    /** ข้อมูลดิบ (ไม่กรอง) — ส่งต่อให้ useMapAge */
+    rawBoxes: boxes,
+    rawZones: zones,
     bloodOrder,
-    bloodAgeMap,
     totalBoxes,
     totalUnits,
-    draft,
-    hasFilter,
-    isDirty,
-    canClear,
-    setBlood,
-    setType,
-    applyFilters,
-    clearFilters,
     error,
-    filterError,
     loading,
-    /** กำลังดึงข้อมูลตามตัวกรองของแท็บ "เก่าสุด / ใหม่สุด" */
-    filtering,
   };
 }

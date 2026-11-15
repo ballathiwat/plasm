@@ -16,9 +16,32 @@ export interface MapBoxRaw {
   shelf: string
   units: string[]
   status: string
-  collectionDate: string    
-  storedAt: string          
+  /** ชั้นใน rack 1–5 / ช่อง 1–20 — เฉพาะห้อง -30°C */
+  level?: number | null
+  position?: number | null
+  collectionDate: string
+  storedAt: string
 }
+
+/** GET /ext/stock — เลือดจากภายนอกที่ยังอยู่ในคลัง (1 แถว = 1 เอกสาร/กล่อง) */
+export interface ExtStockRaw {
+  id: string
+  boxLabel: string
+  docNumber: string
+  /** รหัสชนิดเลือดจาก master_plasma_types เช่น "LDRC" */
+  type: string
+  /** หมู่เลือด (มี Rh ได้) เช่น "A+" */
+  blood: string
+  source: string
+  location: string
+  /** จำนวนถุงคงเหลือ (IN_STOCK) */
+  bags: number
+  /** yyyy-MM-dd */
+  receivedDate: string
+}
+
+/** คลังของแท็บ "เก่าสุด / ใหม่สุด": in = กล่องพลาสมา, ex = รับจากภายนอก */
+export type MapSource = 'in' | 'ex'
 
 export interface MapZoneRaw {
   id: string
@@ -71,11 +94,34 @@ export const ROOM_LAYOUT: { shelf: string; row: number; col: number; label: stri
   { shelf: 'R1', row: 2, col: 2, label: 'R1' },
 ]
 
-/** 1 แถว = ชนิดเลือด + หมู่เลือด (ไม่ปนกล่องต่างชนิดกัน) */
-export interface BloodGroupAgeInfo {
-  type: string
-  blood: string
-  oldest: { boxLabel: string; zoneName: string; shelf: string; collectionDate: string } | null
-  newest: { boxLabel: string; zoneName: string; shelf: string; collectionDate: string } | null
+/** กล่อง 1 ใบในช่อง เก่าสุด / ใหม่สุด (ใช้ร่วมกันทั้งภายใน/ภายนอก) */
+export interface AgeBox {
+  boxLabel: string
+  /** เลขเอกสาร — เฉพาะภายนอก */
+  docNumber?: string
+  /** ภายใน: ชื่อสถานที่จัดเก็บ · ภายนอก: แหล่งที่มา */
+  place: string
+  /** ภายใน: ชั้น/ช่อง · ภายนอก: ตำแหน่งจัดเก็บ */
+  location: string
+  /** ภายใน: จำนวน units · ภายนอก: จำนวนถุงคงเหลือ */
+  qty: number
+  /** ภายใน: วันที่เก็บ · ภายนอก: วันที่รับ (yyyy-MM-dd) */
+  date: string
 }
 
+/** 1 แถว = ชนิดเลือด + หมู่เลือด (ไม่ปนกล่องต่างชนิดกัน) */
+export interface AgeRow {
+  type: string
+  blood: string
+  /** คงคลังของกลุ่ม */
+  boxes: number
+  qty: number
+  oldest: AgeBox
+  /** null = กลุ่มนี้มีกล่องเดียว */
+  newest: AgeBox | null
+}
+
+export interface ExtStockTotals {
+  boxes: number
+  bags: number
+}
