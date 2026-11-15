@@ -3,7 +3,7 @@
    ใช้ร่วมกับ ext-blood.css (.ext-title, .ext-tabs, .ext-table, .ext-empty)
    สีทั้งหมดมาจาก token ใน globals.css · สีที่มาจากข้อมูล (ชนิดเลือด/หมู่เลือด) ส่งผ่าน --c */
 
-.rpt-page { max-width: 1200px; animation: plasm-fade-in .2s ease; }
+.rpt-page { animation: plasm-fade-in .2s ease; }
 .rpt-header { margin-bottom: 16px; }
 
 /* ── การ์ดพื้นฐาน ── */
