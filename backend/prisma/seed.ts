@@ -50,16 +50,16 @@ async function main() {
 
   // ===== 4. Master data (ต้องมาก่อนกล่อง) =====
   const plasmaTypes = [
-    { code: 'FFP', name: 'Fresh Frozen Plasma' },
+    { code: 'FFP', name: 'Fresh Frozen Plasma', defaultVolumeMl: 220 },
     { code: 'Cryo', name: 'Cryoprecipitate' },
     { code: 'LDRC', name: 'Leukocyte Depleted Red Cell' },
     { code: 'PRC', name: 'Packed Red Cell' },
-    { code: 'PC', name: 'Platelet Concentrate' },
+    { code: 'PC', name: 'Platelet Concentrate', defaultVolumeMl: 55 },
     { code: 'WB', name: 'Whole Blood' },
-  ]
+  ] as { code: string; name: string; defaultVolumeMl?: number }[]
   for (const [i, p] of plasmaTypes.entries()) {
     await prisma.masterPlasmaType.upsert({
-      where: { code: p.code }, update: {}, create: { code: p.code, name: p.name, sort: i },
+      where: { code: p.code }, update: {}, create: { code: p.code, name: p.name, sort: i, defaultVolumeMl: p.defaultVolumeMl },
     })
   }
 

@@ -2,7 +2,7 @@
 
 import apiAdapter from '../../../helpers/http/apiAdapter'
 import {
-  EXT_DOCUMENTS, EXT_SUMMARY, EXT_REPORT,
+  EXT_DOCUMENTS, EXT_SUMMARY,
   EXT_SOURCES, EXT_STORAGES, EXT_EXPORT_REASONS, MASTER_PLASMA_TYPES,
   EXT_ATTACHMENTS, EXT_PIN_SETUP, EXT_PIN_VERIFY, EXT_COMMITTEE, EXT_USERS,
 } from '../../../helpers/url_helper'
@@ -59,9 +59,8 @@ const extBloodService = {
     apiAdapter.upload<ExtDocument>(`${EXT_DOCUMENTS}/${id}/attachments`, data),
   deleteAttachment: (id: string) => apiAdapter.delete<{ message: string }>(`${EXT_ATTACHMENTS}/${id}`),
 
-  // Summary & Report
+  // Summary (รายงาน: pages/ExtBloodReport/services/ReportService.ts)
   getSummary: () => apiAdapter.get<ExtSummary>(EXT_SUMMARY),
-  getReport: (params: Record<string, string>) => apiAdapter.get<unknown>(EXT_REPORT, params),
 
   // Master data
   getSources: () => apiAdapter.get<ExtSource[]>(EXT_SOURCES),

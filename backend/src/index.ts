@@ -20,6 +20,7 @@ import lockRoutes from './routes/locks'
 import reportRoutes from './routes/reports'
 import extRoutes from './routes/ext'
 import extCommitteeRoutes from './routes/extCommittee'
+import extReportRoutes from './routes/extReport'
 import notificationRoutes from './routes/notifications'
 
 const app = express()
@@ -54,6 +55,7 @@ app.use('/api/v1/master', authGuard, masterRoutes)
 app.use('/api/v1/locks', authGuard, lockRoutes)
 app.use('/api/v1/reports', authGuard, reportRoutes)
 app.use('/api/v1/notifications', authGuard, notificationRoutes)
+app.use('/api/v1/ext/reports', authGuard, extReportRoutes)
 app.use('/api/v1/ext', authGuard, extCommitteeRoutes)
 app.use('/api/v1/ext', authGuard, extRoutes)
   // /uploads ไม่เปิดสาธารณะแล้ว — ไฟล์แนบ ext เปิดผ่าน GET /api/v1/ext/attachments/:id/file
