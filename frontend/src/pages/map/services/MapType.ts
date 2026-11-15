@@ -66,7 +66,10 @@ export interface ShelfSummary {
   shelf: string
   totalBoxes: number
   totalUnits: number
+  /** จำนวน units แยกหมู่เลือด */
   byBlood: Record<string, number>
+  /** จำนวนกล่องแยกหมู่เลือด — ใช้กับป้ายสีในแผนผัง */
+  byBloodBoxes: Record<string, number>
 }
 
 export interface ZoneSummary {

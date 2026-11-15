@@ -7,7 +7,9 @@ import type { ReactNode } from 'react'
 import { ArrowDownUp, Map as MapIcon } from 'lucide-react'
 import useMap from './services/useMap'
 import useMapAge from './services/useMapAge'
+import useMapZone from './services/useMapZone'
 import MapZoneCard from './components/MapZoneCard'
+import MapZonePicker from './components/MapZonePicker'
 import MapFilterBar from './components/MapFilterBar'
 import MapSummaryCards from './components/MapSummaryCards'
 import MapAgeTable from './components/MapAgeTable'
@@ -23,6 +25,7 @@ const TABS: { key: MapTab; label: string; icon: ReactNode }[] = [
 const MapPage = () => {
   const { zones, rawBoxes, rawZones, bloodOrder, totalBoxes, totalUnits, loading, error } = useMap()
   const age = useMapAge({ boxes: rawBoxes, zones: rawZones })
+  const zone = useMapZone(zones)
   const [tab, setTab] = useState<MapTab>('map')
 
   if (loading) {
@@ -65,14 +68,24 @@ const MapPage = () => {
       {/* Tab content: แผนผัง */}
       {tab === 'map' && (
         <div role="tabpanel" id="map-panel-map" aria-labelledby="map-tab-map">
-          {zones.length === 0 ? (
+          {zone.selected === null ? (
             <div className="map-empty">ยังไม่มีสถานที่จัดเก็บ — เพิ่มได้ที่ ตั้งค่า › สถานที่จัดเก็บ</div>
           ) : (
-            <div className="map-zone-grid">
-              {zones.map((z) => (
-                <MapZoneCard key={z.id} zone={z} bloodOrder={bloodOrder} />
-              ))}
-            </div>
+            <>
+              <MapZonePicker
+                zones={zone.visibleZones}
+                hiddenEmptyZones={zone.hiddenEmptyZones}
+                selectedId={zone.selected.id}
+                totalCount={zone.totalCount}
+                withBoxesCount={zone.withBoxesCount}
+                emptyCount={zone.emptyCount}
+                maxBoxes={zone.maxBoxes}
+                showEmpty={zone.showEmpty}
+                onShowEmptyChange={zone.setShowEmpty}
+                onSelect={zone.selectZone}
+              />
+              <MapZoneCard zone={zone.selected} bloodOrder={bloodOrder} />
+            </>
           )}
         </div>
       )}
