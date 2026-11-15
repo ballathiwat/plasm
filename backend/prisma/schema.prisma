@@ -130,6 +130,8 @@ model MasterPlasmaType {
   color  String? 
   active Boolean @default(true)
   sort   Int     @default(0)
+  // ปริมาตรมาตรฐานต่อถุง (ml) — ใช้ประมาณปริมาตรในรายงานรับเลือดจากภายนอก
+  defaultVolumeMl Int? @map("default_volume_ml")
   boxes        Box[]
   extDocuments ExtDocument[]
 
@@ -338,6 +340,7 @@ model ExtDocument {
   exports      ExtExport[]
   committee    ExtCommittee[]
 
+  @@index([receivedDate, status])
   @@map("ext_documents")
 }
 
@@ -348,11 +351,14 @@ model ExtBag {
   status     ExtBagStatus @default(IN_STOCK)
   exportedAt DateTime?    @map("exported_at")
   exportId   String?      @map("export_id")
+  // ปริมาตรจริงของถุง (ml) — null = ใช้ค่ามาตรฐานของชนิดเลือด
+  volumeMl   Int?         @map("volume_ml")
 
   document ExtDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
   export   ExtExport?  @relation(fields: [exportId], references: [id])
 
   @@unique([bagNumber])
+  @@index([documentId])
   @@map("ext_bags")
 }
 

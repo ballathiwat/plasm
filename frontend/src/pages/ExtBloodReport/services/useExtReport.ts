@@ -1,48 +1,300 @@
 // frontend/src/pages/ExtBloodReport/services/useExtReport.ts
-import { useState, useEffect, useCallback } from 'react'
-import extBloodService from '../../ExtBlood/services/ExtBloodService'
-import type { ExtSource, ExtBloodProduct } from '../../ExtBlood/services/ExtBloodType'
-import type { ExtReportFilter, ExtReportKPI, ExtReportChartItem, ExtReportMatrixRow } from './ExtReportType'
+//
+// state + logic ทั้งหมดของหน้ารายงานรับเลือดจากภายนอก
+//  - ตัวกรองทั้งหมดเก็บใน URL query (แชร์ลิงก์ได้)
+//  - cache ผลลัพธ์ตาม query 60 วินาที และคงข้อมูลเดิมไว้ระหว่างโหลดชุดใหม่
 
-// Default: ต้นเดือนนี้ → วันนี้
-const today = () => new Date().toISOString().slice(0, 10)
-const monthStart = () => { const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10) }
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import reportService from './ReportService'
+import { buildProductColors, presetRange, validateRange } from './reportHelpers'
+import type {
+  Abo, DimKey, FilterOption, ProductColorMap, RangePreset, ReceiptRowsResult,
+  ReceiptsReport, ReportFilters, ReportQuery, ReportTab, Rh,
+} from './ReportType'
 
+export const ROWS_PAGE_SIZE = 10
+const DEFAULT_PRESET: RangePreset = '6m'
+const PRESETS: RangePreset[] = ['month', '3m', '6m', 'fy', 'custom']
+const TABS: ReportTab[] = ['source', 'matrix', 'rows']
+const ABOS: Abo[] = ['A', 'B', 'O', 'AB']
+
+/* ----------------------------------------------------------
+   Cache (อายุ 60 วินาที)
+---------------------------------------------------------- */
+const STALE_MS = 60_000
+const CACHE_LIMIT = 40
+const cache = new Map<string, { at: number; data: unknown }>()
+
+async function loadCached<T>(key: string, loader: () => Promise<T>): Promise<T> {
+  const hit = cache.get(key)
+  if (hit && Date.now() - hit.at < STALE_MS) return hit.data as T
+  const data = await loader()
+  cache.delete(key)
+  cache.set(key, { at: Date.now(), data })
+  if (cache.size > CACHE_LIMIT) {
+    const oldest = cache.keys().next().value
+    if (oldest !== undefined) cache.delete(oldest)
+  }
+  return data
+}
+
+const errorMessage = (e: unknown): string => {
+  const msg = (e as { message?: unknown } | null)?.message
+  return typeof msg === 'string' && msg ? msg : 'โหลดรายงานไม่สำเร็จ'
+}
+
+/* ----------------------------------------------------------
+   URL query ↔ filters
+   range=month|3m|6m|fy|custom · from,to (เฉพาะ custom) · sourceId · productId
+   abo=A|B|O|AB · rh=pos|neg · pending=1 · tab=source|matrix|rows · page
+---------------------------------------------------------- */
+const parseFilters = (sp: URLSearchParams): ReportFilters => {
+  const rawPreset = sp.get('range') as RangePreset | null
+  const preset = rawPreset && PRESETS.includes(rawPreset) ? rawPreset : DEFAULT_PRESET
+  const range =
+    preset === 'custom'
+      ? { from: sp.get('from') ?? '', to: sp.get('to') ?? '' }
+      : presetRange(preset)
+  const rawAbo = sp.get('abo') as Abo | null
+  const rawRh = sp.get('rh')
+  const rh: Rh | undefined = rawRh === 'pos' ? '+' : rawRh === 'neg' ? '-' : undefined
+  return {
+    preset,
+    ...range,
+    sourceId: sp.get('sourceId') || undefined,
+    productId: sp.get('productId') || undefined,
+    abo: rawAbo && ABOS.includes(rawAbo) ? rawAbo : undefined,
+    rh,
+    includePending: sp.get('pending') === '1',
+  }
+}
+
+const toQuery = (f: ReportFilters): ReportQuery => ({
+  from: f.from,
+  to: f.to,
+  sourceId: f.sourceId,
+  productId: f.productId,
+  abo: f.abo,
+  rh: f.rh,
+  includePending: f.includePending ? 'true' : undefined,
+})
+
+/* ----------------------------------------------------------
+   Hook
+---------------------------------------------------------- */
 export default function useExtReport() {
-  const [filter, setFilterRaw] = useState<ExtReportFilter>({ dateFrom: monthStart(), dateTo: today() })
-  const [kpi, setKpi] = useState<ExtReportKPI | null>(null)
-  const [chartData, setChartData] = useState<ExtReportChartItem[]>([])
-  const [matrix, setMatrix] = useState<ExtReportMatrixRow[]>([])
-  const [sources, setSources] = useState<ExtSource[]>([])
-  const [products, setProducts] = useState<ExtBloodProduct[]>([])
-  const [loading, setLoading] = useState(true)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const spKey = searchParams.toString()
 
-  // Master data
+  // spKey เป็นตัวแทนของ searchParams — ใช้เป็น dependency เพื่อให้ filters คงที่เมื่อ URL ไม่เปลี่ยน
+  const filters = useMemo(() => parseFilters(new URLSearchParams(spKey)), [spKey])
+  const rawTab = searchParams.get('tab') as ReportTab | null
+  const tab: ReportTab = rawTab && TABS.includes(rawTab) ? rawTab : 'source'
+  const page = Math.max(1, Math.floor(Number(searchParams.get('page')) || 1))
+
+  const rangeError = useMemo(() => validateRange(filters.from, filters.to), [filters.from, filters.to])
+  const query = useMemo(() => toQuery(filters), [filters])
+  const queryKey = JSON.stringify(query)
+
+  const [report, setReport] = useState<ReceiptsReport | null>(null)
+  const [fetching, setFetching] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [rows, setRows] = useState<ReceiptRowsResult | null>(null)
+  const [rowsFetching, setRowsFetching] = useState(false)
+  const [rowsError, setRowsError] = useState<string | null>(null)
+  const [sources, setSources] = useState<FilterOption[]>([])
+  const [products, setProducts] = useState<(FilterOption & { code: string; color?: string | null })[]>([])
+  const [reload, setReload] = useState(0)
+
+  /* ── master data ของ dropdown (รวมรายการที่ปิดใช้งาน เพราะเอกสารเก่ายังอ้างอิง) ── */
   useEffect(() => {
-    Promise.all([extBloodService.getSources(), extBloodService.getBloodProducts()])
-      .then(([s, p]) => { setSources(s.filter((x) => x.active)); setProducts(p.filter((x) => x.active)) })
+    let alive = true
+    Promise.all([reportService.getSources(), reportService.getProducts()])
+      .then(([s, p]) => {
+        if (!alive) return
+        setSources(s.map((x) => ({ id: x.id, label: x.name })))
+        setProducts(
+          p.map((x) => ({
+            id: x.id,
+            code: x.code,
+            color: x.color,
+            label: x.name ? `${x.code} — ${x.name}` : x.code,
+          })),
+        )
+      })
+      .catch((e: unknown) => {
+        // dropdown ว่าง แต่รายงานยังใช้ได้ — แจ้งให้ผู้ใช้ทราบ
+        if (alive) setError(`โหลดตัวเลือกตัวกรองไม่สำเร็จ: ${errorMessage(e)}`)
+      })
+    return () => {
+      alive = false
+    }
   }, [])
 
-  const fetchReport = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params: Record<string, string> = {}
-      if (filter.dateFrom) params.dateFrom = filter.dateFrom
-      if (filter.dateTo) params.dateTo = filter.dateTo
-      if (filter.sourceId) params.sourceId = filter.sourceId
-      if (filter.bloodProductId) params.bloodProductId = filter.bloodProductId
-      if (filter.bloodGroup) params.bloodGroup = filter.bloodGroup
-      const res = await extBloodService.getReport(params) as any
-      setKpi(res.kpi ?? null)
-      setChartData(res.chart ?? [])
-      setMatrix(res.matrix ?? [])
-    } catch { /* ignore */ }
-    finally { setLoading(false) }
-  }, [filter])
+  /* ── รายงานสรุป ── */
+  useEffect(() => {
+    if (rangeError) {
+      setFetching(false)
+      return
+    }
+    let alive = true
+    setFetching(true)
+    setError(null)
+    loadCached(`report:${queryKey}`, () => reportService.getReceipts(JSON.parse(queryKey) as ReportQuery))
+      .then((data) => {
+        if (alive) setReport(data)
+      })
+      .catch((e: unknown) => {
+        if (alive) setError(errorMessage(e))
+      })
+      .finally(() => {
+        if (alive) setFetching(false)
+      })
+    return () => {
+      alive = false
+    }
+  }, [queryKey, rangeError, reload])
 
-  useEffect(() => { fetchReport() }, [fetchReport])
+  /* ── รายการทั้งหมด (โหลดเมื่อเปิดแท็บ) ── */
+  useEffect(() => {
+    if (tab !== 'rows' || rangeError) return
+    let alive = true
+    setRowsFetching(true)
+    setRowsError(null)
+    loadCached(
+      `rows:${queryKey}:${page}`,
+      () => reportService.getReceiptRows(JSON.parse(queryKey) as ReportQuery, page, ROWS_PAGE_SIZE),
+    )
+      .then((data) => {
+        if (alive) setRows(data)
+      })
+      .catch((e: unknown) => {
+        if (alive) setRowsError(errorMessage(e))
+      })
+      .finally(() => {
+        if (alive) setRowsFetching(false)
+      })
+    return () => {
+      alive = false
+    }
+  }, [tab, queryKey, page, rangeError, reload])
 
-  const setFilter = (f: Partial<ExtReportFilter>) => setFilterRaw((p) => ({ ...p, ...f }))
+  /* ── เขียน URL ── */
+  const update = useCallback(
+    (mutate: (p: URLSearchParams) => void, resetPage = true) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          mutate(next)
+          if (resetPage) next.delete('page')
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setSearchParams],
+  )
 
-  return { filter, setFilter, kpi, chartData, matrix, sources, products, loading }
+  const setPreset = useCallback(
+    (preset: RangePreset) => {
+      update((p) => {
+        if (preset === DEFAULT_PRESET) p.delete('range')
+        else p.set('range', preset)
+        if (preset === 'custom') {
+          // เริ่มจากช่วงที่แสดงอยู่ เพื่อให้ผู้ใช้ปรับต่อได้ทันที
+          if (!p.get('from')) p.set('from', filters.from)
+          if (!p.get('to')) p.set('to', filters.to)
+        } else {
+          p.delete('from')
+          p.delete('to')
+        }
+      })
+    },
+    [update, filters.from, filters.to],
+  )
+
+  const setCustomDate = useCallback(
+    (key: 'from' | 'to', iso: string) => {
+      update((p) => {
+        p.set('range', 'custom')
+        if (iso) p.set(key, iso)
+        else p.delete(key)
+      })
+    },
+    [update],
+  )
+
+  const setDim = useCallback(
+    (key: DimKey, value: string | undefined) => {
+      update((p) => {
+        const v = key === 'rh' ? (value === '+' ? 'pos' : value === '-' ? 'neg' : undefined) : value
+        if (v) p.set(key, v)
+        else p.delete(key)
+      })
+    },
+    [update],
+  )
+
+  /** คลิกกราฟ: เลือกค่าเดิมซ้ำ = ยกเลิกตัวกรองนั้น */
+  const toggleDim = useCallback(
+    (key: DimKey, value: string) => setDim(key, filters[key] === value ? undefined : value),
+    [setDim, filters],
+  )
+
+  const setIncludePending = useCallback(
+    (on: boolean) => update((p) => (on ? p.set('pending', '1') : p.delete('pending'))),
+    [update],
+  )
+
+  /** ล้างตัวกรอง (คงช่วงวันที่และแท็บ) */
+  const clearDims = useCallback(
+    () => update((p) => ['sourceId', 'productId', 'abo', 'rh', 'pending'].forEach((k) => p.delete(k))),
+    [update],
+  )
+
+  /** ล้างทุกอย่างกลับค่าเริ่มต้น (รวมช่วงวันที่) */
+  const resetAll = useCallback(
+    () => update((p) => ['range', 'from', 'to', 'sourceId', 'productId', 'abo', 'rh', 'pending'].forEach((k) => p.delete(k))),
+    [update],
+  )
+
+  const setTab = useCallback(
+    (t: ReportTab) => update((p) => (t === 'source' ? p.delete('tab') : p.set('tab', t))),
+    [update],
+  )
+
+  const setPage = useCallback(
+    (n: number) => update((p) => (n <= 1 ? p.delete('page') : p.set('page', String(n))), false),
+    [update],
+  )
+
+  /** โหลดใหม่โดยไม่ใช้ cache */
+  const retry = useCallback(() => {
+    cache.clear()
+    setReload((n) => n + 1)
+  }, [])
+
+  /* ── ค่าที่คำนวณจากข้อมูล ── */
+  // ลำดับ/สีของชนิดเลือดในกราฟ: ตามจำนวนถุง (byProduct) แล้วตามด้วย master
+  const productColors: ProductColorMap = useMemo(
+    () => buildProductColors([...(report?.byProduct ?? []), ...products]),
+    [report, products],
+  )
+  const productCodes = useMemo(() => (report?.byProduct ?? []).map((p) => p.code), [report])
+
+  const hasDimFilter =
+    !!filters.sourceId || !!filters.productId || !!filters.abo || !!filters.rh || filters.includePending
+  const isEmpty = !!report && report.kpi.bags === 0
+
+  return {
+    filters, tab, page, rangeError,
+    report, loading: fetching && !report, fetching, error, isEmpty,
+    rows, rowsFetching, rowsError,
+    sources, products, productColors, productCodes, hasDimFilter,
+    setPreset, setCustomDate, setDim, toggleDim, setIncludePending,
+    clearDims, resetAll, setTab, setPage, retry,
+  }
 }
+
+export type ExtReportState = ReturnType<typeof useExtReport>

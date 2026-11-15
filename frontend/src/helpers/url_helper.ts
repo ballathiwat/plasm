@@ -60,7 +60,8 @@ export const SLOT_LOCKS = `${API}/locks`            // POST · PUT /:id (heartbe
 export const EXT_BASE = `${API}/ext`
 export const EXT_DOCUMENTS = `${EXT_BASE}/documents`
 export const EXT_SUMMARY = `${EXT_BASE}/summary`
-export const EXT_REPORT = `${EXT_BASE}/report`
+export const EXT_REPORT_RECEIPTS = `${EXT_BASE}/reports/receipts`
+export const EXT_REPORT_RECEIPT_ROWS = `${EXT_BASE}/reports/receipts/rows`
 export const EXT_SOURCES = `${EXT_BASE}/sources`
 export const EXT_STORAGES = `${EXT_BASE}/storages`
 // EXT_BLOOD_PRODUCTS ถูกยุบรวมเข้า MASTER_PLASMA_TYPES แล้ว (migration 20261114)
