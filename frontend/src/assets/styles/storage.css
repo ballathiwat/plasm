@@ -185,3 +185,63 @@
   .sto-move__arrow { transform: rotate(90deg); }
   .sto-rack__slots { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
+
+/* ============================================================
+   ฟอร์มจัดเก็บ (/storage/new)
+   timeline (.ext-tl*), การ์ดสรุป (.ext-sum*), ช่องถุง (.ext-bag*) ใช้ร่วมกับ ExtBloodForm
+   ============================================================ */
+.sto-create { width: 100%; max-width: 1600px; margin: 0 auto; }
+.sto-create__back { width: 44px; min-height: 44px; padding: 0; flex-shrink: 0; }
+.sto-create__layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+.sto-create__layout.is-wide { grid-template-columns: minmax(0, 1fr) clamp(300px, 26%, 380px); }
+.sto-create__main { min-width: 0; }
+.sto-create__aside { position: sticky; top: 0; }
+.sto-create__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 20px; align-items: start; }
+.sto-create .plasm-btn--primary.plasm-btn--block,
+.sto-create .sto-rack__level { min-height: 44px; }
+
+/* ── Banner ── */
+.sto-banner {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 0 0 16px; padding: 10px 14px;
+  border: 1px solid transparent; border-radius: var(--radius-md); font-size: 13px;
+}
+.sto-banner > svg { flex-shrink: 0; }
+.sto-banner__text { flex: 1 1 260px; min-width: 0; margin: 0; }
+.sto-banner__actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.sto-banner--success { border-color: var(--success-border); background: var(--success-surface); color: var(--success-ink); }
+.sto-banner--danger { border-color: var(--danger-border); background: var(--danger-surface); color: var(--danger-ink); }
+.sto-banner--inline { margin: 0 0 12px; padding: 8px 12px; }
+
+/* ── สแกนถุง ── */
+.sto-progress { height: 6px; margin-bottom: 14px; border-radius: var(--radius-full); background: var(--surface-raised); overflow: hidden; }
+.sto-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--primary); transition: width .2s, background .2s; }
+.sto-progress.is-full > span { background: var(--stock-normal); }
+.sto-scan__field { flex: 1; min-width: 0; }
+.sto-scan__order { margin-top: 16px; font-size: 12px; color: var(--text-secondary); }
+.sto-scan__grid { margin-top: 6px; }
+.sto-create .ext-bag__x:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+/* ── การ์ดสรุป ── */
+.sto-sum__label { padding: 12px 16px 8px; }
+.sto-sum__caption { font-size: 12px; color: var(--text-secondary); }
+.sto-sum__box { margin-top: 2px; font-family: var(--font-mono); font-size: 22px; font-weight: 700; line-height: 1.3; color: var(--text-primary); overflow-wrap: anywhere; }
+.sto-sum__box.is-empty { font-family: var(--font-sans); font-size: 15px; font-weight: 500; color: var(--text-disabled); }
+.sto-sum__note { margin: 0; font-size: 12px; text-align: center; color: var(--text-secondary); }
+
+/* ── แถบสรุปติดบน (container < 860px) ── */
+.sto-sumbar {
+  position: sticky; top: -24px; z-index: 6; margin: 0 -24px 16px; padding: 10px 24px;
+  background: var(--background); border-bottom: 1px solid var(--border);
+}
+.sto-sumbar__row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.sto-sumbar__toggle {
+  display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface);
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--text-primary); cursor: pointer;
+}
+.sto-sumbar__toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sto-sumbar__parts { color: var(--primary); }
+.sto-sumbar__chev { color: var(--text-secondary); transition: transform .15s; }
+.sto-sumbar__chev.is-open { transform: rotate(180deg); }
+.sto-sumbar__actions { display: flex; gap: 8px; margin-left: auto; }
+.sto-sumbar__card { margin-top: 10px; }

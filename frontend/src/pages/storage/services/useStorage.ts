@@ -1,74 +1,79 @@
 // ============================================================
-//  src/pages/storage/services/useStorage.ts
+//  frontend/src/pages/storage/services/useStorage.ts
+//  state + logic ของฟอร์มจัดเก็บกล่องใหม่ (/storage/new)
+//  (รายการกล่อง / แก้ไข units / ย้ายตำแหน่ง อยู่ใน useStorageList.ts)
 // ============================================================
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import storageService from "./StorageService";
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import storageService from './StorageService'
 import type {
-  StorageBoxItem,
-  StorageFormData,
-  MasterOptions,
-  QuickAddKind,
-  UnitRemovalInput,
-} from "./StorageType";
-import type { ToastState } from "../../../components/common/Toast";
-import type { BarcodeLabelData } from "../components/BarcodeLabel";
-import type { PaginationInfo } from "../../../components/shared/Pagination";
+  MasterOptions, QuickAddKind, RackSlotMap, StorageBoxItem, StorageFormData,
+} from './StorageType'
+import type { ToastState } from '../../../components/common/Toast'
+import type { BarcodeLabelData } from '../components/BarcodeLabel'
+import type { ApiError } from '../../../helpers/http/types'
 import {
-  BOX_CAPACITY,
-  POSITION_LIST,
-  ROOM_LEGACY_KEY,
-} from "../../../helpers/rack";
+  BOX_CAPACITY, LEVEL_LIST, POSITION_LIST, ROOM_LEGACY_KEY,
+  UNIT_FORMAT_ERROR, UNIT_PATTERN, cleanUnit, positionLabel,
+} from '../../../helpers/rack'
 
-const EMPTY_FORM: StorageFormData = {
-  boxName: "",
-  type: "",
-  blood: "",
-  collectionDate: new Date().toISOString().split("T")[0],
-  zoneId: "",
-  shelf: "",
-};
+/** วันนี้ตามเวลาเครื่อง (yyyy-MM-dd) */
+export const todayISO = () => {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+const emptyForm = (): StorageFormData => ({
+  boxName: '', type: '', blood: '', collectionDate: todayISO(), zoneId: '', shelf: '',
+})
+
+const errorMessage = (err: unknown, fallback: string) =>
+  (err as Partial<ApiError> | null)?.message || fallback
+
+/** ช่องของฟอร์มที่ตรวจความครบถ้วน */
+export type StorageField = 'type' | 'blood' | 'collectionDate' | 'zoneId' | 'shelf' | 'slot' | 'units'
+export type StorageErrors = Partial<Record<StorageField, string>>
+
+/** กล่องที่เพิ่งบันทึกสำเร็จ — ใช้แสดง banner + พิมพ์ฉลาก */
+export interface SavedBox {
+  boxLabel: string
+  unitCount: number
+  location: string
+  print: BarcodeLabelData
+}
+
+const labelData = (box: StorageBoxItem, zoneName: string): BarcodeLabelData => ({
+  boxLabel: box.boxLabel,
+  type: box.type,
+  blood: box.blood,
+  location: box.zoneName || zoneName,
+  shelf: box.level != null && box.position != null
+    ? `${box.shelf}-${box.level} ช่อง ${box.position}`
+    : box.shelf,
+  collectionDate: box.collectionDate,
+  unitCount: box.units.length,
+})
 
 export default function useStorage() {
-  const [boxes, setBoxes] = useState<StorageBoxItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [master, setMaster] = useState<MasterOptions>({
-    plasmaTypes: [],
-    bloodTypes: [],
-    zones: [],
-  });
-  const [form, setForm] = useState<StorageFormData>(EMPTY_FORM);
-  const [nextLabel, setNextLabel] = useState("");
-  const [scannedUnits, setScannedUnits] = useState<string[]>([]);
-  const [unitInput, setUnitInput] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<ToastState | null>(null);
-  const [printData, setPrintData] = useState<BarcodeLabelData | null>(null);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    page: 1, pageSize: 20, total: 0, totalPages: 0,
-  });
+  const [master, setMaster] = useState<MasterOptions>({ plasmaTypes: [], bloodTypes: [], zones: [] })
+  const [form, setForm] = useState<StorageFormData>(emptyForm)
+  const [nextLabel, setNextLabel] = useState('')
+  const [scannedUnits, setScannedUnits] = useState<string[]>([])
+  const [unitInput, setUnitInputState] = useState('')
+  const [unitError, setUnitError] = useState('')
+  const [checking, setChecking] = useState(false)
   // ── ตำแหน่งใน rack (เฉพาะห้อง -30°C) ──
-  const [rackLevel, setRackLevel] = useState(1);
-  const [rackPosition, setRackPosition] = useState<number | null>(null);
-  const [occupied, setOccupied] = useState<Record<number, number[]>>({});
+  const [rackLevel, setRackLevelState] = useState<number | null>(null)
+  const [rackPosition, setRackPosition] = useState<number | null>(null)
+  const [slots, setSlots] = useState<RackSlotMap>({})
 
-  // ── Load boxes (paginated) ──
-  const loadBoxes = useCallback(async (page = 1, pageSize = 20) => {
-    setLoading(true);
-    try {
-      const res = await storageService.getStoredBoxesPaged(page, pageSize);
-      setBoxes(res.data);
-      setPagination({ page: res.page, pageSize: res.pageSize, total: res.total, totalPages: res.totalPages });
-    } catch {
-      setBoxes([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadBoxes();
-  }, [loadBoxes]);
+  const [tried, setTried] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [saved, setSaved] = useState<SavedBox | null>(null)
+  const [toast, setToast] = useState<ToastState | null>(null)
+  const [printData, setPrintData] = useState<BarcodeLabelData | null>(null)
 
   // ── Load master (เฉพาะรายการที่ active) ──
   const loadMaster = useCallback(async (): Promise<MasterOptions> => {
@@ -76,212 +81,237 @@ export default function useStorage() {
       storageService.listPlasmaTypes(),
       storageService.listBloodTypes(),
       storageService.listZones(),
-    ]);
+    ])
     const options: MasterOptions = {
       plasmaTypes: p.filter((x) => x.active),
       bloodTypes: b.filter((x) => x.active),
       zones: z
         .filter((x) => x.active)
         .map((x) => ({ ...x, shelves: x.shelves.filter((s) => s.active) })),
-    };
-    setMaster(options);
-    return options;
-  }, []);
+    }
+    setMaster(options)
+    return options
+  }, [])
 
-  // ── โหลดครั้งแรก + ตั้งค่าเริ่มต้นของฟอร์ม ──
   useEffect(() => {
-    loadMaster()
-      .then(({ plasmaTypes, bloodTypes, zones }) => {
-        setForm((f) => ({
-          ...f,
-          type: f.type || plasmaTypes[0]?.code || "",
-          blood: f.blood || bloodTypes[0]?.code || "",
-          zoneId: f.zoneId || zones[0]?.id || "",
-          shelf: f.shelf || zones[0]?.shelves[0]?.code || "",
-        }));
-      })
-      .catch((err: any) => {
-        setToast({
-          type: "error",
-          msg: err?.message || "โหลดข้อมูลหลักไม่สำเร็จ",
-        });
-      });
-  }, [loadMaster]);
+    loadMaster().catch((err: unknown) => {
+      setToast({ type: 'error', msg: errorMessage(err, 'โหลดข้อมูลหลักไม่สำเร็จ') })
+    })
+  }, [loadMaster])
 
   // ── เลขกล่องถัดไป (แสดงตัวอย่างเท่านั้น เลขจริง backend ออกตอนบันทึก) ──
   const refreshNextLabel = useCallback(async (type: string, blood: string) => {
     if (!type || !blood) {
-      setNextLabel("");
-      return;
+      setNextLabel('')
+      return
     }
     try {
-      const res = await storageService.getNextLabel(type, blood);
-      setNextLabel(res.label);
+      const res = await storageService.getNextLabel(type, blood)
+      setNextLabel(res.label)
     } catch {
-      setNextLabel("");
+      setNextLabel('')
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    refreshNextLabel(form.type, form.blood);
-  }, [form.type, form.blood, refreshNextLabel]);
+    refreshNextLabel(form.type, form.blood)
+  }, [form.type, form.blood, refreshNextLabel])
 
-  // ── Shelves ของสถานที่ที่เลือก ──
-  const availableShelves = useMemo(
-    () => master.zones.find((z) => z.id === form.zoneId)?.shelves ?? [],
-    [master.zones, form.zoneId],
-  );
+  // ── ห้อง/ตู้ + ชั้นวางที่เลือก ──
+  const zone = useMemo(() => master.zones.find((z) => z.id === form.zoneId), [master.zones, form.zoneId])
+  const availableShelves = useMemo(() => zone?.shelves ?? [], [zone])
+  const isRackZone = zone?.legacyKey === ROOM_LEGACY_KEY
 
-  // ── ห้อง -30°C: โหลดช่องที่ถูกใช้ของ rack ที่เลือก ──
-  const isRackZone =
-    master.zones.find((z) => z.id === form.zoneId)?.legacyKey === ROOM_LEGACY_KEY;
-
-  const freeSlots = useCallback(
-    (lv: number) => POSITION_LIST.filter((p) => !(occupied[lv] ?? []).includes(p)),
-    [occupied],
-  );
-
+  // ── ห้อง -30°C: กล่องที่วางอยู่ในแต่ละช่องของ rack ที่เลือก ──
   const loadOccupancy = useCallback(async () => {
     if (!isRackZone || !form.zoneId || !form.shelf) {
-      setOccupied({});
-      return;
+      setSlots({})
+      return
     }
     try {
-      setOccupied(await storageService.getRackOccupancy(form.zoneId, form.shelf));
+      setSlots(await storageService.getRackSlots(form.zoneId, form.shelf))
     } catch {
-      setOccupied({});
+      setSlots({})
     }
-  }, [isRackZone, form.zoneId, form.shelf]);
+  }, [isRackZone, form.zoneId, form.shelf])
 
   useEffect(() => {
-    loadOccupancy();
-  }, [loadOccupancy]);
+    loadOccupancy()
+  }, [loadOccupancy])
 
-  // เลือกช่องว่างแรกของชั้นอัตโนมัติ
+  const freeSlots = useCallback(
+    (lv: number) => POSITION_LIST.filter((p) => !slots[lv]?.[p]),
+    [slots],
+  )
+  const occupantLabel = useCallback((lv: number, p: number) => slots[lv]?.[p]?.boxLabel, [slots])
+
+  // ชั้น: เลือกชั้นแรกที่ยังมีช่องว่างให้ · ช่อง: ผู้ใช้ต้องเลือกเอง (ช่องที่เพิ่งถูกใช้ไป → ยกเลิกการเลือก)
   useEffect(() => {
-    if (!isRackZone) {
-      setRackPosition(null);
-      return;
+    if (!isRackZone || !form.shelf) {
+      setRackLevelState(null)
+      setRackPosition(null)
+      return
     }
-    setRackPosition((cur) =>
-      cur && freeSlots(rackLevel).includes(cur) ? cur : (freeSlots(rackLevel)[0] ?? null),
-    );
-  }, [isRackZone, rackLevel, freeSlots]);
+    setRackLevelState((cur) =>
+      cur && freeSlots(cur).length > 0 ? cur : (LEVEL_LIST.find((lv) => freeSlots(lv).length > 0) ?? null),
+    )
+  }, [isRackZone, form.shelf, freeSlots])
+
+  useEffect(() => {
+    setRackPosition((cur) => (cur && rackLevel && freeSlots(rackLevel).includes(cur) ? cur : null))
+  }, [rackLevel, freeSlots])
+
+  const setRackLevel = (lv: number) => {
+    setRackLevelState(lv)
+    setRackPosition(null)
+  }
 
   // ── Form handlers ──
   const handleFormChange = (field: keyof StorageFormData, value: string) => {
+    setSubmitError('')
     setForm((f) => {
-      const updated = { ...f, [field]: value };
-      if (field === "zoneId") {
-        const zone = master.zones.find((z) => z.id === value);
-        updated.shelf = zone?.shelves[0]?.code || "";
-      }
-      return updated;
-    });
-  };
+      const updated = { ...f, [field]: value }
+      // เปลี่ยนห้อง/ตู้ → ต้องเลือกชั้นวางใหม่
+      if (field === 'zoneId' && value !== f.zoneId) updated.shelf = ''
+      return updated
+    })
+    if (field === 'zoneId' || field === 'shelf') setRackPosition(null)
+  }
 
   // ── เพิ่มชนิด/หมู่เลือด/สถานที่/ชั้นวางใหม่ทันทีหน้างาน แล้วเลือกให้เลย ──
-  const handleQuickAdd = async (
-    kind: QuickAddKind,
-    value: string,
-  ): Promise<boolean> => {
-    const v = value.trim();
-    if (!v) return false;
+  const handleQuickAdd = async (kind: QuickAddKind, value: string): Promise<boolean> => {
+    const v = value.trim()
+    if (!v) return false
 
     try {
-      let patch: Partial<StorageFormData>;
-      let msg: string;
+      let patch: Partial<StorageFormData>
+      let msg: string
 
-      if (kind === "type") {
-        const created = await storageService.createPlasmaType(v);
-        patch = { type: created.code };
-        msg = `เพิ่มชนิด "${created.code}" สำเร็จ`;
-      } else if (kind === "blood") {
-        const created = await storageService.createBloodType(v);
-        patch = { blood: created.code };
-        msg = `เพิ่มหมู่เลือด "${created.code}" สำเร็จ`;
-      } else if (kind === "zone") {
-        const created = await storageService.createZone(v);
+      if (kind === 'type') {
+        const created = await storageService.createPlasmaType(v)
+        patch = { type: created.code }
+        msg = `เพิ่มชนิด "${created.code}" สำเร็จ`
+      } else if (kind === 'blood') {
+        const created = await storageService.createBloodType(v)
+        patch = { blood: created.code }
+        msg = `เพิ่มหมู่เลือด "${created.code}" สำเร็จ`
+      } else if (kind === 'zone') {
+        const created = await storageService.createZone(v)
         // สถานที่ใหม่ยังไม่มีชั้นวาง → เคลียร์ชั้นไว้ให้เพิ่มต่อ
-        patch = { zoneId: created.id, shelf: "" };
-        msg = `เพิ่มสถานที่ "${created.name}" สำเร็จ — เพิ่มชั้นวางต่อได้เลย`;
+        patch = { zoneId: created.id, shelf: '' }
+        msg = `เพิ่มสถานที่ "${created.name}" สำเร็จ — เพิ่มชั้นวางต่อได้เลย`
       } else {
         if (!form.zoneId) {
-          setToast({ type: "error", msg: "กรุณาเลือกสถานที่ก่อนเพิ่มชั้นวาง" });
-          return false;
+          setToast({ type: 'error', msg: 'กรุณาเลือกสถานที่ก่อนเพิ่มชั้นวาง' })
+          return false
         }
-        const created = await storageService.createShelf(form.zoneId, v);
-        patch = { shelf: created.code };
-        msg = `เพิ่มชั้น "${created.code}" สำเร็จ`;
+        const created = await storageService.createShelf(form.zoneId, v)
+        patch = { shelf: created.code }
+        msg = `เพิ่มชั้น "${created.code}" สำเร็จ`
       }
 
-      await loadMaster();
-      setForm((f) => ({ ...f, ...patch }));
-      setToast({ type: "success", msg });
-      return true;
-    } catch (err: any) {
-      setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
-      return false;
+      await loadMaster()
+      setForm((f) => ({ ...f, ...patch }))
+      setToast({ type: 'success', msg })
+      return true
+    } catch (err) {
+      setToast({ type: 'error', msg: errorMessage(err, 'เกิดข้อผิดพลาด') })
+      return false
     }
-  };
+  }
 
-  // ── Unit scanning ──
-  const handleAddUnit = () => {
-    const trimmed = unitInput.trim().toUpperCase();
-    if (!trimmed) return;
+  // ── สแกนถุง: ตรวจรูปแบบ → ซ้ำในกล่อง → ซ้ำในระบบ (/units/check) ──
+  const setUnitInput = (v: string) => {
+    setUnitInputState(v)
+    setUnitError('')
+  }
 
-    const newUnits = trimmed
-      .split(/[,\s\n]+/)
-      .map((u) => u.trim())
-      .filter(Boolean);
-    const dupes: string[] = [];
-    const added: string[] = [];
-    let overflow = false;
+  const handleAddUnit = async () => {
+    if (checking) return
+    const incoming = unitInput.split(/[,\s]+/).map(cleanUnit).filter(Boolean)
+    if (incoming.length === 0) return
 
-    for (const u of newUnits) {
-      if (scannedUnits.includes(u) || added.includes(u)) dupes.push(u);
-      else if (scannedUnits.length + added.length >= BOX_CAPACITY) overflow = true;
-      else added.push(u);
+    const units = [...scannedUnits]
+    let error = ''
+    let rest: string[] = []
+    setChecking(true)
+    try {
+      for (let i = 0; i < incoming.length; i++) {
+        const u = incoming[i]
+        rest = incoming.slice(i)
+        if (!UNIT_PATTERN.test(u)) { error = UNIT_FORMAT_ERROR; break }
+        const at = units.indexOf(u)
+        if (at >= 0) { error = `${u} สแกนแล้วในกล่องนี้ (ถุงที่ ${at + 1})`; break }
+        if (units.length >= BOX_CAPACITY) { error = `กล่องเต็มแล้ว (สูงสุด ${BOX_CAPACITY} ถุง)`; break }
+        const res = await storageService.checkUnit(u)
+        if (res.exists) {
+          error = res.status === 'withdrawn'
+            ? `${u} เคยอยู่ในกล่อง ${res.boxLabel} และนำออกแล้ว — ใช้เลขซ้ำไม่ได้`
+            : `${u} อยู่ในกล่อง ${res.boxLabel} แล้ว — ตรวจเลขถุงอีกครั้ง`
+          break
+        }
+        units.push(u)
+        rest = incoming.slice(i + 1)
+      }
+    } catch (err) {
+      error = errorMessage(err, 'ตรวจสอบ unit ไม่สำเร็จ')
+    } finally {
+      setChecking(false)
     }
 
-    if (added.length > 0) setScannedUnits((prev) => [...prev, ...added]);
-    if (overflow)
-      setToast({ type: "error", msg: `กล่องเต็มแล้ว (สูงสุด ${BOX_CAPACITY} ถุง)` });
-    else if (dupes.length > 0)
-      setToast({ type: "error", msg: `Unit ซ้ำ: ${dupes.join(", ")}` });
-    setUnitInput("");
-  };
+    setScannedUnits(units)
+    setUnitInputState(error ? rest.join(' ') : '')
+    setUnitError(error)
+    setSubmitError('')
+  }
 
   const handleUnitKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAddUnit();
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleAddUnit()
     }
-  };
+  }
 
   const handleRemoveUnit = (unit: string) => {
-    setScannedUnits((prev) => prev.filter((u) => u !== unit));
-  };
+    setScannedUnits((prev) => prev.filter((u) => u !== unit))
+    setUnitError('')
+  }
 
-  // ── Submit + auto print ──
+  // ── ความครบถ้วนของฟอร์ม ──
+  const errors = useMemo<StorageErrors>(() => {
+    const e: StorageErrors = {}
+    if (!form.type) e.type = 'เลือกชนิดเลือด'
+    if (!form.blood) e.blood = 'เลือกหมู่เลือด'
+    if (!form.collectionDate) e.collectionDate = 'ระบุวันที่เก็บ'
+    else if (form.collectionDate > todayISO()) e.collectionDate = 'วันที่เก็บต้องไม่เกินวันนี้'
+    if (!form.zoneId) e.zoneId = 'เลือกห้อง/ตู้'
+    if (!form.shelf) e.shelf = 'เลือกชั้นวาง'
+    else if (isRackZone && (!rackLevel || !rackPosition)) e.slot = 'เลือกช่องที่จะวางกล่อง'
+    if (scannedUnits.length === 0) e.units = 'สแกนถุงอย่างน้อย 1 ถุง'
+    return e
+  }, [form, isRackZone, rackLevel, rackPosition, scannedUnits.length])
+
+  const valid = Object.keys(errors).length === 0
+
+  /** ตำแหน่งเต็ม เช่น "ห้อง -30°C · L1-2 ช่อง 7" — ว่างถ้ายังเลือกไม่ครบ */
+  const locationLabel = useMemo(() => {
+    if (!zone || !form.shelf || (isRackZone && (!rackLevel || !rackPosition))) return ''
+    const pos = positionLabel({
+      shelf: form.shelf,
+      level: isRackZone ? rackLevel : null,
+      position: isRackZone ? rackPosition : null,
+    })
+    return `${zone.name} · ${pos}`
+  }, [zone, form.shelf, isRackZone, rackLevel, rackPosition])
+
+  // ── Submit ──
   const handleSubmit = async () => {
-    if (scannedUnits.length === 0) {
-      setToast({ type: "error", msg: "กรุณาเพิ่ม Unit อย่างน้อย 1 รายการ" });
-      return;
-    }
-    if (!form.type || !form.blood || !form.zoneId || !form.shelf) {
-      setToast({
-        type: "error",
-        msg: "กรุณาเลือกชนิด หมู่เลือด สถานที่ และชั้นวางให้ครบ",
-      });
-      return;
-    }
-    if (isRackZone && !rackPosition) {
-      setToast({ type: "error", msg: "กรุณาเลือกชั้นและช่องใน rack" });
-      return;
-    }
+    if (submitting) return
+    setTried(true)
+    setSubmitError('')
+    if (!valid) return
 
-    setSubmitting(true);
+    setSubmitting(true)
     try {
       const created = await storageService.createBox({
         boxName: form.boxName.trim() || undefined,
@@ -291,116 +321,64 @@ export default function useStorage() {
         shelf: form.shelf,
         collectionDate: form.collectionDate,
         units: scannedUnits,
-        ...(isRackZone && rackPosition
+        ...(isRackZone && rackLevel && rackPosition
           ? { level: rackLevel, position: rackPosition }
           : {}),
-      });
+      })
 
-      setToast({
-        type: "success",
-        msg: `บันทึกกล่อง ${created.boxLabel} สำเร็จ (${scannedUnits.length} units)`,
-      });
+      const unitCount = scannedUnits.length
+      setToast({ type: 'success', msg: `จัดเก็บ ${created.boxLabel} (${unitCount} ถุง) แล้ว` })
+      setSaved({
+        boxLabel: created.boxLabel,
+        unitCount,
+        location: locationLabel,
+        print: labelData(created, zone?.name ?? ''),
+      })
 
-      setScannedUnits([]);
-      setUnitInput("");
-      setForm((f) => ({ ...f, boxName: "" }));
-      loadBoxes(1, pagination.pageSize);
-      refreshNextLabel(form.type, form.blood);
-      loadOccupancy();
-    } catch (err: any) {
-      setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
-      if (err?.statusCode === 409) loadOccupancy();
+      // พร้อมสำหรับกล่องถัดไป: ล้างเฉพาะถุง ช่อง rack และชื่อกล่อง — คงชนิด หมู่ วันที่ ห้อง ชั้นวาง
+      setScannedUnits([])
+      setUnitInputState('')
+      setUnitError('')
+      setRackPosition(null)
+      setForm((f) => ({ ...f, boxName: '' }))
+      setTried(false)
+      refreshNextLabel(form.type, form.blood)
+      loadOccupancy()
+    } catch (err) {
+      setSubmitError(errorMessage(err, 'บันทึกไม่สำเร็จ'))
+      // ช่องถูกใช้ไปแล้ว / unit ซ้ำ → โหลดสถานะ rack ใหม่
+      if ((err as Partial<ApiError> | null)?.statusCode === 409) loadOccupancy()
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  };
+  }
 
-  // ── Print existing box ──
-  const handlePrintBox = (box: StorageBoxItem) => {
-    setPrintData({
-      boxLabel: box.boxLabel,
-      type: box.type,
-      blood: box.blood,
-      location: box.zoneName || String(box.location),
-      shelf:
-        box.level != null && box.position != null
-          ? `${box.shelf}-${box.level} ช่อง ${box.position}`
-          : box.shelf,
-      collectionDate: box.collectionDate,
-      unitCount: box.units.length,
-    });
-  };
-
-
-  const closePrint = () => setPrintData(null);
-  /** คืนค่า null ถ้าสำเร็จ / ข้อความ error ถ้าไม่สำเร็จ (ให้ modal แสดงและไม่ปิด) */
-  const handleEditUnits = async (
-    boxId: string,
-    units: string[],
-    removals: UnitRemovalInput[],
-  ): Promise<string | null> => {
-    try {
-      await storageService.updateBoxUnits(boxId, units, removals);
-      setToast({ type: "success", msg: "แก้ไขรายการ units สำเร็จ" });
-      loadBoxes(pagination.page, pagination.pageSize);
-      return null;
-    } catch (err: any) {
-      return err?.message || "เกิดข้อผิดพลาด";
-    }
-  };
-  const dismissToast = () => setToast(null);
-
-  const goToPage = useCallback((page: number) => {
-    loadBoxes(page, pagination.pageSize);
-  }, [loadBoxes, pagination.pageSize]);
-
-  const changePageSize = useCallback((size: number) => {
-    loadBoxes(1, size);
-  }, [loadBoxes]);
-
-  const handleEditLocation = async (boxId: string, zoneId: string, shelf: string) => {
-    try {
-      await storageService.updateBoxLocation(boxId, zoneId, shelf);
-      setToast({ type: "success", msg: "แก้ไขตำแหน่งจัดเก็บสำเร็จ" });
-      loadBoxes(pagination.page, pagination.pageSize);
-    } catch (err: any) {
-      setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
-    }
-  };
+  /** ล้างทั้งฟอร์มกลับเป็นค่าเริ่มต้น */
+  const resetForm = () => {
+    setForm(emptyForm())
+    setScannedUnits([])
+    setUnitInputState('')
+    setUnitError('')
+    setRackPosition(null)
+    setTried(false)
+    setSubmitError('')
+  }
 
   return {
-    isRackZone,
-    rackLevel,
-    setRackLevel,
-    rackPosition,
-    setRackPosition,
-    freeSlots,
-    boxes,
-    loading,
-    pagination,
-    goToPage,
-    changePageSize,
-    form,
-    master,
-    scannedUnits,
-    unitInput,
-    submitting,
-    toast,
-    availableShelves,
-    nextLabel,
-    printData,
-    handleEditLocation,
-    handleFormChange,
-    handleQuickAdd,
-    setUnitInput,
-    handleAddUnit,
-    handleUnitKeyDown,
-    handleRemoveUnit,
-    handleSubmit,
-    handlePrintBox,
-    handleEditUnits,
-    closePrint,
-    dismissToast,
-  };
-
+    // ข้อมูลหลัก + ฟอร์ม
+    master, form, nextLabel, availableShelves, zoneName: zone?.name ?? '',
+    handleFormChange, handleQuickAdd,
+    // rack
+    isRackZone, rackLevel, setRackLevel, rackPosition, setRackPosition, freeSlots, occupantLabel,
+    // สแกนถุง
+    scannedUnits, unitInput, setUnitInput, unitError, checking,
+    handleAddUnit, handleUnitKeyDown, handleRemoveUnit,
+    // ตรวจ + บันทึก
+    errors, valid, tried, locationLabel,
+    submitting, submitError, handleSubmit, resetForm,
+    // หลังบันทึก
+    saved, dismissSaved: () => setSaved(null),
+    printData, openPrint: setPrintData, closePrint: () => setPrintData(null),
+    toast, dismissToast: () => setToast(null),
+  }
 }

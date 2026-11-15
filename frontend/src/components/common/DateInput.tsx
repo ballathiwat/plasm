@@ -19,6 +19,8 @@ export interface DateInputProps {
   value: string
   onChange: (isoDate: string) => void
   label?: string
+  /** แสดง * หลัง label (ช่องบังคับ) */
+  required?: boolean
   placeholder?: string
   disabled?: boolean
   error?: string
@@ -52,6 +54,7 @@ export default function DateInput({
   value,
   onChange,
   label,
+  required = false,
   placeholder = 'เลือกวันที่...',
   disabled = false,
   error,
@@ -77,7 +80,7 @@ export default function DateInput({
 
   return (
     <div className={wrapperClass} style={style}>
-      {label && <label className="plasm-dp-label">{label}</label>}
+      {label && <label className={`plasm-dp-label${required ? ' plasm-dp-label--required' : ''}`}>{label}</label>}
 
       <div style={{ position: 'relative' }}>
         <DatePicker
