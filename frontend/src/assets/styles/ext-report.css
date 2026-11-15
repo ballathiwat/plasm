@@ -46,8 +46,15 @@
 .rpt-filters__dates { display: flex; flex-wrap: wrap; gap: 8px; }
 .rpt-filters__dates > * { width: 160px; }
 .rpt-filters__error { margin: 0; font-size: 13px; font-weight: 500; color: var(--danger-ink); }
-.rpt-filters__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-@media (max-width: 939px) { .rpt-filters__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.rpt-filters__field { display: flex; flex-direction: column; min-width: 0; }
+/* ตัวอักษรเดียวกับ .plasm-select-label */
+.rpt-filters__label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.rpt-filters__hint { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; font-size: 12px; color: var(--text-secondary); }
+.rpt-filters__grid { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.rpt-filters__grid > .plasm-select-wrap { flex: 1 1 180px; min-width: 0; }
+.rpt-filters__search { position: relative; flex: 0 0 auto; margin-left: auto; }
+.rpt-filters__search .plasm-btn { min-height: 40px; padding-inline: 20px; }
+.rpt-filters__dot { position: absolute; top: -4px; right: -4px; width: 12px; height: 12px; border-radius: 999px; background: var(--warning); border: 2px solid var(--surface); }
 @media (max-width: 479px) {
   .rpt-filters__dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
   .rpt-filters__dates > * { width: auto; }
@@ -120,6 +127,7 @@
   cursor: pointer;
 }
 .rpt-chips__clear:hover { color: var(--danger-ink); }
+.rpt-chips__clear--alone { margin-left: auto; }
 
 /* ── Alert / Empty / Skeleton ── */
 .rpt-alert {

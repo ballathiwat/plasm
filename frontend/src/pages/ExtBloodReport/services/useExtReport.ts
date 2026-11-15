@@ -1,7 +1,8 @@
 // frontend/src/pages/ExtBloodReport/services/useExtReport.ts
 //
 // state + logic ทั้งหมดของหน้ารายงานรับเลือดจากภายนอก
-//  - ตัวกรองทั้งหมดเก็บใน URL query (แชร์ลิงก์ได้)
+//  - ตัวกรองแบบ "กรอกก่อน แล้วกดค้นหา": draft = ค่าที่กำลังเลือกในแผง · filters = ค่าที่ใช้ดึง API
+//  - filters เก็บใน URL query (แชร์ลิงก์ได้) — draft ไม่ลง URL
 //  - cache ผลลัพธ์ตาม query 60 วินาที และคงข้อมูลเดิมไว้ระหว่างโหลดชุดใหม่
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -65,6 +66,50 @@ const parseFilters = (sp: URLSearchParams): ReportFilters => {
   }
 }
 
+/** เขียน filters ลง URL (ค่าเริ่มต้นไม่ต้องมีใน URL) */
+const writeFilters = (p: URLSearchParams, f: ReportFilters): void => {
+  const put = (key: string, value: string | undefined) => (value ? p.set(key, value) : p.delete(key))
+  put('range', f.preset === DEFAULT_PRESET ? undefined : f.preset)
+  put('from', f.preset === 'custom' ? f.from : undefined)
+  put('to', f.preset === 'custom' ? f.to : undefined)
+  put('sourceId', f.sourceId)
+  put('productId', f.productId)
+  put('abo', f.abo)
+  put('pending', f.includePending ? '1' : undefined)
+}
+
+const defaultFilters = (): ReportFilters => ({
+  preset: DEFAULT_PRESET,
+  ...presetRange(DEFAULT_PRESET),
+  includePending: false,
+})
+
+/**
+ * รวม patch เข้ากับค่าเดิม
+ *  - เปลี่ยน preset (ไม่ใช่กำหนดเอง) → คำนวณ from/to ใหม่ · เลือก "กำหนดเอง" → เริ่มจากช่วงที่แสดงอยู่
+ *  - แก้ from/to ตรง ๆ → เป็นช่วงกำหนดเอง
+ */
+const mergeFilters = (base: ReportFilters, patch: Partial<ReportFilters>): ReportFilters => {
+  const next: ReportFilters = { ...base, ...patch }
+  // patch ส่ง includePending: undefined (ลบ chip) = ปิด
+  next.includePending = 'includePending' in patch ? !!patch.includePending : base.includePending
+  if (patch.preset && patch.preset !== 'custom') Object.assign(next, presetRange(patch.preset))
+  else if (patch.from !== undefined || patch.to !== undefined) next.preset = 'custom'
+  return next
+}
+
+const isDefault = (f: ReportFilters): boolean =>
+  f.preset === DEFAULT_PRESET && !f.sourceId && !f.productId && !f.abo && !f.includePending
+
+const sameFilters = (a: ReportFilters, b: ReportFilters): boolean =>
+  a.preset === b.preset &&
+  // preset สำเร็จรูปคำนวณ from/to จากวันนี้เสมอ — เทียบวันที่เฉพาะช่วงกำหนดเอง
+  (a.preset !== 'custom' || (a.from === b.from && a.to === b.to)) &&
+  a.sourceId === b.sourceId &&
+  a.productId === b.productId &&
+  a.abo === b.abo &&
+  a.includePending === b.includePending
+
 const toQuery = (f: ReportFilters): ReportQuery => ({
   from: f.from,
   to: f.to,
@@ -81,13 +126,20 @@ export default function useExtReport() {
   const [searchParams, setSearchParams] = useSearchParams()
   const spKey = searchParams.toString()
 
+  // filters = ค่าที่ค้นหาแล้ว (อ่านจาก URL) — เปลี่ยนเมื่อ search / applyNow / resetAll เท่านั้น
   // spKey เป็นตัวแทนของ searchParams — ใช้เป็น dependency เพื่อให้ filters คงที่เมื่อ URL ไม่เปลี่ยน
   const filters = useMemo(() => parseFilters(new URLSearchParams(spKey)), [spKey])
+  // draft = ค่าที่กำลังเลือกในแผงตัวกรอง — ไม่ยิง API และไม่ลง URL
+  const [draft, setDraftState] = useState<ReportFilters>(filters)
+  // ข้อความ error ของช่วงวันที่ใน draft (ขึ้นตอนกดค้นหา)
+  const [draftError, setDraftError] = useState<string | null>(null)
   const rawTab = searchParams.get('tab') as ReportTab | null
   const tab: ReportTab = rawTab && TABS.includes(rawTab) ? rawTab : 'source'
   const page = Math.max(1, Math.floor(Number(searchParams.get('page')) || 1))
 
-  const rangeError = useMemo(() => validateRange(filters.from, filters.to), [filters.from, filters.to])
+  // ช่วงวันที่ของ filters ไม่ถูกต้อง (เช่น แก้ URL เอง) → ไม่ดึงข้อมูล
+  const filtersError = useMemo(() => validateRange(filters.from, filters.to), [filters.from, filters.to])
+  const rangeError = draftError ?? filtersError
   const query = useMemo(() => toQuery(filters), [filters])
   const queryKey = JSON.stringify(query)
 
@@ -128,7 +180,7 @@ export default function useExtReport() {
 
   /* ── รายงานสรุป ── */
   useEffect(() => {
-    if (rangeError) {
+    if (filtersError) {
       setFetching(false)
       return
     }
@@ -148,11 +200,11 @@ export default function useExtReport() {
     return () => {
       alive = false
     }
-  }, [queryKey, rangeError, reload])
+  }, [queryKey, filtersError, reload])
 
   /* ── รายการทั้งหมด (โหลดเมื่อเปิดแท็บ) ── */
   useEffect(() => {
-    if (tab !== 'rows' || rangeError) return
+    if (tab !== 'rows' || filtersError) return
     let alive = true
     setRowsFetching(true)
     setRowsError(null)
@@ -172,7 +224,7 @@ export default function useExtReport() {
     return () => {
       alive = false
     }
-  }, [tab, queryKey, page, rangeError, reload])
+  }, [tab, queryKey, page, filtersError, reload])
 
   /* ── เขียน URL ── */
   const update = useCallback(
@@ -190,67 +242,42 @@ export default function useExtReport() {
     [setSearchParams],
   )
 
-  const setPreset = useCallback(
-    (preset: RangePreset) => {
-      update((p) => {
-        if (preset === DEFAULT_PRESET) p.delete('range')
-        else p.set('range', preset)
-        if (preset === 'custom') {
-          // เริ่มจากช่วงที่แสดงอยู่ เพื่อให้ผู้ใช้ปรับต่อได้ทันที
-          if (!p.get('from')) p.set('from', filters.from)
-          if (!p.get('to')) p.set('to', filters.to)
-        } else {
-          p.delete('from')
-          p.delete('to')
-        }
-      })
-    },
-    [update, filters.from, filters.to],
-  )
+  /** แก้ค่าในแผงตัวกรอง — ยังไม่ดึงข้อมูลจนกว่าจะกดค้นหา */
+  const setDraft = useCallback((patch: Partial<ReportFilters>) => {
+    setDraftState((d) => mergeFilters(d, patch))
+    if ('preset' in patch || 'from' in patch || 'to' in patch) setDraftError(null)
+  }, [])
 
-  const setCustomDate = useCallback(
-    (key: 'from' | 'to', iso: string) => {
-      update((p) => {
-        p.set('range', 'custom')
-        if (iso) p.set(key, iso)
-        else p.delete(key)
-      })
-    },
-    [update],
-  )
+  /** ค้นหา: filters = draft แล้วกลับไปหน้าแรกของตาราง (ช่วงวันที่ไม่ถูกต้อง → แสดง error และไม่ค้นหา) */
+  const search = useCallback(() => {
+    const err = validateRange(draft.from, draft.to)
+    setDraftError(err)
+    if (err) return
+    update((p) => writeFilters(p, draft))
+  }, [update, draft])
 
-  const setDim = useCallback(
-    (key: DimKey, value: string | undefined) => {
-      update((p) => {
-        if (value) p.set(key, value)
-        else p.delete(key)
-      })
+  /** กรองทันที (คลิกกราฟ / ปุ่ม x บน chip): อัปเดตทั้ง filters และ draft */
+  const applyNow = useCallback(
+    (patch: Partial<ReportFilters>) => {
+      setDraftState((d) => mergeFilters(d, patch))
+      update((p) => writeFilters(p, mergeFilters(filters, patch)))
     },
-    [update],
+    [update, filters],
   )
 
   /** คลิกกราฟ: เลือกค่าเดิมซ้ำ = ยกเลิกตัวกรองนั้น */
   const toggleDim = useCallback(
-    (key: DimKey, value: string) => setDim(key, filters[key] === value ? undefined : value),
-    [setDim, filters],
+    (key: DimKey, value: string) => applyNow({ [key]: filters[key] === value ? undefined : value }),
+    [applyNow, filters],
   )
 
-  const setIncludePending = useCallback(
-    (on: boolean) => update((p) => (on ? p.set('pending', '1') : p.delete('pending'))),
-    [update],
-  )
-
-  /** ล้างตัวกรอง (คงช่วงวันที่และแท็บ) */
-  const clearDims = useCallback(
-    () => update((p) => ['sourceId', 'productId', 'abo', 'pending'].forEach((k) => p.delete(k))),
-    [update],
-  )
-
-  /** ล้างทุกอย่างกลับค่าเริ่มต้น (รวมช่วงวันที่) */
-  const resetAll = useCallback(
-    () => update((p) => ['range', 'from', 'to', 'sourceId', 'productId', 'abo', 'pending'].forEach((k) => p.delete(k))),
-    [update],
-  )
+  /** ล้างทุกอย่างกลับค่าเริ่มต้น (รวมช่วงวันที่) ทั้ง draft และ filters */
+  const resetAll = useCallback(() => {
+    const init = defaultFilters()
+    setDraftState(init)
+    setDraftError(null)
+    update((p) => writeFilters(p, init))
+  }, [update])
 
   const setTab = useCallback(
     (t: ReportTab) => update((p) => (t === 'source' ? p.delete('tab') : p.set('tab', t))),
@@ -276,17 +303,20 @@ export default function useExtReport() {
   )
   const productCodes = useMemo(() => (report?.byProduct ?? []).map((p) => p.code), [report])
 
-  const hasDimFilter =
-    !!filters.sourceId || !!filters.productId || !!filters.abo || filters.includePending
+  const isDirty = !sameFilters(draft, filters)
+  const isNonDefault = !isDefault(filters) || !isDefault(draft)
   const isEmpty = !!report && report.kpi.bags === 0
 
   return {
-    filters, tab, page, rangeError,
+    filters, draft, tab, page, rangeError,
+    /** ช่วงวันที่ของ filters ใช้ไม่ได้ → ไม่มีข้อมูลให้แสดง */
+    blocked: !!filtersError,
+    isDirty, isNonDefault,
     report, loading: fetching && !report, fetching, error, isEmpty,
     rows, rowsFetching, rowsError,
-    sources, products, productColors, productCodes, hasDimFilter,
-    setPreset, setCustomDate, setDim, toggleDim, setIncludePending,
-    clearDims, resetAll, setTab, setPage, retry,
+    sources, products, productColors, productCodes,
+    setDraft, search, applyNow, toggleDim, resetAll,
+    setTab, setPage, retry,
   }
 }
 

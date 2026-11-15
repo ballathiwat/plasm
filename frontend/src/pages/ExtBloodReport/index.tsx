@@ -47,16 +47,17 @@ export default function ExtBloodReportPage() {
       </header>
 
       <ReportFilters
+        draft={r.draft}
         filters={filters}
         rangeError={r.rangeError}
         sources={r.sources}
         products={r.products}
-        hasDimFilter={r.hasDimFilter}
-        onPreset={r.setPreset}
-        onCustomDate={r.setCustomDate}
-        onDim={r.setDim}
-        onIncludePending={r.setIncludePending}
-        onClear={r.clearDims}
+        isDirty={r.isDirty}
+        isNonDefault={r.isNonDefault}
+        onDraft={r.setDraft}
+        onSearch={r.search}
+        onApplyNow={r.applyNow}
+        onReset={r.resetAll}
       />
 
       {r.error && (
@@ -69,9 +70,9 @@ export default function ExtBloodReportPage() {
         </div>
       )}
 
-      {r.loading && !r.rangeError && <ReportSkeleton />}
+      {r.loading && !r.blocked && <ReportSkeleton />}
 
-      {report && !r.rangeError && r.isEmpty && (
+      {report && !r.blocked && r.isEmpty && (
         <div className="ext-empty rpt-empty">
           <Inbox size={48} strokeWidth={1.2} color="var(--text-disabled)" aria-hidden="true" />
           <p className="ext-empty-text">ไม่มีการรับเลือดในช่วงนี้</p>
@@ -82,7 +83,7 @@ export default function ExtBloodReportPage() {
         </div>
       )}
 
-      {report && !r.rangeError && !r.isEmpty && (
+      {report && !r.blocked && !r.isEmpty && (
         <div className={`rpt-body${r.fetching ? ' is-fetching' : ''}`} aria-busy={r.fetching}>
           <KpiCards kpi={report.kpi} prev={report.prev} range={report.range} />
 
