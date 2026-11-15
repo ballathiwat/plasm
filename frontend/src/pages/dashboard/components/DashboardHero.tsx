@@ -28,7 +28,7 @@ export default function DashboardHero({ total, dailyData }: Props) {
       <div className="hero__content">
         <p className="hero__greeting">สวัสดี, {user.name || 'ผู้ดูแลระบบ'}</p>
         <p className="hero__title">
-          สต็อกพลาสมารวม {total.toLocaleString()} units
+          สต็อกรวม {total.toLocaleString()} units
         </p>
         <p className="hero__updated">
           อัปเดตล่าสุด{' '}
