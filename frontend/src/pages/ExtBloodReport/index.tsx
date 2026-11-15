@@ -20,7 +20,7 @@ function ReportSkeleton() {
   return (
     <div role="status" aria-label="กำลังโหลดรายงาน">
       <div className="rpt-kpis">
-        {[1, 2, 3, 4].map((i) => <div key={i} className="rpt-skel rpt-skel--kpi" />)}
+        {[1, 2, 3].map((i) => <div key={i} className="rpt-skel rpt-skel--kpi" />)}
       </div>
       <div className="rpt-row">
         <div className="rpt-skel rpt-skel--chart" />
@@ -128,10 +128,6 @@ export default function ExtBloodReportPage() {
             pageSize={ROWS_PAGE_SIZE}
             onPage={r.setPage}
           />
-
-          <p className="rpt-note">
-            หมายเหตุ: ปริมาตรเป็นค่าโดยประมาณ คำนวณจากค่ามาตรฐานต่อถุงของแต่ละชนิดเลือด
-          </p>
         </div>
       )}
     </div>

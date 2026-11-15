@@ -9,15 +9,14 @@ import { useSearchParams } from 'react-router-dom'
 import reportService from './ReportService'
 import { buildProductColors, presetRange, validateRange } from './reportHelpers'
 import type {
-  Abo, DimKey, FilterOption, ProductColorMap, RangePreset, ReceiptRowsResult,
-  ReceiptsReport, ReportFilters, ReportQuery, ReportTab, Rh,
+  DimKey, FilterOption, ProductColorMap, RangePreset, ReceiptRowsResult,
+  ReceiptsReport, ReportFilters, ReportQuery, ReportTab,
 } from './ReportType'
 
 export const ROWS_PAGE_SIZE = 10
 const DEFAULT_PRESET: RangePreset = '6m'
 const PRESETS: RangePreset[] = ['month', '3m', '6m', 'fy', 'custom']
 const TABS: ReportTab[] = ['source', 'matrix', 'rows']
-const ABOS: Abo[] = ['A', 'B', 'O', 'AB']
 
 /* ----------------------------------------------------------
    Cache (อายุ 60 วินาที)
@@ -47,7 +46,7 @@ const errorMessage = (e: unknown): string => {
 /* ----------------------------------------------------------
    URL query ↔ filters
    range=month|3m|6m|fy|custom · from,to (เฉพาะ custom) · sourceId · productId
-   abo=A|B|O|AB · rh=pos|neg · pending=1 · tab=source|matrix|rows · page
+   abo=<code หมู่เลือดจาก master เช่น A, A-> · pending=1 · tab=source|matrix|rows · page
 ---------------------------------------------------------- */
 const parseFilters = (sp: URLSearchParams): ReportFilters => {
   const rawPreset = sp.get('range') as RangePreset | null
@@ -56,16 +55,12 @@ const parseFilters = (sp: URLSearchParams): ReportFilters => {
     preset === 'custom'
       ? { from: sp.get('from') ?? '', to: sp.get('to') ?? '' }
       : presetRange(preset)
-  const rawAbo = sp.get('abo') as Abo | null
-  const rawRh = sp.get('rh')
-  const rh: Rh | undefined = rawRh === 'pos' ? '+' : rawRh === 'neg' ? '-' : undefined
   return {
     preset,
     ...range,
     sourceId: sp.get('sourceId') || undefined,
     productId: sp.get('productId') || undefined,
-    abo: rawAbo && ABOS.includes(rawAbo) ? rawAbo : undefined,
-    rh,
+    abo: sp.get('abo')?.trim() || undefined,
     includePending: sp.get('pending') === '1',
   }
 }
@@ -76,7 +71,6 @@ const toQuery = (f: ReportFilters): ReportQuery => ({
   sourceId: f.sourceId,
   productId: f.productId,
   abo: f.abo,
-  rh: f.rh,
   includePending: f.includePending ? 'true' : undefined,
 })
 
@@ -228,8 +222,7 @@ export default function useExtReport() {
   const setDim = useCallback(
     (key: DimKey, value: string | undefined) => {
       update((p) => {
-        const v = key === 'rh' ? (value === '+' ? 'pos' : value === '-' ? 'neg' : undefined) : value
-        if (v) p.set(key, v)
+        if (value) p.set(key, value)
         else p.delete(key)
       })
     },
@@ -249,13 +242,13 @@ export default function useExtReport() {
 
   /** ล้างตัวกรอง (คงช่วงวันที่และแท็บ) */
   const clearDims = useCallback(
-    () => update((p) => ['sourceId', 'productId', 'abo', 'rh', 'pending'].forEach((k) => p.delete(k))),
+    () => update((p) => ['sourceId', 'productId', 'abo', 'pending'].forEach((k) => p.delete(k))),
     [update],
   )
 
   /** ล้างทุกอย่างกลับค่าเริ่มต้น (รวมช่วงวันที่) */
   const resetAll = useCallback(
-    () => update((p) => ['range', 'from', 'to', 'sourceId', 'productId', 'abo', 'rh', 'pending'].forEach((k) => p.delete(k))),
+    () => update((p) => ['range', 'from', 'to', 'sourceId', 'productId', 'abo', 'pending'].forEach((k) => p.delete(k))),
     [update],
   )
 
@@ -284,7 +277,7 @@ export default function useExtReport() {
   const productCodes = useMemo(() => (report?.byProduct ?? []).map((p) => p.code), [report])
 
   const hasDimFilter =
-    !!filters.sourceId || !!filters.productId || !!filters.abo || !!filters.rh || filters.includePending
+    !!filters.sourceId || !!filters.productId || !!filters.abo || filters.includePending
   const isEmpty = !!report && report.kpi.bags === 0
 
   return {

@@ -3,7 +3,7 @@
 // Stacked bar: จำนวนถุงตามช่วงเวลา แยกตามชนิดเลือด + tooltip
 
 import { useState, type CSSProperties } from 'react'
-import { bucketLabel, bucketTitle, fmtInt, fmtLiters, niceMax } from '../services/reportHelpers'
+import { bucketLabel, bucketTitle, fmtInt, niceMax } from '../services/reportHelpers'
 import type { Granularity, ProductColorMap, TrendBucket } from '../services/ReportType'
 
 interface Props {
@@ -51,7 +51,7 @@ export default function TrendChart({ trend, granularity, productCodes, colors }:
                   className={`rpt-trend__col${active === i ? ' rpt-trend__col--active' : ''}`}
                   tabIndex={0}
                   role="img"
-                  aria-label={`${title}: ${fmtInt(t.bags)} ถุง, ${fmtLiters(t.volumeMl)} ลิตร`}
+                  aria-label={`${title}: ${fmtInt(t.bags)} ถุง`}
                   onMouseEnter={() => setActive(i)}
                   onMouseLeave={() => setActive(null)}
                   onFocus={() => setActive(i)}
@@ -87,7 +87,7 @@ export default function TrendChart({ trend, granularity, productCodes, colors }:
                       })}
                       <div className="rpt-trend__tip-row rpt-trend__tip-row--total">
                         <span>รวม</span>
-                        <strong>{fmtInt(t.bags)} ถุง · {fmtLiters(t.volumeMl)} ลิตร</strong>
+                        <strong>{fmtInt(t.bags)} ถุง</strong>
                       </div>
                     </div>
                   )}

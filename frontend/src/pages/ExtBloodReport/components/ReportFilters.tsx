@@ -6,6 +6,8 @@ import { useMemo } from 'react'
 import { X } from 'lucide-react'
 import SelectDropdown, { type OptionType } from '../../../components/common/SelectDropdown'
 import DateInput from '../../../components/common/DateInput'
+import PlasmaTypeSelect from '../../../components/common/PlasmaTypeSelect'
+import BloodGroupSelect from '../../../components/common/BloodGroupSelect'
 import type { DimKey, FilterOption, RangePreset, ReportFilters as Filters } from '../services/ReportType'
 
 interface Props {
@@ -29,15 +31,6 @@ const PRESET_OPTIONS: { value: RangePreset; label: string }[] = [
   { value: 'custom', label: 'กำหนดเอง' },
 ]
 
-const ABO_OPTIONS: OptionType[] = [
-  { value: '', label: 'ทุกหมู่' },
-  ...['A', 'B', 'O', 'AB'].map((g) => ({ value: g, label: `หมู่ ${g}` })),
-]
-const RH_OPTIONS: OptionType[] = [
-  { value: '', label: 'ทุก Rh' },
-  { value: '+', label: 'Rh บวก (+)' },
-  { value: '-', label: 'Rh ลบ (−)' },
-]
 const STATUS_OPTIONS: OptionType[] = [
   { value: '', label: 'อนุมัติแล้ว' },
   { value: 'pending', label: 'รวมรออนุมัติ' },
@@ -53,8 +46,8 @@ export default function ReportFilters({
     () => [{ value: '', label: 'ทุกแหล่งที่มา' }, ...sources.map((s) => ({ value: s.id, label: s.label }))],
     [sources],
   )
-  const productOpts = useMemo<OptionType[]>(
-    () => [{ value: '', label: 'ทุกชนิดเลือด' }, ...products.map((p) => ({ value: p.id, label: p.label }))],
+  const productItems = useMemo(
+    () => products.map((p) => ({ id: p.id, code: p.code, name: p.label })),
     [products],
   )
 
@@ -67,9 +60,8 @@ export default function ReportFilters({
     const code = products.find((p) => p.id === filters.productId)?.code ?? 'ที่เลือก'
     chips.push({ key: 'product', label: `ชนิดเลือด: ${code}`, onRemove: () => onDim('productId', undefined) })
   }
-  if (filters.abo) chips.push({ key: 'abo', label: `หมู่ ${filters.abo}`, onRemove: () => onDim('abo', undefined) })
-  if (filters.rh) {
-    chips.push({ key: 'rh', label: filters.rh === '+' ? 'Rh บวก' : 'Rh ลบ', onRemove: () => onDim('rh', undefined) })
+  if (filters.abo) {
+    chips.push({ key: 'abo', label: `หมู่เลือด: ${filters.abo}`, onRemove: () => onDim('abo', undefined) })
   }
   if (filters.includePending) {
     chips.push({ key: 'pending', label: 'รวมรออนุมัติ', onRemove: () => onIncludePending(false) })
@@ -120,28 +112,18 @@ export default function ReportFilters({
           onChange={(o) => onDim('sourceId', o?.value || undefined)}
           isClearable={false}
         />
-        <SelectDropdown
+        <PlasmaTypeSelect
           label="ชนิดเลือด"
-          options={productOpts}
-          value={pick(productOpts, filters.productId)}
-          onChange={(o) => onDim('productId', o?.value || undefined)}
-          isClearable={false}
+          allLabel="ทุกชนิดเลือด"
+          value={products.find((p) => p.id === filters.productId)?.code ?? ''}
+          products={productItems}
+          onChange={(_code, productId) => onDim('productId', productId || undefined)}
         />
-        <SelectDropdown
-          label="หมู่เลือด (ABO)"
-          options={ABO_OPTIONS}
-          value={pick(ABO_OPTIONS, filters.abo)}
-          onChange={(o) => onDim('abo', o?.value || undefined)}
-          isClearable={false}
-          isSearchable={false}
-        />
-        <SelectDropdown
-          label="Rh"
-          options={RH_OPTIONS}
-          value={pick(RH_OPTIONS, filters.rh)}
-          onChange={(o) => onDim('rh', o?.value || undefined)}
-          isClearable={false}
-          isSearchable={false}
+        <BloodGroupSelect
+          label="หมู่เลือด"
+          allLabel="ทุกหมู่เลือด"
+          value={filters.abo ?? ''}
+          onChange={(v) => onDim('abo', v || undefined)}
         />
         <SelectDropdown
           label="สถานะ"

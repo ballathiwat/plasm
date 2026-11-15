@@ -6,7 +6,7 @@
 import type { CSSProperties } from 'react'
 import { Pagination } from '../../../components/shared'
 import { bloodGroupClass, statusClass, statusLabel } from '../../ExtBlood/services/extHelpers'
-import { ABO_ORDER, fmtInt, fmtLiters, fmtPct, formatThaiDay, formatThaiRange, pct } from '../services/reportHelpers'
+import { compareBloodGroup, fmtInt, fmtPct, formatThaiDay, formatThaiRange, pct } from '../services/reportHelpers'
 import type { ReceiptRowsResult, ReceiptsReport, ReportTab } from '../services/ReportType'
 
 interface Props {
@@ -38,8 +38,8 @@ const HEAT_MAX = 45 // % ของ --primary ที่ผสมในช่อ�
 function SourceTable({ report, sourceId }: Pick<Props, 'report' | 'sourceId'>) {
   const list = sourceId ? report.bySource.filter((s) => s.sourceId === sourceId) : report.bySource
   const sum = list.reduce(
-    (a, s) => ({ receipts: a.receipts + s.receipts, bags: a.bags + s.bags, volumeMl: a.volumeMl + s.volumeMl }),
-    { receipts: 0, bags: 0, volumeMl: 0 },
+    (a, s) => ({ receipts: a.receipts + s.receipts, bags: a.bags + s.bags }),
+    { receipts: 0, bags: 0 },
   )
   return (
     <table className="ext-table rpt-table">
@@ -48,7 +48,6 @@ function SourceTable({ report, sourceId }: Pick<Props, 'report' | 'sourceId'>) {
           <th>แหล่งที่มา</th>
           <th className="rpt-num">ครั้งที่รับ</th>
           <th className="rpt-num">ถุง</th>
-          <th className="rpt-num">ปริมาตร (ลิตร)</th>
           <th className="rpt-table__share">สัดส่วนถุง</th>
         </tr>
       </thead>
@@ -58,7 +57,6 @@ function SourceTable({ report, sourceId }: Pick<Props, 'report' | 'sourceId'>) {
             <td>{s.sourceName}</td>
             <td className="rpt-num">{fmtInt(s.receipts)}</td>
             <td className="rpt-num">{fmtInt(s.bags)}</td>
-            <td className="rpt-num">{fmtLiters(s.volumeMl)}</td>
             <td>
               <span className="rpt-share">
                 <span className="rpt-share__track">
@@ -75,7 +73,6 @@ function SourceTable({ report, sourceId }: Pick<Props, 'report' | 'sourceId'>) {
           <td>รวม {fmtInt(list.length)} แห่ง</td>
           <td className="rpt-num">{fmtInt(sum.receipts)}</td>
           <td className="rpt-num">{fmtInt(sum.bags)}</td>
-          <td className="rpt-num">{fmtLiters(sum.volumeMl)}</td>
           <td>
             <span className="rpt-share__pct">{sum.bags > 0 ? '100%' : '–'}</span>
           </td>
@@ -91,8 +88,7 @@ function SourceTable({ report, sourceId }: Pick<Props, 'report' | 'sourceId'>) {
 function MatrixTable({ report }: Pick<Props, 'report'>) {
   const { matrix } = report
   const codes = [...new Set(matrix.map((m) => m.productCode))]
-  const extraAbo = [...new Set(matrix.map((m) => m.abo))].filter((a) => !(ABO_ORDER as string[]).includes(a))
-  const abos = [...ABO_ORDER.filter((a) => matrix.some((m) => m.abo === a)), ...extraAbo]
+  const abos = [...new Set(matrix.map((m) => m.abo))].sort(compareBloodGroup)
 
   const cell = (abo: string, code: string) =>
     matrix.find((m) => m.abo === abo && m.productCode === code)?.bags ?? 0
@@ -164,13 +160,12 @@ function RowsTable({
             <th>หมู่เลือด</th>
             <th>สถานะ</th>
             <th className="rpt-num">ถุง</th>
-            <th className="rpt-num">ปริมาตร (มล.)</th>
           </tr>
         </thead>
         <tbody>
           {rows.rows.length === 0 && (
             <tr>
-              <td colSpan={8} className="rpt-table__msg">ไม่มีรายการในหน้านี้</td>
+              <td colSpan={7} className="rpt-table__msg">ไม่มีรายการในหน้านี้</td>
             </tr>
           )}
           {rows.rows.map((r) => (
@@ -186,7 +181,6 @@ function RowsTable({
                 <span className={`ext-status ${statusClass(r.status)}`}>{statusLabel(r.status)}</span>
               </td>
               <td className="rpt-num">{fmtInt(r.bags)}</td>
-              <td className="rpt-num">{fmtInt(r.volumeMl)}</td>
             </tr>
           ))}
         </tbody>
@@ -194,7 +188,6 @@ function RowsTable({
           <tr>
             <td colSpan={6}>รวม {fmtInt(rows.total)} รายการ (ทุกหน้า)</td>
             <td className="rpt-num">{fmtInt(rows.sum.bags)}</td>
-            <td className="rpt-num">{fmtInt(rows.sum.volumeMl)}</td>
           </tr>
         </tfoot>
       </table>

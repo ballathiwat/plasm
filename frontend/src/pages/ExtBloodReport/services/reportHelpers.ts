@@ -93,10 +93,6 @@ export const bucketTitle = (iso: string, g: Granularity): string => {
 ---------------------------------------------------------- */
 export const fmtInt = (n: number): string => n.toLocaleString('th-TH')
 
-/** มิลลิลิตร → ลิตร ทศนิยม 1 ตำแหน่ง */
-export const fmtLiters = (ml: number): string =>
-  (ml / 1000).toLocaleString('th-TH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-
 export const pct = (part: number, total: number): number => (total > 0 ? (part / total) * 100 : 0)
 
 export const fmtPct = (part: number, total: number): string =>
@@ -115,9 +111,23 @@ export const niceMax = (v: number): number => {
 ---------------------------------------------------------- */
 export const ABO_ORDER: Abo[] = ['A', 'B', 'O', 'AB']
 
-/** สีหมู่เลือดจาก token --group-a/b/o/ab (ไม่รู้จัก → --group-other) */
-export const aboColor = (abo: string): string =>
-  (ABO_ORDER as string[]).includes(abo) ? `var(--group-${abo.toLowerCase()})` : 'var(--group-other)'
+/** หมู่ ABO ของ code หมู่เลือด: "A-" → "A", "AB+" → "AB" */
+export const aboBase = (group: string): string => group.replace(/[+-]$/, '')
+
+/** สีหมู่เลือดจาก token --group-a/b/o/ab ตามหมู่ ABO (ไม่รู้จัก → --group-other) */
+export const aboColor = (group: string): string => {
+  const base = aboBase(group)
+  return (ABO_ORDER as string[]).includes(base) ? `var(--group-${base.toLowerCase()})` : 'var(--group-other)'
+}
+
+/** เรียงหมู่เลือด: A, B, O, AB (หมู่เดียวกันเรียงตาม code เช่น A, A+, A-) แล้วตามด้วยหมู่อื่น */
+export const compareBloodGroup = (a: string, b: string): number => {
+  const rank = (g: string) => {
+    const i = (ABO_ORDER as string[]).indexOf(aboBase(g))
+    return i === -1 ? ABO_ORDER.length : i
+  }
+  return rank(a) - rank(b) || a.localeCompare(b)
+}
 
 // สีชนิดเลือด: ใช้สีจาก master ก่อน → ค่ากำหนดของรายงาน → วนสีสำรอง
 const PRODUCT_COLORS: Record<string, string> = { FFP: '#2563EB', LPRC: '#E11D48', PC: '#D97706' }

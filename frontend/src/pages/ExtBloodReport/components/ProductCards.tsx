@@ -1,9 +1,9 @@
 // frontend/src/pages/ExtBloodReport/components/ProductCards.tsx
 //
-// การ์ดชนิดเลือด (ถุง · ลิตร · %) — คลิก = toggle ตัวกรองชนิดเลือด
+// การ์ดชนิดเลือด (ถุง · %) — คลิก = toggle ตัวกรองชนิดเลือด
 
 import type { CSSProperties } from 'react'
-import { fmtInt, fmtLiters, fmtPct } from '../services/reportHelpers'
+import { fmtInt, fmtPct } from '../services/reportHelpers'
 import type { ProductColorMap, ProductItem } from '../services/ReportType'
 
 interface Props {
@@ -43,7 +43,6 @@ export default function ProductCards({ products, colors, selected, onToggle }: P
             <span className="rpt-product__value">
               {fmtInt(p.bags)} <span className="rpt-product__unit">ถุง</span>
             </span>
-            <span className="rpt-product__sub">{fmtLiters(p.volumeMl)} ลิตร</span>
           </button>
         ))}
       </div>

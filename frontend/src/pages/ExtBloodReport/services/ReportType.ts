@@ -10,9 +10,8 @@ import type { ExtDocStatus } from '../../ExtBlood/services/ExtBloodType'
 ---------------------------------------------------------- */
 export type RangePreset = 'month' | '3m' | '6m' | 'fy' | 'custom'
 export type Abo = 'A' | 'B' | 'O' | 'AB'
-export type Rh = '+' | '-'
 export type ReportTab = 'source' | 'matrix' | 'rows'
-export type DimKey = 'sourceId' | 'productId' | 'abo' | 'rh'
+export type DimKey = 'sourceId' | 'productId' | 'abo'
 
 export interface ReportFilters {
   preset: RangePreset
@@ -21,8 +20,8 @@ export interface ReportFilters {
   to: string
   sourceId?: string
   productId?: string
-  abo?: Abo
-  rh?: Rh
+  /** หมู่เลือดตรงตัวตาม code ของ master เช่น "A", "A-" */
+  abo?: string
   includePending: boolean
 }
 
@@ -34,7 +33,6 @@ export interface ReportQuery {
   sourceId?: string
   productId?: string
   abo?: string
-  rh?: string
   includePending?: string
 }
 
@@ -45,7 +43,6 @@ export type Granularity = 'week' | 'month'
 
 export interface ReportKpi {
   bags: number
-  volumeMl: number
   sources: number
   receipts: number
 }
