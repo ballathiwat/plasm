@@ -5,6 +5,8 @@
 import { useState } from "react";
 import useMap from "./services/useMap";
 import MapZoneCard from "./components/MapZoneCard";
+import MapFilterBar from "./components/MapFilterBar";
+import "./map.css";
 import { bloodBase } from "../../helpers/blood";
 import type { BloodGroupAgeInfo } from "./services/MapType";
 
@@ -17,8 +19,21 @@ const ZONE_COLORS = [
 ];
 
 const MapPage = () => {
-  const { zones, bloodOrder, bloodAgeMap, totalBoxes, totalUnits, loading } =
-    useMap();
+  const {
+    zones,
+    bloodOrder,
+    bloodAgeMap,
+    totalBoxes,
+    totalUnits,
+    loading,
+    filtering,
+    filters,
+    hasFilter,
+    setBlood,
+    setType,
+    clearFilters,
+    error,
+  } = useMap();
   const [tab, setTab] = useState<"map" | "age">("map");
 
   if (loading) {
@@ -66,10 +81,28 @@ const MapPage = () => {
         <p
           style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}
         >
-          ภาพรวมตำแหน่งจัดเก็บพลาสมา · รวม {totalBoxes} กล่อง · {totalUnits}{" "}
-          units
+          ภาพรวมตำแหน่งจัดเก็บพลาสมา · {hasFilter ? "ตามตัวกรอง" : "รวม"}{" "}
+          {totalBoxes} กล่อง · {totalUnits} units
         </p>
       </div>
+
+      {/* ตัวกรอง: หมู่เลือด + ชนิดเลือด (มีผลทั้งสองแท็บ) */}
+      <MapFilterBar
+        filters={filters}
+        hasFilter={hasFilter}
+        filtering={filtering}
+        onBloodChange={setBlood}
+        onTypeChange={setType}
+        onClear={clearFilters}
+      />
+
+      {error && (
+        <div className="map-error" role="alert">
+          {error}
+        </div>
+      )}
+
+      <div className={`map-content${filtering ? " map-content--busy" : ""}`}>
 
       {/* Summary cards */}
       <div
@@ -170,6 +203,13 @@ const MapPage = () => {
         ))}
 
       {/* Tab content: เก่าสุด / ใหม่สุด */}
+      {tab === "age" && bloodAgeMap.length === 0 && (
+        <div className="map-empty">
+          {hasFilter
+            ? "ไม่พบกล่องตามหมู่เลือด / ชนิดเลือดที่เลือก"
+            : "ยังไม่มีกล่องที่จัดเก็บอยู่"}
+        </div>
+      )}
       {tab === "age" && bloodAgeMap.length > 0 && (
         <div
           style={{
@@ -287,6 +327,7 @@ const MapPage = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -9,6 +9,7 @@ export { ROOM_LEGACY_KEY }
 export interface MapBoxRaw {
   id: string
   boxLabel: string          
+  type: string
   blood: string
   zoneId: string
   zoneName?: string
@@ -26,6 +27,16 @@ export interface MapZoneRaw {
   active: boolean
   shelves: { id: string; code: string; active: boolean }[]
 }
+
+// ── ตัวกรองของหน้า (ค่าว่าง = ทั้งหมด) ──
+export interface MapFilters {
+  /** รหัสหมู่เลือดจาก master เช่น "A", "AB" */
+  blood: string
+  /** รหัสชนิดเลือดจาก master_plasma_types เช่น "FFP" */
+  type: string
+}
+
+export const EMPTY_MAP_FILTERS: MapFilters = { blood: '', type: '' }
 
 // ── ข้อมูลที่สรุปแล้วสำหรับแสดงผล ──
 export interface ShelfSummary {
