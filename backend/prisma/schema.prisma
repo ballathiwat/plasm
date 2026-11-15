@@ -1,5 +1,5 @@
 // prisma/schema.prisma
-// Plasm — ระบบจัดการคลังพลาสมา
+// BLIS — ระบบจัดการคลังเลือดอัจฉริยะ
 
 generator client {
   provider = "prisma-client-js"

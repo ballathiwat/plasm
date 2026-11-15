@@ -73,9 +73,9 @@ export default function LoginPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 18, fontWeight: 700, color: '#fff',
           }}>
-            P
+            B
           </div>
-          <span style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>Plasm</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>BLIS</span>
         </div>
 
         {/* Middle: Hero text */}
@@ -134,10 +134,10 @@ export default function LoginPage() {
               fontSize: 22, fontWeight: 700, color: '#fff',
               marginBottom: 12,
             }}>
-              P
+              B
             </div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary, #18181B)' }}>
-              Plasm
+              BLIS
             </h1>
           </div>
 

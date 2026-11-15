@@ -96,7 +96,7 @@ export default function Sidebar({
               fontSize: 18,
             }}
           >
-            P
+            B
           </div>
           {!collapsed && (
             <span
@@ -107,7 +107,7 @@ export default function Sidebar({
                 whiteSpace: "nowrap",
               }}
             >
-              Plasm
+              BLIS
             </span>
           )}
         </div>
