@@ -3,22 +3,11 @@
 // ============================================================
 
 import apiAdapter from '../../../helpers/http/apiAdapter'
-import {
-  GET_SETTINGS, PUT_SETTINGS,
-  GET_USERS, POST_USER, PATCH_USER,
-} from '../../../helpers/url_helper'
-import type { MinimumStock, UserItem, UserFormData } from './SettingsType'
+import { GET_USERS, POST_USER, PATCH_USER } from '../../../helpers/url_helper'
+import type { UserItem, UserFormData } from './SettingsType'
 
 const settingsService = {
-  /** GET /settings */
-  getSettings: async (): Promise<Record<string, unknown>> => {
-    return await apiAdapter.get(GET_SETTINGS)
-  },
-
-  /** PUT /settings */
-  updateMinimumStock: async (minimumStock: MinimumStock): Promise<{ message: string }> => {
-    return await apiAdapter.put(PUT_SETTINGS, { minimumStock })
-  },
+  // สต็อกขั้นต่ำ → helpers/services/minStockService.ts
 
   /** GET /users */
   getUsers: async (): Promise<UserItem[]> => {

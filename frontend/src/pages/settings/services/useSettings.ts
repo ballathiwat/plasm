@@ -4,11 +4,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import settingsService from "./SettingsService";
-import type { MinimumStock, UserItem, UserFormData } from "./SettingsType";
+import type { UserItem, UserFormData } from "./SettingsType";
 import type { ToastState } from "../../../components/common/Toast";
 import { validatePassword } from "../../../helpers/passwordValidation";
 
-const DEFAULT_MIN: MinimumStock = {};
 const DEFAULT_USER_FORM: UserFormData = {
   username: "",
   name: "",
@@ -17,10 +16,7 @@ const DEFAULT_USER_FORM: UserFormData = {
 };
 
 export default function useSettings() {
-  // ── Settings ──
-  const [minimumStock, setMinimumStock] = useState<MinimumStock>(DEFAULT_MIN);
-  const [savingSettings, setSavingSettings] = useState(false);
-  const [savedMinimum, setSavedMinimum] = useState<MinimumStock>(DEFAULT_MIN);
+  // สต็อกขั้นต่ำย้ายไป useMinStockSettings.ts (ราย ชนิด × หมู่)
 
   // ── Users ──
   const [users, setUsers] = useState<UserItem[]>([]);
@@ -34,19 +30,6 @@ export default function useSettings() {
   const [activeTab, setActiveTab] = useState<
     "stock" | "users" | "plasma" | "blood" | "zones" | "removal"
   >("stock");
-
-  // ── Load settings ──
-  useEffect(() => {
-    settingsService
-      .getSettings()
-      .then((data: any) => {
-        if (data?.minimumStock) {
-          setMinimumStock(data.minimumStock as MinimumStock);
-          setSavedMinimum(data.minimumStock as MinimumStock);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   // ── Load users ──
   const loadUsers = useCallback(async () => {
@@ -64,34 +47,6 @@ export default function useSettings() {
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
-
-  // ── Save minimum stock ──
-  const handleSaveMinimumStock = async () => {
-    setSavingSettings(true);
-    try {
-      await settingsService.updateMinimumStock(minimumStock);
-      setSavedMinimum(minimumStock);
-      setToast({ type: "success", msg: "บันทึกค่าขั้นต่ำสำเร็จ" });
-    } catch (err: any) {
-      setToast({ type: "error", msg: err?.message || "เกิดข้อผิดพลาด" });
-    } finally {
-      setSavingSettings(false);
-    }
-  };
-
-  const handleMinStockChange = (group: string, value: string) => {
-    setMinimumStock((prev) => {
-      const next = { ...prev };
-      if (value.trim() === "") {
-        delete next[group];
-        return next;
-      }
-      const num = parseInt(value, 10);
-      if (isNaN(num) || num < 0) return prev;
-      next[group] = num;
-      return next;
-    });
-  };
 
   // ── Create user (with password validation) ──
   const handleCreateUser = async () => {
@@ -161,12 +116,6 @@ export default function useSettings() {
   return {
     activeTab,
     setActiveTab,
-    minimumStock,
-    savingSettings,
-    handleMinStockChange,
-    handleSaveMinimumStock,
-    savedMinimum,
-    resetMinimumStock: () => setMinimumStock(savedMinimum),
     users,
     loadingUsers,
     showUserForm,

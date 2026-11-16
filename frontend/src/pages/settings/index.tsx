@@ -15,20 +15,20 @@ import { ConfirmModal } from '../../components/common/Modal'
 import { useAuth } from '../../Routes/AuthProtected'
 import useSettings from './services/useSettings'
 import useMasterData from './services/useMasterData'
+import useMinStockSettings from './services/useMinStockSettings'
 import useExtSettings from '../ExtBloodSettings/services/useExtSettings'
 import SettingsMinStock from './components/SettingsMinStock'
 import SettingsUsers from './components/SettingsUsers'
 import SettingsCodeList from './components/SettingsCodeList'
 import SettingsZones from './components/SettingsZones'
 import SettingsOptionList, { type OptionItem } from './components/SettingsOptionList'
-import type { MinimumStock } from './services/SettingsType'
 
 type TabKey = 'stock' | 'users' | 'plasma' | 'blood' | 'zones' | 'removal' | 'extSources' | 'extStorages' | 'extReasons'
 interface NavGroup { key: 'system' | 'master' | 'forms'; label: string; note?: string; items: { k: TabKey; label: string; icon: LucideIcon }[] }
 
 const NAV: NavGroup[] = [
   { key: 'system', label: 'ระบบ', items: [
-    { k: 'stock', label: 'ค่าขั้นต่ำสต็อก', icon: Gauge },
+    { k: 'stock', label: 'สต็อกขั้นต่ำ', icon: Gauge },
     { k: 'users', label: 'ผู้ใช้', icon: Users },
   ] },
   { key: 'master', label: 'ข้อมูลหลัก', note: 'ใช้ร่วมกันทั้งพลาสมาและเลือดภายนอก', items: [
@@ -45,11 +45,6 @@ const NAV: NavGroup[] = [
 ]
 const FLAT = NAV.flatMap((g) => g.items.map((it) => ({ ...it, group: g })))
 const groupOf = (k: string) => FLAT.find((x) => x.k === k)?.group
-
-const sameStock = (a: MinimumStock, b: MinimumStock) => {
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)])
-  return [...keys].every((k) => (a[k] ?? null) === (b[k] ?? null))
-}
 
 // พื้นหลังโทนฟ้าอ่อนแบบคงที่ — ไม่ใช้ --primary-surface เพราะ globals.css สลับค่านี้เป็นสีเข้มตาม prefers-color-scheme
 // ขณะที่ surface อื่นยังเป็นสีสว่าง (ทำให้ได้กล่องสีกรมท่าบนหน้าขาว)
@@ -73,7 +68,8 @@ export default function SettingsPage() {
   const s = useSettings()
   const master = useMasterData(s.notify)
   const ext = useExtSettings()
-  const dirty = !sameStock(s.minimumStock, s.savedMinimum)
+  const minStock = useMinStockSettings(s.notify)
+  const dirty = minStock.dirtyCount > 0
 
   // เตือนเมื่อออกจากหมวดค่าขั้นต่ำโดยยังไม่บันทึก (ทั้งจากเมนูในหน้าและ Sidebar)
   const prevTab = useRef<TabKey>(tab)
@@ -95,7 +91,6 @@ export default function SettingsPage() {
     if (okMsg) s.notify({ type: 'success', msg: okMsg })
   }
   const toItems = (xs: OptionItem[]) => xs
-  const minFor = (code: string) => s.minimumStock[code]
 
   // Sidebar เลือก "กลุ่ม" แล้ว → ในหน้าแสดงเฉพาะหมวดของกลุ่มนั้นเป็นแท็บ (ไม่ซ้ำกับ Sidebar)
   const groupItems = cur.group.items
@@ -150,15 +145,9 @@ export default function SettingsPage() {
       <section role="tabpanel" aria-label={cur.label} style={{ minWidth: 0 }}>
           {tab === 'stock' && (
             <SettingsMinStock
-              groups={master.bloodTypes.filter((b) => b.active).map((b) => b.code)}
+              m={minStock}
               hiddenGroups={master.bloodTypes.filter((b) => !b.active).map((b) => b.code)}
-              minimumStock={s.minimumStock}
-              saving={s.savingSettings}
-              loading={master.loading}
-              dirty={dirty}
-              onChange={s.handleMinStockChange}
-              onSave={s.handleSaveMinimumStock}
-              onReset={s.resetMinimumStock}
+              focusCell={sp.get('cell')}
               onOpenGroups={() => go('blood')}
             />
           )}
@@ -210,9 +199,7 @@ export default function SettingsPage() {
               onColorChange={(it, color) => master.updateColor('blood', it, color)}
               impact={(it) => [
                 `จัดเก็บหมู่ ${it.code} ใหม่ไม่ได้ — สต็อกเดิมยังนำออกได้`,
-                minFor(it.code) != null
-                  ? `ค่าขั้นต่ำ ${minFor(it.code)} units จะถูกซ่อน และหยุดแจ้งเตือนสต็อกต่ำ`
-                  : 'ช่องค่าขั้นต่ำของหมู่นี้จะถูกซ่อน',
+                'ช่องสต็อกขั้นต่ำของหมู่นี้ (ทุกชนิดเลือด) จะถูกซ่อน และหยุดแจ้งเตือนสต็อกต่ำ',
               ]}
             />
           )}
@@ -303,7 +290,7 @@ export default function SettingsPage() {
         confirmText="ทิ้งการแก้ไข"
         cancelText="กลับไปแก้ไขต่อ"
         onClose={() => { setLeaveAsk(false); go('stock') }}
-        onConfirm={() => { s.resetMinimumStock(); setLeaveAsk(false) }}
+        onConfirm={() => { minStock.reset(); setLeaveAsk(false) }}
       />
     </div>
   )

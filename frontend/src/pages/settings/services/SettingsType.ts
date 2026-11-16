@@ -3,8 +3,6 @@
 // ============================================================
 
 
-export type MinimumStock = Record<string, number>
-
 export interface UserItem {
   id: string
   username: string

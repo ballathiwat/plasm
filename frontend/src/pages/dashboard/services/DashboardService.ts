@@ -3,14 +3,11 @@
 // ============================================================
 
 import apiAdapter from '../../../helpers/http/apiAdapter'
-import { GET_STOCK_SUMMARY, GET_STOCK_DAILY, GET_LOG } from '../../../helpers/url_helper'
-import type { StockSummary, DailyData, LogEntryItem } from './DashboardType'
+import { GET_STOCK_DAILY, GET_LOG } from '../../../helpers/url_helper'
+import type { DailyData, LogEntryItem } from './DashboardType'
 
 const dashboardService = {
-  getStockSummary: async (): Promise<StockSummary> => {
-    return await apiAdapter.get<StockSummary>(GET_STOCK_SUMMARY)
-  },
-
+// สต็อกเทียบขั้นต่ำ → helpers/useMinStockStatus.ts (cache เดียวกับกระดิ่ง)
   getStockDaily: async (days = 7): Promise<DailyData[]> => {
     return await apiAdapter.get<DailyData[]>(GET_STOCK_DAILY, { days: String(days) })
   },
