@@ -4,7 +4,7 @@ import { MoreHorizontal } from 'lucide-react'
 
 export interface RowMenuItem { icon: ReactNode; label: string; onClick: () => void; danger?: boolean }
 
-export default function ExtRowMenu({ items }: { items: RowMenuItem[] }) {
+export default function ExtRowMenu({ items, ariaLabel = 'เมนูเพิ่มเติม' }: { items: RowMenuItem[]; ariaLabel?: string }) {
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function ExtRowMenu({ items }: { items: RowMenuItem[] }) {
   }
   return (
     <div ref={ref} className="ext-row-menu">
-      <button type="button" className="ext-row-menu__btn" aria-label="เมนูเพิ่มเติม" aria-expanded={!!pos} onClick={toggle}><MoreHorizontal size={16} /></button>
+      <button type="button" className="ext-row-menu__btn" aria-label={ariaLabel} aria-expanded={!!pos} onClick={toggle}><MoreHorizontal size={16} /></button>
       {pos && (
         <div role="menu" className="ext-row-menu__panel" style={{ top: pos.top, right: pos.right }}>
           {items.map((it) => (

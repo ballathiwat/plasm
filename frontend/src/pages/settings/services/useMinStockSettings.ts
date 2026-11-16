@@ -8,7 +8,7 @@ import { refreshMinStockStatus } from '../../../helpers/useMinStockStatus'
 import { cellKey, type MinStockType } from '../../../helpers/minStock'
 import type { ToastState } from '../../../components/common/Toast'
 
-export const MIN_STOCK_ERROR = 'ต้องเป็นจำนวนเต็ม 0 ขึ้นไป'
+export const MIN_STOCK_ERROR = 'กรอกเป็นจำนวนเต็ม 0 ขึ้นไป'
 const MAX_MIN_UNITS = 1_000_000
 
 /** ว่าง = ไม่ได้ตั้งค่า (null) · อื่นๆ ต้องเป็นจำนวนเต็ม ≥ 0 */
