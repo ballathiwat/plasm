@@ -5,7 +5,6 @@ import { useAuth } from '../../Routes/AuthProtected'
 import DashboardHero from './components/DashboardHero'
 import DashboardMinBanner from './components/DashboardMinBanner'
 import DashboardMinList from './components/DashboardMinList'
-import DashboardRefillList from './components/DashboardRefillList'
 import DashboardMinDetail from './components/DashboardMinDetail'
 import DashboardMinEmpty from './components/DashboardMinEmpty'
 import DashboardRecentActivity from './components/DashboardRecentActivity'
@@ -29,12 +28,7 @@ const DashboardPage = () => {
       ) : !d.configured ? (
         <DashboardMinEmpty isAdmin={isAdmin} />
       ) : (
-        <>
-          <div className="dms-grid">
-            <DashboardMinList d={d} isAdmin={isAdmin} />
-            <DashboardRefillList items={d.refill} onOpen={d.openDetail} />
-          </div>
-        </>
+        <DashboardMinList d={d} isAdmin={isAdmin} />
       )}
 
       <DashboardRecentActivity entries={d.logEntries} />

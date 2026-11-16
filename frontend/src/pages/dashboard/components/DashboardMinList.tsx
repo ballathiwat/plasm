@@ -1,6 +1,6 @@
 // frontend/src/pages/dashboard/components/DashboardMinList.tsx
 // การ์ด "สต็อกเทียบขั้นต่ำ" (แบบ D — พับได้ เน้นที่มีปัญหา)
-//   header + ป้ายนับ → ตัวกรอง (กดค้นหา) → accordion ชนิดเลือดละ 1 แถว เรียงจากวิกฤตที่สุด
+//   เต็มความกว้าง 1 คอลัมน์: header + ป้ายนับ → ตัวกรอง (กดค้นหา) → accordion ชนิดเลือดละ 1 แถว เรียงจากวิกฤตที่สุด
 import { Link } from 'react-router-dom'
 import { CircleCheck, Settings2 } from 'lucide-react'
 import MinStatusPill from '../../../components/common/MinStatusPill'
@@ -23,7 +23,7 @@ export default function DashboardMinList({ d, isAdmin }: Props) {
     : d.idleCodes.join(', ')
 
   return (
-    <section ref={d.cardRef} className="dms-card" aria-labelledby="dms-list-title">
+    <section ref={d.cardRef} className="dms-card dms-card--block" aria-labelledby="dms-list-title">
       <header className="dms-card__head dms-card__head--top">
         <div>
           <h3 id="dms-list-title" className="dms-card__title">สต็อกเทียบขั้นต่ำ</h3>
@@ -40,7 +40,13 @@ export default function DashboardMinList({ d, isAdmin }: Props) {
 
       <div className="dms-counts">
         {COUNTED.map((s) => (
-          <MinStatusPill key={s} status={s} label={`${MIN_STATUS[s].label} ${d.counts[s].toLocaleString()}`} />
+          // ป้ายนับที่เป็น 0 แสดงแบบเทา (ไม่ใช้สีสถานะ)
+          <MinStatusPill
+            key={s}
+            status={s}
+            className={d.counts[s] === 0 ? 'is-zero' : undefined}
+            label={`${MIN_STATUS[s].label} ${d.counts[s].toLocaleString()}`}
+          />
         ))}
         <span className="dms-legend-line">ต่ำกว่าขั้นต่ำ = น้อยกว่า 100% · ใกล้ต่ำ = 100–120%</span>
       </div>
