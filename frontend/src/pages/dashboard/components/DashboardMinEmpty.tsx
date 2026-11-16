@@ -1,5 +1,5 @@
 // frontend/src/pages/dashboard/components/DashboardMinEmpty.tsx
-// Empty state — ยังไม่มีค่าขั้นต่ำเลยทั้งระบบ (แทนการ์ดสรุป + heatmap)
+// Empty state — ยังไม่มีค่าขั้นต่ำเลยทั้งระบบ (แทนการ์ดสต็อกเทียบขั้นต่ำ)
 import { useNavigate } from 'react-router-dom'
 import { Gauge } from 'lucide-react'
 import Button from '../../../components/common/Button'
