@@ -66,13 +66,12 @@ export const pctLabel = (pct: number | null): string => {
 /** สเกลแถบ 0–150% — เส้นขั้นต่ำอยู่ที่ 100% */
 export const barWidth = (pct: number | null) => `${(Math.min(Math.max(pct ?? 0, 0), 1.5) / 1.5) * 100}%`
 
-/** หมู่ ABO ของรหัสหมู่เลือด: "A+" / "A-" / "A−" → "A" · "A" (ไม่ระบุ Rh) → "A" */
+/** หมู่ ABO ของรหัสหมู่เลือด — ใช้จัดกลุ่มการแสดงผลเท่านั้น: "A+" / "A-" / "A−" → "A" · "A" → "A" */
 export const aboOf = (group: string) => group.replace(/[-+−]$/, '') || group
-/** ลำดับในกลุ่ม ABO: ไม่ระบุ Rh → + → − */
+/** ลำดับในกลุ่ม ABO: A → A+ → A− */
 export const rhRank = (group: string) => (group.endsWith('+') ? 1 : /[-−]$/.test(group) ? 2 : 0)
-/** ตัวกรองหมู่เลือด: เลือก "A" (ไม่ระบุ Rh) = รวม A / A+ / A− · เลือก "A−" = เฉพาะหมู่นั้น */
-export const matchesGroup = (group: string, filter: string) =>
-  !filter || group === filter || (aboOf(filter) === filter && aboOf(group) === filter)
+/** ตัวกรองหมู่เลือด: ตรงตัวเสมอ — "A" คือหมู่ A ของมันเอง ไม่ได้รวม A+ / A− */
+export const matchesGroup = (group: string, filter: string) => !filter || group === filter
 
 /** key ของช่อง — ใช้ใน query ?cell=FFP|A ทั้งหน้าแดชบอร์ดและตั้งค่า */
 export const cellKey = (type: string, group: string) => `${type}|${group}`

@@ -5,7 +5,7 @@ import { useMemo, type KeyboardEvent } from 'react'
 import { Search, X } from 'lucide-react'
 import Button from '../../../components/common/Button'
 import SelectDropdown, { type OptionType } from '../../../components/common/SelectDropdown'
-import { aboOf, type MinStockType } from '../../../helpers/minStock'
+import type { MinStockType } from '../../../helpers/minStock'
 import type { MinFilters } from '../services/useDashboard'
 
 interface Props {
@@ -31,14 +31,11 @@ export default function DashboardMinFilters({
     () => [{ value: '', label: 'ทุกชนิดเลือด' }, ...types.map((t) => ({ value: t.code, label: t.code }))],
     [types],
   )
-  // หมู่ที่ไม่ระบุ Rh (เช่น "A") = รวมทุก Rh ของหมู่นั้น — บอกไว้ในตัวเลือกเมื่อมีหมู่ย่อย
-  const groupOpts = useMemo<OptionType[]>(() => [
-    { value: '', label: 'ทุกหมู่เลือด' },
-    ...groups.map((g) => {
-      const subs = aboOf(g) === g ? groups.filter((x) => x !== g && aboOf(x) === g) : []
-      return { value: g, label: subs.length ? `${g} (รวม ${subs.join(', ')})` : g }
-    }),
-  ], [groups])
+  // แต่ละหมู่เป็นข้อมูลของตัวเอง — เลือก "A" = เฉพาะหมู่ A (ไม่รวม A+ / A−)
+  const groupOpts = useMemo<OptionType[]>(
+    () => [{ value: '', label: 'ทุกหมู่เลือด' }, ...groups.map((g) => ({ value: g, label: g }))],
+    [groups],
+  )
 
   const chips: { key: string; label: string; onRemove: () => void }[] = []
   if (filters.type) chips.push({ key: 'type', label: `ชนิดเลือด: ${filters.type}`, onRemove: () => onApplyNow({ type: '' }) })
