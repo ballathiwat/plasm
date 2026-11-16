@@ -5,7 +5,7 @@ export { groupColor, groupSurface, groupInk, bloodChartColor, plasmaChartColor, 
 export const ALL_KEYS = ['A','A+','A-','B','B+','B-','O','O+','O-','AB','AB+','AB-']
 
 /** A+ → A+, A- → A−  (U+2212) */
-export const displayKey = (k: string): string => k.replace(/-$/, '\u2212')
+export const displayKey = (k: string): string => k.replace(/-$/, '−')
 
 /** Base group of a key: A+ → A, AB- → AB, A → A */
 export const keyGroup = (k: string): string =>
@@ -46,14 +46,14 @@ export interface MovementResponse {
 }
 
 // ── Filter state ──
-export type PresetKey = 'today' | '7d' | '30d' | 'this-month' | 'last-month' | 'this-year' | 'last-year'
+export type PresetKey = 'today' | '7d' | '30d' | 'this-month' | 'last-month' | 'this-year' | 'custom'
 
 export interface FilterDraft {
   from: string
   to: string
-  preset: PresetKey | null
-  types: string[]
-  blood: string   // 'all' | one of ALL_KEYS
+  preset: PresetKey
+  types: string[]   // [] = ทุกชนิด (เลือกได้หลายชนิด, เรียงตามลำดับ master เสมอ)
+  blood: string     // '' = ทุกหมู่ (ส่ง API เฉพาะเมื่อไม่ว่าง)
 }
 
 // ── Helpers ──
