@@ -141,7 +141,33 @@
 .sto-move__value--new { color: var(--primary-ink); }
 .sto-move__value--idle { font-weight: 500; color: var(--text-disabled); }
 .sto-move__arrow { color: var(--text-secondary); }
-.sto-move__fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+/* ── Move modal: radio groups ── */
+.sto-move__group { display:flex; flex-direction:column; gap:6px; margin-top:16px; }
+.sto-move__group-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.sto-move__label { font-size:13px; font-weight:500; color:var(--text-primary); }
+.sto-move__search { width:220px; max-width:100%; height:32px; padding:0 10px; border:1px solid var(--border); border-radius:var(--radius-md, 8px); font:inherit; font-size:13px; background:var(--surface); }
+.sto-move__search:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+
+.sto-move__zones { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:6px; }
+.sto-move__zones.is-scroll { max-height:156px; overflow-y:auto; padding:2px; margin:-2px; }
+.sto-move__zone { display:flex; align-items:center; gap:8px; min-width:0; min-height:40px; padding:6px 10px; margin:1px;
+  border:1px solid var(--border); border-radius:var(--radius-md, 8px); background:var(--surface);
+  color:var(--text-primary); font:inherit; font-size:14px; font-weight:500; line-height:1.3; text-align:left; cursor:pointer; }
+.sto-move__zone:hover:not(.is-on) { border-color:var(--primary); }
+.sto-move__zone.is-on { margin:0; border:2px solid var(--primary); background:var(--primary-surface); color:var(--primary-ink); font-weight:600; }
+.sto-move__zone-name { overflow-wrap:anywhere; }
+.sto-move__radio { width:16px; height:16px; flex-shrink:0; border-radius:999px; border:1.5px solid var(--text-disabled); background:var(--surface); box-sizing:border-box; }
+.sto-move__zone.is-on .sto-move__radio { border:5px solid var(--primary); }
+
+.sto-move__shelves { display:flex; flex-wrap:wrap; gap:6px; }
+.sto-move__shelf { min-width:56px; min-height:40px; padding:6px 12px; margin:1px;
+  border:1px solid var(--border); border-radius:var(--radius-md, 8px); background:var(--surface);
+  color:var(--text-primary); font-family:var(--font-mono); font-size:13px; font-weight:600; cursor:pointer; }
+.sto-move__shelf:hover:not(.is-on) { border-color:var(--primary); }
+.sto-move__shelf.is-on { margin:0; border:2px solid var(--primary); background:var(--primary-surface); color:var(--primary-ink); }
+
+.sto-move__zone:focus-visible, .sto-move__shelf:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+.sto-move__zone:disabled, .sto-move__shelf:disabled { opacity:.5; cursor:not-allowed; }
 
 /* ── RackSlotPicker ── */
 .sto-rack { margin-top: 16px; }
