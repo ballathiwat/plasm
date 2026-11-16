@@ -29,16 +29,18 @@ function Cell({ item, highlight, onOpen }: { item: MinStockStatusItem; highlight
   const Icon = MIN_STATUS[status].icon
   const nums = minUnits == null ? stock.toLocaleString() : `${stock.toLocaleString()}/${minUnits.toLocaleString()}`
   const label = cellLabel(item)
+  // ยังไม่ตั้งค่าและคงเหลือ 0 → "—" ขอบประ (ลด noise ของเลข 0)
+  const blank = minUnits == null && stock === 0
   return (
     <button
       type="button"
       data-cell={cellKey(item.type, item.group)}
-      className={`dms-cell dms-cell--${status} ms-status--${status}${highlight ? ' is-highlight' : ''}`}
+      className={`dms-cell dms-cell--${status}${blank ? ' dms-cell--blank' : ''} ms-status--${status}${highlight ? ' is-highlight' : ''}`}
       title={label}
       aria-label={label}
       onClick={onOpen}
     >
-      <span className={`dms-cell__nums${nums.length > 9 ? ' dms-cell__nums--long' : ''}`}>{nums}</span>
+      <span className={`dms-cell__nums${nums.length > 9 ? ' dms-cell__nums--long' : ''}`}>{blank ? '—' : nums}</span>
       {problem && (
         <span className="dms-cell__pct">
           <Icon size={12} aria-hidden="true" />{pctLabel(pct)}

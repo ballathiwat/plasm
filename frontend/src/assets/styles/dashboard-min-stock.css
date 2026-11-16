@@ -16,15 +16,14 @@
 .dms-banner__title { margin: 0; font-size: 14px; font-weight: 700; color: var(--danger-ink); }
 .dms-banner__sub { margin: 2px 0 0; font-size: 13px; line-height: 1.5; color: var(--danger-ink); }
 
-/* ── Grid 2 คอลัมน์ ── */
-.dms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 16px; margin-bottom: 16px; align-items: start; }
-
+/* ── การ์ด (เต็มความกว้าง 1 คอลัมน์) ── */
 .dms-card {
   min-width: 0; padding: 20px; scroll-margin-top: 16px;
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
 }
 p.dms-card { margin: 0 0 16px; }
+.dms-card--block { margin-bottom: 16px; }
 .dms-card__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .dms-card__title { margin: 0; font-size: 15px; font-weight: 600; }
 .dms-card__count { font-size: 12px; color: var(--text-secondary); }
@@ -37,12 +36,14 @@ p.dms-card { margin: 0 0 16px; }
 /* ── header + ป้ายนับ ── */
 .dms-card__head--top { align-items: flex-start; margin-bottom: 10px; }
 .dms-card__desc { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+/* ป้ายนับที่เป็น 0 → เทา ไม่ใช้สีสถานะ */
+.dms-counts .is-zero { --ms-bg: var(--surface-raised); --ms-ink: var(--text-secondary); --ms-border: var(--border); --ms-bar: var(--text-secondary); }
 .dms-counts { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-bottom: 14px; }
 
 /* ── ตัวกรอง (draft → กดค้นหา) — ปุ่มค้นหา / จุดส้ม / chip ใช้ .rpt-* จาก report-filters.css ── */
 .dms-filters { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-raised); }
 .dms-filters__row { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px 12px; }
-.dms-filters__select { flex: 1 1 160px; min-width: 0; }
+.dms-filters__select { flex: 1 1 160px; min-width: 0; max-width: 260px; }
 .dms-filters__check { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; cursor: pointer; }
 .dms-filters__check input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
 .dms-filters__check input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
@@ -97,6 +98,8 @@ button.dms-cell:hover { box-shadow: var(--shadow-md); }
 .dms-cell--none .dms-cell__nums { font-weight: 500; }
 .dms-cell__pct { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; line-height: 1.2; color: var(--ms-ink); font-variant-numeric: tabular-nums; }
 .dms-cell__pct svg { color: var(--ms-bar); }
+/* ยังไม่ตั้งค่าและคงเหลือ 0 → "—" ขอบประ */
+.dms-cell--blank { border-style: dashed; }
 /* ช่องที่ไม่ผ่านตัวกรอง */
 .dms-cell--off { background: transparent; border: 1px dashed var(--border); cursor: default; }
 /* ไฮไลต์จาก ?cell= (3 วินาที): ring + pulse */
@@ -114,22 +117,6 @@ button.dms-cell:hover { box-shadow: var(--shadow-md); }
 .dms-card__foot-end { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; font-size: 13px; color: var(--text-secondary); }
 .dms-textbtn { min-height: 44px; padding: 0 6px; border: none; background: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .dms-textbtn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
-
-/* ── ต้องเติมก่อน ── */
-.dms-refill { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.dms-refill__item {
-  display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; text-align: left;
-  background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--ms-bar);
-  border-radius: var(--radius-md); font: inherit; color: var(--text-primary); cursor: pointer;
-  transition: background .15s;
-}
-.dms-refill__item:hover { background: var(--ms-bg); }
-.dms-refill__item:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.dms-refill__icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 30px; height: 30px; border-radius: 99px; background: var(--ms-bg); color: var(--ms-bar); }
-.dms-refill__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.dms-refill__name { font-size: 14px; font-weight: 700; }
-.dms-refill__nums { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-.dms-refill__tag { flex-shrink: 0; padding: 2px 9px; border-radius: 99px; background: var(--ms-bg); border: 1px solid var(--ms-border); color: var(--ms-ink); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ── Modal รายละเอียด ── */
 .dms-detail__title { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }

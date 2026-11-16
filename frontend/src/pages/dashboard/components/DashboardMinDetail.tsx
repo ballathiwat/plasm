@@ -1,5 +1,5 @@
 // frontend/src/pages/dashboard/components/DashboardMinDetail.tsx
-// Modal รายละเอียดของ 1 คู่ ชนิด × หมู่ (คลิกจากช่องหมู่เลือด หรือรายการ "ต้องเติมก่อน")
+// Modal รายละเอียดของ 1 คู่ ชนิด × หมู่ (คลิกจากช่องหมู่เลือด)
 import { useNavigate } from 'react-router-dom'
 import { Pencil } from 'lucide-react'
 import Modal from '../../../components/common/Modal'

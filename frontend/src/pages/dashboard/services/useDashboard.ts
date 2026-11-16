@@ -10,7 +10,7 @@ import dashboardService from './DashboardService'
 import type { DailyData, LogEntryItem } from './DashboardType'
 import useMinStockStatus from '../../../helpers/useMinStockStatus'
 import {
-  aboOf, cellKey, matchesGroup, parseCell, rhRank, sortByCritical, MIN_STATUS,
+  aboOf, cellKey, matchesGroup, parseCell, rhRank, sortByCritical,
   type MinStockStatusItem, type MinStockType,
 } from '../../../helpers/minStock'
 
@@ -32,7 +32,6 @@ export interface MinRow {
 }
 
 const HIGHLIGHT_MS = 3000
-const isProblem = (i: MinStockStatusItem) => i.status === 'danger' || i.status === 'warning'
 
 export default function useDashboard() {
   const [dailyData, setDailyData] = useState<DailyData[]>([])
@@ -143,12 +142,6 @@ export default function useDashboard() {
     setOpenOverride(Object.fromEntries(types.map((t) => [t.code, open])))
   }, [types])
 
-  // ── ต้องเติมก่อน: danger + warning ที่ผ่านตัวกรอง เรียง % ของขั้นต่ำน้อยสุด ──
-  const refill = useMemo(() => items
-    .filter((i) => isProblem(i) && passes(i))
-    .sort((a, b) => (a.pct ?? 9) - (b.pct ?? 9) || MIN_STATUS[a.status].rank - MIN_STATUS[b.status].rank),
-  [items, passes])
-
   // ── modal รายละเอียด ──
   const [detailKey, setDetailKey] = useState<string | null>(null)
   const detail = useMemo(
@@ -201,7 +194,7 @@ export default function useDashboard() {
     status, types, groups,
     total: status?.totalStock ?? 0,
     configured: status?.configured ?? false,
-    counts, dangerItems, rows, refill, passes,
+    counts, dangerItems, rows, passes,
     draft, filters, patchDraft, search, applyNow, resetFilters, isDirty, isFiltered,
     idleCodes, showIdle, setShowIdle,
     isOpen, toggleRow, setAllOpen,
