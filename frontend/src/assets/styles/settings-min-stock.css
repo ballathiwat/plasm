@@ -1,0 +1,101 @@
+/* frontend/src/assets/styles/settings-min-stock.css
+   ตั้งค่า › ระบบ › สต็อกขั้นต่ำ (matrix ชนิดเลือด × หมู่เลือด) */
+
+.ms-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── หัวการ์ด ── */
+.ms-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; margin-bottom: 16px; }
+.ms-head__title { font-size: 16px; font-weight: 700; margin: 0 0 6px; }
+.ms-head__desc { font-size: 13px; color: var(--text-secondary); margin: 0 0 10px; }
+.ms-head__legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.ms-head__meta { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; color: var(--text-secondary); }
+.ms-head__meta strong { color: var(--text-primary); font-weight: 600; }
+
+.ms-state { padding: 24px; text-align: center; font-size: 13px; color: var(--text-secondary); }
+
+/* ── empty state ── */
+.ms-empty {
+  display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; padding: 12px 14px;
+  border-radius: var(--radius-md); background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E3A8A;
+  font-size: 13px; line-height: 1.5;
+}
+.ms-empty svg { flex-shrink: 0; margin-top: 2px; color: var(--primary); }
+
+/* ── ตาราง matrix ── */
+.ms-matrix { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.ms-matrix th, .ms-matrix td { padding: 8px 6px; vertical-align: top; border-bottom: 1px solid var(--border); }
+.ms-matrix thead th { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-align: right; padding-right: 14px; vertical-align: bottom; }
+.ms-matrix tbody tr:last-child th, .ms-matrix tbody tr:last-child td { border-bottom: none; }
+.ms-matrix .ms-matrix__type { width: 190px; text-align: left; padding-left: 0; font-weight: 400; }
+.ms-matrix thead .ms-matrix__type { text-align: left; }
+.ms-matrix .ms-matrix__total { width: 104px; text-align: right; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; padding-top: 16px; }
+.ms-matrix thead .ms-matrix__total { padding-top: 8px; font-weight: 600; font-size: 12px; }
+.ms-matrix .ms-matrix__menu { width: 46px; padding-right: 0; text-align: right; }
+.ms-matrix .ms-matrix__menu .ext-row-menu { display: inline-block; }
+
+.ms-type__code { display: block; font-size: 14px; font-weight: 700; color: var(--text-primary); padding-top: 8px; }
+.ms-type__name { display: block; font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── ช่องกรอก ── */
+.ms-cell { min-width: 0; }
+.ms-cell__box {
+  display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface);
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.ms-cell__box:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18); }
+.ms-cell__input {
+  flex: 1; min-width: 0; width: 100%; border: none; outline: none; background: transparent;
+  font: inherit; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-primary);
+}
+.ms-cell__input::placeholder { color: var(--text-secondary); opacity: .7; }
+.ms-cell__suffix { font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
+.ms-cell__group { font-size: 12px; font-weight: 700; color: var(--text-secondary); flex-shrink: 0; min-width: 20px; }
+
+/* แก้แล้วยังไม่บันทึก */
+.ms-cell__box.is-dirty { border-color: #F59E0B; background: #FFFBEB; }
+.ms-cell__box.is-dirty .ms-cell__input { font-weight: 700; }
+/* ค่าไม่ถูกต้อง */
+.ms-cell__box.is-invalid { border-color: var(--stock-danger); background: var(--danger-surface); }
+/* ช่องที่มาจาก ?cell= */
+.ms-cell__box.is-target { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35); }
+.ms-cell__error { margin: 4px 0 0; font-size: 11px; line-height: 1.3; color: var(--danger-ink); text-align: right; }
+
+/* ── การ์ดต่อชนิด (container < 760px) ── */
+.ms-cards { display: grid; gap: 12px; }
+.ms-card { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; min-width: 0; }
+.ms-card__head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ms-card__type { flex: 1; min-width: 0; }
+.ms-card__type .ms-type__code { padding-top: 0; }
+.ms-card__total { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ms-card__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+.ms-hidden-note { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 16px 0 0; font-size: 13px; color: var(--text-secondary); }
+
+/* ── แถบบันทึก (sticky ล่างการ์ด) ── */
+.ms-savebar {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap;
+  margin: 16px -24px -24px; padding: 12px 24px;
+  background: var(--surface); border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  box-shadow: 0 -4px 12px rgba(24, 24, 27, 0.06);
+}
+.ms-savebar__text { font-size: 13px; font-weight: 600; color: var(--warning-ink); }
+.ms-savebar__error { color: var(--danger-ink); }
+.ms-savebar__actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+/* ── modal ── */
+.ms-modal__label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.ms-modal__note { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+
+.ms-diff__wrap { max-height: 320px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.ms-diff { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ms-diff th, .ms-diff td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.ms-diff thead th { position: sticky; top: 0; background: var(--surface-raised, #F4F4F5); font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.ms-diff tbody tr:last-child th, .ms-diff tbody tr:last-child td { border-bottom: none; }
+.ms-diff tbody th { font-weight: 600; }
+.ms-diff td { font-variant-numeric: tabular-nums; }
+.ms-diff .is-unset { color: var(--text-secondary); font-style: italic; }
+.ms-diff .is-new { font-weight: 700; }
+.ms-diff__arrow { width: 28px; color: var(--text-secondary); }

@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import { User, ChevronDown, UserCircle } from 'lucide-react'
 import { PAGE_TITLES, type UserRole } from '../../types/navigation'
 import NotificationBell from './NotificationBell'
-import type { StockAlert } from '../../helpers/useNotificationCount'
+import type { MinStockStatusItem } from '../../helpers/minStock'
 
 interface TopBarProps {
   activeModule: string
@@ -15,13 +15,15 @@ interface TopBarProps {
   onNavigate?: (key: string) => void
   notificationCount?: number
   approvalCount?: number
-  stockAlerts?: StockAlert[]
+  /** คู่ ชนิด × หมู่ ที่ ต่ำกว่าขั้นต่ำ / ใกล้ต่ำ */
+  stockAlerts?: MinStockStatusItem[]
+  onNotificationAcknowledge?: (n: MinStockStatusItem) => Promise<void> | void
   userId?: string
 }
 
 export default function TopBar({
   activeModule, userName, userRole, onNavigate,
-  notificationCount = 0, approvalCount = 0, stockAlerts = [], userId = '',
+  notificationCount = 0, approvalCount = 0, stockAlerts = [], onNotificationAcknowledge, userId = '',
 }: TopBarProps) {
   const title = PAGE_TITLES[activeModule] || 'BLIS'
   const [showMenu, setShowMenu] = useState(false)
@@ -49,6 +51,7 @@ export default function TopBar({
           totalCount={notificationCount}
           approvalCount={approvalCount}
           stockAlerts={stockAlerts}
+          onAcknowledge={onNotificationAcknowledge}
           onNavigate={onNavigate}
           userId={userId}
         />

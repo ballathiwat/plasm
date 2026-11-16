@@ -36,6 +36,8 @@ model User {
   logs         LogEntry[]
   unitRemovals UnitRemoval[]
   slotLocks    SlotLock[]
+  minStockUpdates   MinStock[]
+  stockAlertAcks    StockAlert[]
 
   @@map("users")
 }
@@ -134,6 +136,8 @@ model MasterPlasmaType {
   defaultVolumeMl Int? @map("default_volume_ml")
   boxes        Box[]
   extDocuments ExtDocument[]
+  minStocks    MinStock[]
+  stockAlerts  StockAlert[]
 
   @@map("master_plasma_types")
 }
@@ -146,6 +150,8 @@ model MasterBloodType {
   active Boolean @default(true)
   sort   Int     @default(0)
   boxes  Box[]
+  minStocks   MinStock[]
+  stockAlerts StockAlert[]
 
   @@map("master_blood_types")
 }
@@ -184,6 +190,49 @@ model MasterRemovalReason {
   sort   Int     @default(0)
 
   @@map("master_removal_reasons")
+}
+
+// ===== สต็อกขั้นต่ำ แยกตาม ชนิดเลือด × หมู่เลือด =====
+// minUnits = null → ไม่ได้ตั้งค่า (ไม่แจ้งเตือน)
+// ค่าเดิมแบบรายหมู่ยังอยู่ที่ settings.key = 'minimumStock' (ไม่ถูกใช้แล้ว เก็บไว้จนกว่าจะยืนยันลบ)
+model MinStock {
+  id           String   @id @default(cuid())
+  plasmaTypeId String   @map("plasma_type_id")
+  bloodTypeId  String   @map("blood_type_id")
+  minUnits     Int?     @map("min_units")
+  updatedById  String?  @map("updated_by_id")
+  updatedAt    DateTime @default(now()) @map("updated_at")
+
+  plasmaType MasterPlasmaType @relation(fields: [plasmaTypeId], references: [id])
+  bloodType  MasterBloodType  @relation(fields: [bloodTypeId], references: [id])
+  updatedBy  User?            @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([plasmaTypeId, bloodTypeId])
+  @@map("min_stock")
+}
+
+enum StockAlertStatus {
+  DANGER
+  WARNING
+}
+
+// ===== การแจ้งเตือนสต็อกต่ำ — 1 แถวต่อคู่ ชนิด × หมู่ ที่อยู่ในสถานะ DANGER/WARNING =====
+// since = เวลาที่คู่นี้เข้าสู่สถานะปัจจุบัน · กลับเป็นปกติ/ไม่ได้ตั้งค่า → ลบแถว
+model StockAlert {
+  id               String           @id @default(cuid())
+  plasmaTypeId     String           @map("plasma_type_id")
+  bloodTypeId      String           @map("blood_type_id")
+  status           StockAlertStatus
+  since            DateTime         @default(now())
+  acknowledgedAt   DateTime?        @map("acknowledged_at")
+  acknowledgedById String?          @map("acknowledged_by_id")
+
+  plasmaType     MasterPlasmaType @relation(fields: [plasmaTypeId], references: [id], onDelete: Cascade)
+  bloodType      MasterBloodType  @relation(fields: [bloodTypeId], references: [id], onDelete: Cascade)
+  acknowledgedBy User?            @relation(fields: [acknowledgedById], references: [id], onDelete: SetNull)
+
+  @@unique([plasmaTypeId, bloodTypeId])
+  @@map("stock_alerts")
 }
 
 // เฟส 2 จะใช้รันเลขกล่อง
@@ -226,6 +275,7 @@ model Box {
 
   @@index([blood, status])
   @@index([bloodTypeId, status])
+  @@index([plasmaTypeId, bloodTypeId, status])
   @@index([zoneId, shelf])
   @@map("boxes")
 

@@ -1,13 +1,17 @@
 // ============================================================
 //  src/components/layout/NotificationBell.tsx
-//  🔔 รวม สต็อกต่ำ + เอกสารรออนุมัติ
+//  🔔 รวม สต็อกต่ำ (ราย ชนิดเลือด × หมู่เลือด) + เอกสารรออนุมัติ
 // ============================================================
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { Bell, Clock, AlertTriangle, CheckCircle, ChevronRight} from 'lucide-react'
+import { Fragment, useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Bell, Clock, Check, CheckCircle, ChevronRight } from 'lucide-react'
 import apiAdapter from '../../helpers/http/apiAdapter'
 import { EXT_COMMITTEE } from '../../helpers/url_helper'
-import type { StockAlert } from '../../helpers/useNotificationCount'
+import {
+  MIN_STATUS, alertDetail, cellKey, dashboardCellPath, groupStockAlerts,
+  type MinStockStatusItem,
+} from '../../helpers/minStock'
 import '../../assets/styles/components/notification-bell.css'
 
 // ── Types ──
@@ -58,12 +62,18 @@ function relativeTime(iso?: string | null): string {
 interface Props {
   totalCount: number
   approvalCount: number
-  stockAlerts: StockAlert[]
+  /** คู่ ชนิด × หมู่ ที่ ต่ำกว่าขั้นต่ำ / ใกล้ต่ำ (จาก useMinStockStatus — ชุดเดียวกับแดชบอร์ด) */
+  stockAlerts: MinStockStatusItem[]
   onNavigate?: (key: string) => void
+  /** กด "รับทราบ" การแจ้งเตือนสต็อก */
+  onAcknowledge?: (n: MinStockStatusItem) => Promise<void> | void
   userId: string
 }
 
-export default function NotificationBell({ totalCount, approvalCount, stockAlerts, onNavigate, userId }: Props) {
+export default function NotificationBell({ totalCount, approvalCount, stockAlerts, onNavigate, onAcknowledge, userId }: Props) {
+  const navigate = useNavigate()
+  const [acking, setAcking] = useState<string[]>([])
+  const stockGroups = useMemo(() => groupStockAlerts(stockAlerts), [stockAlerts])
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<InboxDoc[]>([])
   const [loading, setLoading] = useState(false)
@@ -108,6 +118,13 @@ export default function NotificationBell({ totalCount, approvalCount, stockAlert
 
   const goInbox = () => { setOpen(false); onNavigate?.('ext-blood-list') }
   const goDashboard = () => { setOpen(false); onNavigate?.('dashboard') }
+  // คลิกรายการสต็อก → แดชบอร์ด พร้อมไฮไลต์ช่องของคู่นั้น
+  const goCell = (a: MinStockStatusItem) => { setOpen(false); navigate(dashboardCellPath(a.type, a.group)) }
+  const acknowledge = async (a: MinStockStatusItem) => {
+    const key = cellKey(a.type, a.group)
+    setAcking((xs) => [...xs, key])
+    try { await onAcknowledge?.(a) } finally { setAcking((xs) => xs.filter((x) => x !== key)) }
+  }
   const displayCount = totalCount > 99 ? '99+' : String(totalCount)
 
   const hasStock = stockAlerts.length > 0
@@ -134,32 +151,49 @@ export default function NotificationBell({ totalCount, approvalCount, stockAlert
           </div>
 
           <div className="plasm-noti__list">
-            {/* ═══ Section: สต็อก ═══ */}
-            {hasStock && (
-              <>
-                <div className="plasm-noti__section">สต็อกพลาสมา</div>
-                {stockAlerts.map((a) => (
-                  <div key={a.group} className="plasm-noti__item" onClick={goDashboard} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') goDashboard() }}>
-                    <div className={`plasm-noti__item-icon plasm-noti__item-icon--${a.level}`}>
-                      <AlertTriangle size={16} />
-                    </div>
-                    <div className="plasm-noti__item-body">
-                      <p className="plasm-noti__item-title">
-                        หมู่เลือด {a.group} — {a.level === 'danger' ? 'ต่ำกว่าขั้นต่ำ' : 'ใกล้ขั้นต่ำ'}
-                      </p>
-                      <p className="plasm-noti__item-desc">
-                        คงเหลือ {a.current} ถุง · ขั้นต่ำ {a.minimum} ถุง
-                      </p>
-                      <div className="plasm-noti__item-meta">
-                        <span className={`plasm-noti__stock-tag plasm-noti__stock-tag--${a.level}`}>
-                          {a.level === 'danger' ? 'วิกฤต' : 'เฝ้าระวัง'}
+            {/* ═══ Section: สต็อก — 1 รายการต่อคู่ ชนิด × หมู่ จัดกลุ่มตามชนิดเลือด ═══ */}
+            {stockGroups.map((g) => (
+              <Fragment key={g.type}>
+                <div className="plasm-noti__section plasm-noti__section--stock">สต็อก {g.type} ({g.items.length})</div>
+                {g.items.map((a) => {
+                  const key = cellKey(a.type, a.group)
+                  const { icon: Icon, label } = MIN_STATUS[a.status]
+                  return (
+                    // root ไม่ใช่ปุ่ม — เนื้อหาและ "รับทราบ" เป็นปุ่มแยกกัน (ไม่ซ้อน button ใน button)
+                    <div key={key} role="none" className={`plasm-noti__item plasm-noti__item--split${a.acknowledged ? ' is-read' : ''}`}>
+                      <button type="button" className="plasm-noti__item-main" onClick={() => goCell(a)}>
+                        <span className={`plasm-noti__item-icon plasm-noti__item-icon--${a.status}`}>
+                          <Icon size={16} aria-hidden="true" />
                         </span>
-                      </div>
+                        <span className="plasm-noti__item-body">
+                          <span className={`plasm-noti__stock-tag plasm-noti__stock-tag--${a.status}`}>
+                            <Icon size={11} aria-hidden="true" />{label}
+                          </span>
+                          <span className="plasm-noti__item-title">{a.type} หมู่ {a.group}</span>
+                          <span className="plasm-noti__item-desc plasm-noti__item-desc--wrap">{alertDetail(a)}</span>
+                          <span className="plasm-noti__item-meta">
+                            <span className="plasm-noti__time">
+                              {relativeTime(a.since)}{a.acknowledged && ' · รับทราบแล้ว'}
+                            </span>
+                          </span>
+                        </span>
+                      </button>
+                      {!a.acknowledged && a.notificationId && onAcknowledge && (
+                        <button
+                          type="button"
+                          className="plasm-noti__ack"
+                          disabled={acking.includes(key)}
+                          aria-label={`รับทราบ ${a.type} หมู่ ${a.group}`}
+                          onClick={() => acknowledge(a)}
+                        >
+                          <Check size={13} aria-hidden="true" />รับทราบ
+                        </button>
+                      )}
                     </div>
-                  </div>
-                ))}
-              </>
-            )}
+                  )
+                })}
+              </Fragment>
+            ))}
 
             {/* ═══ Section: รออนุมัติ ═══ */}
             {hasApproval && (

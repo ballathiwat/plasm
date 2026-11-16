@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom'
 import apiAdapter from './http/apiAdapter'
 import { NOTIFICATIONS, NOTIFICATIONS_READ } from './url_helper'
 
-export type NotificationKind = 'approve' | 'rejected' | 'approved' | 'lowstock' | 'info'
+export type NotificationKind = 'approve' | 'rejected' | 'approved' | 'stock-danger' | 'stock-warning' | 'info'
 export interface NotificationItem {
   id: string
   kind: NotificationKind
@@ -13,7 +13,12 @@ export interface NotificationItem {
   detail?: string
   at: string
   read: boolean
-  target?: { path: string; docId?: string }
+  /** หัวกลุ่มย่อยของ info เช่น "สต็อก FFP" */
+  section?: string
+  /** รับทราบได้ผ่าน POST /notifications/:id/ack (เฉพาะแจ้งเตือนสต็อก) */
+  ackable?: boolean
+  acknowledged?: boolean
+  target?: { path: string; docId?: string; cell?: string }
 }
 
 const POLL_MS = 30_000

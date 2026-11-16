@@ -30,6 +30,9 @@ export const PATCH_UNIT_WITHDRAW = `${API}/units`    // + /:id/withdraw
 export const GET_STOCK_SUMMARY = `${API}/stock/summary`
 export const GET_STOCK_DAILY = `${API}/stock/daily`
 export const GET_STOCK_REPORT = `${API}/stock/report`
+// สต็อกขั้นต่ำ ราย ชนิดเลือด × หมู่เลือด
+export const STOCK_MIN_STOCK = `${API}/stock/min-stock`               // GET · PUT (ADMIN)
+export const STOCK_MIN_STOCK_STATUS = `${API}/stock/min-stock/status` // GET — แดชบอร์ด + กระดิ่ง
 
 // ===== Reports =====
 export const GET_REPORTS_MOVEMENTS = `${API}/reports/movements`
@@ -76,3 +79,4 @@ export const EXT_USERS = `${EXT_BASE}/users`
 // ===== Notifications =====
 export const NOTIFICATIONS = `${API}/notifications`
 export const NOTIFICATIONS_READ = `${API}/notifications/read`
+export const NOTIFICATIONS_ACK = `${API}/notifications`               // POST + /:id/ack
