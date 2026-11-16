@@ -1,6 +1,6 @@
 // frontend/src/pages/report-daily/index.tsx
 
-import useDailyReport from './services/useDailyReport'
+import useDailyReport, { presetRange, formatThaiRange } from './services/useDailyReport'
 import MovementFilters from './components/MovementFilters'
 import ReportKpis from './components/ReportKpis'
 import TypeBloodMatrix from './components/TypeBloodMatrix'
@@ -9,31 +9,31 @@ import Toast from '../../components/common/Toast'
 
 export default function DailyReportPage() {
   const {
-    masterTypes, draft, data, loading, toast, setToast,
-    isDirty, validationError, typesLabel,
-    search, setPreset, setFrom, setTo, setBlood,
-    toggleType, selectAllTypes, jumpTo30Days,
+    masterTypes, draft, applied, data, loading, toast, setToast,
+    isDirty, isNonDefault, rangeError,
+    setDraft, search, applyNow, resetAll, toggleTypeNow,
   } = useDailyReport()
 
   const isEmpty = data && data.totals.in === 0 && data.totals.out === 0
-
-  const formatRange = () => {
-    if (!data) return ''
-    const fmt = (iso: string) =>
-      new Date(`${iso}T00:00:00+07:00`).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
-    return data.from === data.to ? fmt(data.from) : `${fmt(data.from)} – ${fmt(data.to)}`
-  }
+  const typesLabel = applied.types.length > 0 ? applied.types.join(', ') : 'ทุกชนิด'
 
   return (
     <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
       <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       <MovementFilters
-        draft={draft} masterTypes={masterTypes} loading={loading}
-        isDirty={isDirty} validationError={validationError}
-        onPreset={setPreset} onFromChange={setFrom} onToChange={setTo}
-        onBloodChange={setBlood} onToggleType={toggleType}
-        onSelectAllTypes={selectAllTypes} onSearch={search}
+        draft={draft}
+        applied={applied}
+        masterTypes={masterTypes}
+        loading={loading}
+        isDirty={isDirty}
+        isNonDefault={isNonDefault}
+        rangeError={rangeError}
+        onDraft={setDraft}
+        onSearch={search}
+        onApplyNow={applyNow}
+        onReset={resetAll}
+        onToggleTypeNow={toggleTypeNow}
       />
 
       {loading && (
@@ -51,8 +51,10 @@ export default function DailyReportPage() {
           <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 6px' }}>
             ไม่มีการนำเข้า/นำออกในช่วงนี้
           </p>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px' }}>{formatRange()}</p>
-          <button type="button" onClick={jumpTo30Days} style={{
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px' }}>
+            {formatThaiRange(applied.from, applied.to)}
+          </p>
+          <button type="button" onClick={() => applyNow({ preset: '30d', ...presetRange('30d') })} style={{
             padding: '8px 20px', borderRadius: 'var(--radius-md, 8px)',
             border: '1px solid var(--primary, #2563EB)', background: 'var(--surface, #fff)',
             color: 'var(--primary, #2563EB)', fontWeight: 600, fontSize: 13,
