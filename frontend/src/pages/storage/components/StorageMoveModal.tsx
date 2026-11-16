@@ -3,14 +3,33 @@
 //  ย้ายตำแหน่งกล่อง: ห้อง/ตู้ + ชั้นวาง (+ ชั้น/ช่อง ของ rack)
 // ============================================================
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowRight, Info, MapPin } from 'lucide-react'
 import Modal from '../../../components/common/Modal'
 import Button from '../../../components/common/Button'
-import SelectDropdown, { type OptionType } from '../../../components/common/SelectDropdown'
 import { POSITION_LIST, ROOM_LEGACY_KEY, positionLabel } from '../../../helpers/rack'
 import type { MasterZone, MoveBoxPayload, RackSlotMap, StorageListItem } from '../services/StorageType'
 import RackSlotPicker from './RackSlotPicker'
+
+const ZONE_SCROLL_AT = 9
+
+/** Arrow-key handler สำหรับ radiogroup — ใช้ร่วมทั้งห้อง/ตู้ และชั้นวาง */
+function onRadioKey(
+  e: KeyboardEvent,
+  list: { key: string }[],
+  currentIndex: number,
+  pick: (key: string) => void,
+) {
+  let next = -1
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    next = currentIndex + 1 >= list.length ? 0 : currentIndex + 1
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    next = currentIndex - 1 < 0 ? list.length - 1 : currentIndex - 1
+  }
+  if (next < 0) return
+  e.preventDefault()
+  pick(list[next].key)
+}
 
 interface Props {
   box: StorageListItem
@@ -31,15 +50,18 @@ export default function StorageMoveModal({ box, zones, onLoadRack, onMove, onClo
   const [rackError, setRackError] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [zoneQuery, setZoneQuery] = useState('')
+
+  const zoneGroupRef = useRef<HTMLDivElement>(null)
+  const shelfGroupRef = useRef<HTMLDivElement>(null)
 
   const zone = zones.find((z) => z.id === zoneId)
   const isRack = zone?.legacyKey === ROOM_LEGACY_KEY
   const shelfValid = !!zone?.shelves.some((s) => s.code === shelf)
 
-  const zoneOptions = useMemo<OptionType[]>(() => zones.map((z) => ({ value: z.id, label: z.name })), [zones])
-  const shelfOptions = useMemo<OptionType[]>(
-    () => (zone?.shelves ?? []).map((s) => ({ value: s.code, label: s.code })),
-    [zone],
+  const many = zones.length > ZONE_SCROLL_AT
+  const visibleZones = zones.filter(
+    (z) => !zoneQuery.trim() || z.id === zoneId || z.name.toLowerCase().includes(zoneQuery.trim().toLowerCase()),
   )
 
   // ── โหลดช่องที่มีกล่องของ rack ที่เลือก ──
@@ -75,11 +97,18 @@ export default function StorageMoveModal({ box, zones, onLoadRack, onMove, onClo
     setShelf('')
     setPosition(null)
     setError('')
+    // focus ตัวที่เลือก
+    requestAnimationFrame(() => {
+      zoneGroupRef.current?.querySelector<HTMLButtonElement>(`[aria-checked="true"]`)?.focus()
+    })
   }
   const changeShelf = (code: string) => {
     setShelf(code)
     setPosition(null)
     setError('')
+    requestAnimationFrame(() => {
+      shelfGroupRef.current?.querySelector<HTMLButtonElement>(`[aria-checked="true"]`)?.focus()
+    })
   }
   const changeLevel = (lv: number) => {
     setLevel(lv)
@@ -113,11 +142,19 @@ export default function StorageMoveModal({ box, zones, onLoadRack, onMove, onClo
     }
   }
 
+  // ── zone radio key items ──
+  const zoneItems = visibleZones.map((z) => ({ key: z.id }))
+  const zoneIdx = zoneItems.findIndex((i) => i.key === zoneId)
+
+  // ── shelf radio key items ──
+  const shelfItems = (zone?.shelves ?? []).map((s) => ({ key: s.code }))
+  const shelfIdx = shelfItems.findIndex((i) => i.key === shelf)
+
   return (
     <Modal
       open
       onClose={onClose}
-      size="md"
+      size="lg"
       title={<span className="sto-modal-title sto-modal-title--stack"><span>ย้ายตำแหน่ง</span><span className="sto-mono sto-modal-title__sub">{box.boxLabel}</span></span>}
       titleIcon={<MapPin size={18} />}
       footer={
@@ -141,27 +178,85 @@ export default function StorageMoveModal({ box, zones, onLoadRack, onMove, onClo
         </div>
       </div>
 
-      <div className="sto-move__fields">
-        <SelectDropdown
-          label="ห้อง/ตู้ *"
-          placeholder="เลือกห้อง/ตู้"
-          options={zoneOptions}
-          value={zoneOptions.find((o) => o.value === zoneId) ?? null}
-          onChange={(o) => changeZone(o?.value ?? '')}
-          isClearable={false}
-          isSearchable={false}
-        />
-        <SelectDropdown
-          label="ชั้นวาง *"
-          placeholder={zone ? 'เลือกชั้นวาง' : 'เลือกห้อง/ตู้ก่อน'}
-          options={shelfOptions}
-          value={shelfOptions.find((o) => o.value === shelf) ?? null}
-          onChange={(o) => changeShelf(o?.value ?? '')}
-          disabled={!zone}
-          isClearable={false}
-          isSearchable={false}
-        />
+      {/* ── ห้อง/ตู้ ── */}
+      <div className="sto-move__group" role="radiogroup" aria-labelledby="sto-move-zone-lbl" ref={zoneGroupRef}>
+        <div className="sto-move__group-head">
+          <span id="sto-move-zone-lbl" className="sto-move__label">
+            ห้อง/ตู้ <span className="sto-req">*</span>
+            {many && <span className="sto-muted"> · {zones.length} รายการ</span>}
+          </span>
+          {many && (
+            <input
+              type="search"
+              className="sto-move__search"
+              placeholder="ค้นหาห้อง / ตู้..."
+              aria-label="ค้นหาห้อง / ตู้"
+              value={zoneQuery}
+              onChange={(e) => setZoneQuery(e.target.value)}
+            />
+          )}
+        </div>
+        <div className={`sto-move__zones ${many ? 'is-scroll' : ''}`}>
+          {visibleZones.length === 0 ? (
+            <p className="sto-muted">ไม่พบห้อง/ตู้ &quot;{zoneQuery}&quot;</p>
+          ) : (
+            visibleZones.map((z, i) => {
+              const on = z.id === zoneId
+              return (
+                <button
+                  key={z.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  title={z.name}
+                  className={`sto-move__zone ${on ? 'is-on' : ''}`}
+                  onClick={() => !on && changeZone(z.id)}
+                  disabled={saving}
+                  tabIndex={on ? 0 : zoneIdx < 0 && i === 0 ? 0 : -1}
+                  onKeyDown={(e) => onRadioKey(e, zoneItems, zoneItems.findIndex((item) => item.key === z.id), changeZone)}
+                >
+                  <span className="sto-move__radio" aria-hidden="true" />
+                  <span className="sto-move__zone-name">{z.name}</span>
+                </button>
+              )
+            })
+          )}
+        </div>
       </div>
+
+      {/* ── ชั้นวาง ── */}
+      {zone && (
+        (zone.shelves ?? []).length === 0 ? (
+          <div className="sto-move__group">
+            <span className="sto-move__label">ชั้นวาง <span className="sto-req">*</span></span>
+            <p className="sto-muted">ห้อง/ตู้นี้ยังไม่มีชั้นวาง — เพิ่มได้ที่ ตั้งค่า › ข้อมูลหลัก</p>
+          </div>
+        ) : (
+          <div className="sto-move__group" role="radiogroup" aria-labelledby="sto-move-shelf-lbl" ref={shelfGroupRef}>
+            <span id="sto-move-shelf-lbl" className="sto-move__label">ชั้นวาง <span className="sto-req">*</span></span>
+            <div className="sto-move__shelves">
+              {zone.shelves.map((s, i) => {
+                const on = s.code === shelf
+                return (
+                  <button
+                    key={s.code}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    className={`sto-move__shelf ${on ? 'is-on' : ''}`}
+                    onClick={() => changeShelf(s.code)}
+                    disabled={saving}
+                    tabIndex={on ? 0 : shelfIdx < 0 && i === 0 ? 0 : -1}
+                    onKeyDown={(e) => onRadioKey(e, shelfItems, shelfItems.findIndex((item) => item.key === s.code), changeShelf)}
+                  >
+                    {s.code}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      )}
 
       {zone && shelfValid && (isRack ? (
         <RackSlotPicker

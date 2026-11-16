@@ -3,7 +3,7 @@
 //  รายละเอียดกล่อง: ข้อมูลกล่อง + รายการ units
 // ============================================================
 
-import { Pencil, Printer } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import Modal from '../../../components/common/Modal'
 import Button from '../../../components/common/Button'
 import StatusBadge from '../../../components/shared/StatusBadge'
@@ -15,12 +15,12 @@ import StorageStatusBadge from './StorageStatusBadge'
 interface Props {
   box: StorageListItem
   onClose: () => void
-  onPrint: (box: StorageListItem) => void
+  onPrint?: (box: StorageListItem) => void
   onEdit: (box: StorageListItem) => void
   onMove: (box: StorageListItem) => void
 }
 
-export default function StorageDetailModal({ box, onClose, onPrint, onEdit, onMove }: Props) {
+export default function StorageDetailModal({ box, onClose, onEdit, onMove }: Props) {
   const hasUnits = box.storedCount > 0
   const withdrawn = box.unitCount - box.storedCount
 
@@ -34,7 +34,6 @@ export default function StorageDetailModal({ box, onClose, onPrint, onEdit, onMo
         <>
           <Button variant="secondary" onClick={onClose}>ปิด</Button>
           {hasUnits && <Button variant="outline" icon={<Pencil size={14} />} onClick={() => onEdit(box)}>แก้ไข units</Button>}
-          <Button variant="primary" icon={<Printer size={14} />} onClick={() => onPrint(box)}>พิมพ์ฉลาก</Button>
         </>
       }
     >
