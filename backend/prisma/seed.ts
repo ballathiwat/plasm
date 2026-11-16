@@ -37,16 +37,7 @@ async function main() {
   })
   console.log(`✅ Staff user: ${staff.username}`)
 
-  // ===== 3. ตั้งค่า Minimum Stock =====
-  await prisma.setting.upsert({
-    where: { key: 'minimumStock' },
-    update: {},
-    create: {
-      key: 'minimumStock',
-      value: { A: 150, B: 300, O: 300, AB: 100 },
-    },
-  })
-  console.log('✅ Minimum stock settings')
+  // ===== 3. สต็อกขั้นต่ำ → ย้ายไปหลัง Sample Boxes (ข้อ 5.1) เพราะอ้าง master data =====
 
   // ===== 4. Master data (ต้องมาก่อนกล่อง) =====
   const plasmaTypes = [
@@ -103,12 +94,17 @@ async function main() {
     if (existing) continue
 
     const zone = await prisma.masterZone.findUniqueOrThrow({ where: { legacyKey: box.legacyKey } })
+    // boxes.plasma_type_id / blood_type_id เป็น FK บังคับ (migration 4_box_type_blood_fk)
+    const plasmaType = await prisma.masterPlasmaType.findUniqueOrThrow({ where: { code: box.type } })
+    const bloodType = await prisma.masterBloodType.findUniqueOrThrow({ where: { code: box.blood } })
 
     await prisma.box.create({
       data: {
         boxLabel: box.boxLabel,
         type: box.type,
         blood: box.blood,
+        plasmaTypeId: plasmaType.id,
+        bloodTypeId: bloodType.id,
         year: 2024,
         zoneId: zone.id,
         shelf: box.shelf,
@@ -129,7 +125,28 @@ async function main() {
     })
     console.log(`✅ Box: ${box.boxLabel} (${box.units.length} units)`)
   }
-    // ===== 6. Ext Blood — Master data =====
+
+  // ===== 5.1 สต็อกขั้นต่ำ ราย ชนิด × หมู่ (ตาราง min_stock) =====
+  // ตัวอย่างให้ครบ 4 สถานะเทียบกับกล่องตัวอย่างข้างบน (A=8, B=10, O=8, AB=5 units)
+  //   FFP A 8/10 = ต่ำกว่าขั้นต่ำ · B 10/9 = ใกล้ต่ำ · O 8/5 = ปกติ · AB 5/8 = ต่ำกว่าขั้นต่ำ · ชนิดอื่น = ไม่ได้ตั้งค่า
+  const sampleMin: { type: string; group: string; minUnits: number }[] = [
+    { type: 'FFP', group: 'A', minUnits: 10 },
+    { type: 'FFP', group: 'B', minUnits: 9 },
+    { type: 'FFP', group: 'O', minUnits: 5 },
+    { type: 'FFP', group: 'AB', minUnits: 8 },
+  ]
+  for (const m of sampleMin) {
+    const pt = await prisma.masterPlasmaType.findUniqueOrThrow({ where: { code: m.type } })
+    const bt = await prisma.masterBloodType.findUniqueOrThrow({ where: { code: m.group } })
+    await prisma.minStock.upsert({
+      where: { plasmaTypeId_bloodTypeId: { plasmaTypeId: pt.id, bloodTypeId: bt.id } },
+      update: {}, // ไม่ทับค่าที่ตั้งเองไว้แล้ว
+      create: { plasmaTypeId: pt.id, bloodTypeId: bt.id, minUnits: m.minUnits, updatedById: admin.id },
+    })
+  }
+  console.log('✅ Minimum stock (ชนิด × หมู่)')
+
+  // ===== 6. Ext Blood — Master data =====
   const extSources = [
     { name: 'ศูนย์บริการโลหิตแห่งชาติ สภากาชาดไทย', locked: true },
     { name: 'ภาคบริการโลหิตแห่งชาติ เขต 6 ขอนแก่น', locked: true },

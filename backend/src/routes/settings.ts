@@ -26,21 +26,9 @@ router.get("/", async (_req, res) => {
 // ===== PUT /api/v1/settings =====
 router.put("/", adminOnly, async (req, res) => {
   try {
-    const { minimumStock, shelfPositions } = req.body;
-
-    if (minimumStock && typeof minimumStock === "object") {
-      const clean: Record<string, number> = {};
-      for (const [k, v] of Object.entries(minimumStock)) {
-        const n = Number(v);
-        if (k.trim() && Number.isFinite(n) && n >= 0)
-          clean[k.trim()] = Math.floor(n);
-      }
-      await prisma.setting.upsert({
-        where: { key: "minimumStock" },
-        update: { value: clean },
-        create: { key: "minimumStock", value: clean },
-      });
-    }
+    // ค่าขั้นต่ำสต็อกย้ายไป PUT /api/v1/stock/min-stock (ราย ชนิด × หมู่) แล้ว
+    // settings.key = 'minimumStock' เดิมยังเก็บไว้ในตาราง แต่ไม่ถูกอ่าน/เขียนอีก
+    const { shelfPositions } = req.body;
 
     if (shelfPositions) {
       await prisma.setting.upsert({
