@@ -28,7 +28,7 @@ export default function DashboardMinList({ d, isAdmin }: Props) {
         <div>
           <h3 id="dms-list-title" className="dms-card__title">สต็อกเทียบขั้นต่ำ</h3>
           <p className="dms-card__desc">
-            คงเหลือ / ขั้นต่ำ (unit) · ที่วิกฤตกว่าอยู่บน · แตะแถวเพื่อดูแยกตามหมู่เลือด
+            คงเหลือ / ขั้นต่ำ (unit) · ที่วิกฤตกว่าอยู่บน · แตะหัวแถวเพื่อพับ/กาง
           </p>
         </div>
         {isAdmin && (

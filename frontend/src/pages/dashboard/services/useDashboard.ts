@@ -129,14 +129,11 @@ export default function useDashboard() {
     [allRows, idleTypes, filters.type],
   )
 
-  // ── กาง/พับ: ค่าเริ่มต้น = กางเฉพาะแถวที่มีปัญหา · ผู้ใช้กดเองแล้วจำค่าที่กดไว้ ──
+  // ── กาง/พับ: ค่าเริ่มต้น = กางทุกแถว (เห็นข้อมูลทุกชนิดทันที) · ผู้ใช้กดเองแล้วจำค่าที่กดไว้ ──
   const [openOverride, setOpenOverride] = useState<Record<string, boolean>>({})
-  const isOpen = useCallback(
-    (r: MinRow) => openOverride[r.type.code] ?? (r.danger + r.warning > 0),
-    [openOverride],
-  )
+  const isOpen = useCallback((r: MinRow) => openOverride[r.type.code] ?? true, [openOverride])
   const toggleRow = useCallback((r: MinRow) => {
-    setOpenOverride((o) => ({ ...o, [r.type.code]: !(o[r.type.code] ?? (r.danger + r.warning > 0)) }))
+    setOpenOverride((o) => ({ ...o, [r.type.code]: !(o[r.type.code] ?? true) }))
   }, [])
   const setAllOpen = useCallback((open: boolean) => {
     setOpenOverride(Object.fromEntries(types.map((t) => [t.code, open])))
