@@ -1,5 +1,5 @@
 /* frontend/src/assets/styles/settings-min-stock.css
-   ตั้งค่า › ระบบ › สต็อกขั้นต่ำ (matrix ชนิดเลือด × หมู่เลือด) */
+   ตั้งค่า › ระบบ › สต็อกขั้นต่ำ (ชนิดเลือดละ 1 กล่อง · หมู่เลือดจัดกลุ่ม ABO) */
 
 .ms-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -16,30 +16,33 @@
 /* ── empty state ── */
 .ms-empty {
   display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; padding: 12px 14px;
-  border-radius: var(--radius-md); background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E3A8A;
+  border-radius: var(--radius-md); background: var(--primary-surface); border: 1px solid var(--primary); color: var(--primary-ink);
   font-size: 13px; line-height: 1.5;
 }
 .ms-empty svg { flex-shrink: 0; margin-top: 2px; color: var(--primary); }
 
-/* ── ตาราง matrix ── */
-.ms-matrix { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.ms-matrix th, .ms-matrix td { padding: 8px 6px; vertical-align: top; border-bottom: 1px solid var(--border); }
-.ms-matrix thead th { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-align: right; padding-right: 14px; vertical-align: bottom; }
-.ms-matrix tbody tr:last-child th, .ms-matrix tbody tr:last-child td { border-bottom: none; }
-.ms-matrix .ms-matrix__type { width: 190px; text-align: left; padding-left: 0; font-weight: 400; }
-.ms-matrix thead .ms-matrix__type { text-align: left; }
-.ms-matrix .ms-matrix__total { width: 104px; text-align: right; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; padding-top: 16px; }
-.ms-matrix thead .ms-matrix__total { padding-top: 8px; font-weight: 600; font-size: 12px; }
-.ms-matrix .ms-matrix__menu { width: 46px; padding-right: 0; text-align: right; }
-.ms-matrix .ms-matrix__menu .ext-row-menu { display: inline-block; }
+/* ── กล่องต่อชนิดเลือด ── */
+.ms-types { display: grid; gap: 12px; }
+.ms-type { border: 1px solid var(--border); border-radius: var(--radius-md); min-width: 0; }
+.ms-type__head {
+  display: flex; align-items: center; gap: 12px; padding: 6px 8px 6px 14px;
+  background: var(--surface-raised); border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+.ms-type__code { flex: 1; min-width: 0; margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms-type__total { font-size: 13px; color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ms-type__total strong { font-weight: 700; color: var(--text-primary); }
+.ms-type__head .ext-row-menu__btn { width: 40px; height: 40px; }
+@media (pointer: coarse) { .ms-type__head .ext-row-menu__btn { width: 44px; height: 44px; } }
 
-.ms-type__code { display: block; font-size: 14px; font-weight: 700; color: var(--text-primary); padding-top: 8px; }
-.ms-type__name { display: block; font-size: 12px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* กลุ่ม ABO: wrap ทีละกลุ่ม (ไม่ตัดกลางกลุ่ม) — จอกว้างได้ 4 กลุ่มในแถวเดียว */
+.ms-type__body { display: flex; flex-wrap: wrap; gap: 12px 20px; padding: 12px 14px 14px; }
+.ms-abo { flex: 1 1 300px; min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: start; }
 
 /* ── ช่องกรอก ── */
 .ms-cell { min-width: 0; }
 .ms-cell__box {
-  display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 10px;
+  display: flex; align-items: center; gap: 4px; height: 40px; padding: 0 8px;
   border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface);
   transition: border-color .15s, box-shadow .15s, background .15s;
 }
@@ -50,25 +53,17 @@
 }
 .ms-cell__input::placeholder { color: var(--text-secondary); opacity: .7; }
 .ms-cell__suffix { font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
-.ms-cell__group { font-size: 12px; font-weight: 700; color: var(--text-secondary); flex-shrink: 0; min-width: 20px; }
+.ms-cell__label { display: block; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.ms-cell__input { align-self: stretch; }
 
 /* แก้แล้วยังไม่บันทึก */
-.ms-cell__box.is-dirty { border-color: #F59E0B; background: #FFFBEB; }
+.ms-cell__box.is-dirty { border-color: var(--stock-warning); background: var(--warning-surface); }
 .ms-cell__box.is-dirty .ms-cell__input { font-weight: 700; }
 /* ค่าไม่ถูกต้อง */
 .ms-cell__box.is-invalid { border-color: var(--stock-danger); background: var(--danger-surface); }
 /* ช่องที่มาจาก ?cell= */
 .ms-cell__box.is-target { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35); }
 .ms-cell__error { margin: 4px 0 0; font-size: 11px; line-height: 1.3; color: var(--danger-ink); text-align: right; }
-
-/* ── การ์ดต่อชนิด (container < 760px) ── */
-.ms-cards { display: grid; gap: 12px; }
-.ms-card { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; min-width: 0; }
-.ms-card__head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.ms-card__type { flex: 1; min-width: 0; }
-.ms-card__type .ms-type__code { padding-top: 0; }
-.ms-card__total { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ms-card__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 
 .ms-hidden-note { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 16px 0 0; font-size: 13px; color: var(--text-secondary); }
 
