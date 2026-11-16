@@ -4,12 +4,12 @@ import useDashboard from './services/useDashboard'
 import { useAuth } from '../../Routes/AuthProtected'
 import DashboardHero from './components/DashboardHero'
 import DashboardMinBanner from './components/DashboardMinBanner'
-import DashboardMinSummary from './components/DashboardMinSummary'
-import DashboardMinMatrix from './components/DashboardMinMatrix'
+import DashboardMinList from './components/DashboardMinList'
 import DashboardRefillList from './components/DashboardRefillList'
 import DashboardMinDetail from './components/DashboardMinDetail'
 import DashboardMinEmpty from './components/DashboardMinEmpty'
 import DashboardRecentActivity from './components/DashboardRecentActivity'
+import '../../assets/styles/report-filters.css'
 import '../../assets/styles/dashboard-min-stock.css'
 
 const DashboardPage = () => {
@@ -21,7 +21,7 @@ const DashboardPage = () => {
 
   return (
     <div style={{ animation: 'plasm-fade-in 0.2s ease' }}>
-      {d.configured && <DashboardMinBanner items={d.dangerItems} onView={d.scrollToMatrix} />}
+      {d.configured && <DashboardMinBanner items={d.dangerItems} onView={d.scrollToCard} />}
       <DashboardHero total={d.total} dailyData={d.dailyData} />
 
       {d.statusError ? (
@@ -30,30 +30,8 @@ const DashboardPage = () => {
         <DashboardMinEmpty isAdmin={isAdmin} />
       ) : (
         <>
-          <DashboardMinSummary
-            counts={d.counts}
-            onlyDanger={d.onlyDanger}
-            onToggleDanger={() => d.setOnlyDanger(!d.onlyDanger)}
-          />
           <div className="dms-grid">
-            <DashboardMinMatrix
-              boxRef={d.matrixRef}
-              types={d.types}
-              rows={d.rows}
-              columns={d.columns}
-              passes={d.passes}
-              anyVisible={d.anyVisible}
-              noneCount={d.counts.none}
-              highlight={d.highlight}
-              isAdmin={isAdmin}
-              typeFilter={d.typeFilter}
-              groupFilter={d.groupFilter}
-              onlyDanger={d.onlyDanger}
-              onTypeFilter={d.setTypeFilter}
-              onGroupFilter={d.setGroupFilter}
-              onOnlyDanger={d.setOnlyDanger}
-              onOpen={d.openDetail}
-            />
+            <DashboardMinList d={d} isAdmin={isAdmin} />
             <DashboardRefillList items={d.refill} onOpen={d.openDetail} />
           </div>
         </>

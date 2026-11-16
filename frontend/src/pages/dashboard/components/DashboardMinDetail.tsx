@@ -1,12 +1,11 @@
 // frontend/src/pages/dashboard/components/DashboardMinDetail.tsx
-// Modal รายละเอียดของ 1 คู่ ชนิด × หมู่ (คลิกจากช่อง heatmap หรือรายการ "ต้องเติมก่อน")
+// Modal รายละเอียดของ 1 คู่ ชนิด × หมู่ (คลิกจากช่องหมู่เลือด หรือรายการ "ต้องเติมก่อน")
 import { useNavigate } from 'react-router-dom'
 import { Pencil } from 'lucide-react'
 import Modal from '../../../components/common/Modal'
 import Button from '../../../components/common/Button'
 import MinStatusPill from '../../../components/common/MinStatusPill'
-import { pctLabel, settingsCellPath, type MinStockStatusItem } from '../../../helpers/minStock'
-import { barWidth } from './DashboardMinMatrix'
+import { barWidth, pctLabel, settingsCellPath, type MinStockStatusItem } from '../../../helpers/minStock'
 
 interface Props {
   item: MinStockStatusItem | null

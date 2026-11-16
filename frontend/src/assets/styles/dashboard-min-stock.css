@@ -16,26 +16,6 @@
 .dms-banner__title { margin: 0; font-size: 14px; font-weight: 700; color: var(--danger-ink); }
 .dms-banner__sub { margin: 2px 0 0; font-size: 13px; line-height: 1.5; color: var(--danger-ink); }
 
-/* ── การ์ดสรุป 3 ใบ ── */
-.dms-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.dms-sum {
-  display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; text-align: left;
-  background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--ms-bar);
-  border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
-  font: inherit; color: var(--text-primary);
-}
-.dms-sum--btn { cursor: pointer; transition: background .15s, box-shadow .15s; }
-.dms-sum--btn:hover { background: var(--ms-bg); }
-.dms-sum--btn[aria-pressed="true"] { background: var(--ms-bg); border-color: var(--ms-border); border-top-color: var(--ms-bar); box-shadow: 0 0 0 2px var(--ms-border); }
-.dms-sum--btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.dms-sum__head { display: flex; align-items: center; gap: 8px; }
-.dms-sum__icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 99px; background: var(--ms-bg); color: var(--ms-bar); }
-.dms-sum__label { font-size: 14px; font-weight: 600; }
-.dms-sum__value { font-size: 32px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
-.dms-sum__unit { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
-.dms-sum__note { font-size: 12px; color: var(--text-secondary); }
-.dms-sum--btn .dms-sum__note { color: var(--ms-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
-
 /* ── Grid 2 คอลัมน์ ── */
 .dms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 16px; margin-bottom: 16px; align-items: start; }
 
@@ -48,56 +28,92 @@ p.dms-card { margin: 0 0 16px; }
 .dms-card__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .dms-card__title { margin: 0; font-size: 15px; font-weight: 600; }
 .dms-card__count { font-size: 12px; color: var(--text-secondary); }
-.dms-card__foot { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.dms-card__foot { display: flex; align-items: center; flex-wrap: wrap; gap: 0 8px; margin-top: 10px; padding-top: 6px; border-top: 1px solid var(--border); }
 
-.dms-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+.dms-link { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; min-height: 44px; font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
 .dms-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
-.dms-link--push { margin-left: auto; }
 .dms-legend-line { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
 
-/* ── ตัวกรอง ── */
-.dms-filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px 12px; margin-bottom: 14px; }
-.dms-filters__select { flex: 1 1 150px; min-width: 150px; max-width: 220px; }
-.dms-filters__check { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; font-size: 13px; cursor: pointer; }
-.dms-filters__check input { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+/* ── header + ป้ายนับ ── */
+.dms-card__head--top { align-items: flex-start; margin-bottom: 10px; }
+.dms-card__desc { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+.dms-counts { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-bottom: 14px; }
+
+/* ── ตัวกรอง (draft → กดค้นหา) — ปุ่มค้นหา / จุดส้ม / chip ใช้ .rpt-* จาก report-filters.css ── */
+.dms-filters { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-raised); }
+.dms-filters__row { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px 12px; }
+.dms-filters__select { flex: 1 1 160px; min-width: 0; }
+.dms-filters__check { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; cursor: pointer; }
+.dms-filters__check input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+.dms-filters__check input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* ขยายพื้นที่แตะของปุ่ม × บน chip ให้ถึง 44px โดยไม่เปลี่ยนขนาดที่เห็น */
+.dms-chips .rpt-chip { min-height: 32px; }
+.dms-chips .rpt-chip__x { position: relative; }
+.dms-chips .rpt-chip__x::after { content: ''; position: absolute; inset: -12px; }
+.dms-chips .rpt-chips__clear { min-height: 44px; padding-inline: 6px; }
 
 .dms-none { margin: 0; padding: 28px 12px; text-align: center; font-size: 13px; color: var(--text-secondary); }
-.dms-none--ok { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--success-ink); }
+.dms-none--ok { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; color: var(--success-ink); }
 
-/* ── heatmap ── */
-.dms-matrix__scroll { overflow-x: auto; margin: 0 -4px; padding: 0 4px 4px; }
-.dms-matrix { width: 100%; border-collapse: separate; border-spacing: 6px; margin: -6px; }
-.dms-matrix thead th { padding: 0 0 2px; font-size: 12px; font-weight: 600; color: var(--text-secondary); text-align: center; }
-.dms-matrix .dms-matrix__type { width: 48px; text-align: left; font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
-.dms-matrix thead .dms-matrix__type { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
-.dms-matrix td { padding: 0; min-width: 104px; height: 1px; }
-
-.dms-cell {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
-  width: 100%; height: 100%; min-height: 96px; padding: 8px; text-align: left;
-  background: var(--ms-bg); border: 1px solid var(--ms-border); border-radius: var(--radius-md);
-  font: inherit; color: var(--text-primary); cursor: pointer;
-  transition: box-shadow .15s, transform .15s;
+/* ── accordion: ชนิดเลือดละ 1 แถว ── */
+.dms-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.dms-row { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); overflow: hidden; }
+.dms-row__head {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
+  width: 100%; min-height: 48px; padding: 8px 12px; text-align: left;
+  background: var(--surface); border: none; font: inherit; color: var(--text-primary); cursor: pointer;
 }
-.dms-cell:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.dms-row__head:hover { background: var(--surface-raised); }
+.dms-row__head:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: var(--radius-md); }
+.dms-row__chev { flex-shrink: 0; color: var(--text-secondary); transition: transform .15s; }
+.dms-row__head[aria-expanded="true"] .dms-row__chev { transform: rotate(90deg); }
+.dms-row__code { min-width: 44px; font-size: 14px; font-weight: 700; }
+.dms-row__tags { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.dms-row__state { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+.dms-row__state svg { color: var(--ms-bar); }
+.dms-row__total { margin-left: auto; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dms-row__total strong { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+
+/* เนื้อหาเมื่อกาง: wrap ทีละกลุ่ม ABO — ไม่ตัดกลางกลุ่ม ไม่เลื่อนแนวนอน */
+.dms-row__body { display: flex; flex-wrap: wrap; gap: 12px 16px; padding: 10px 12px 12px; border-top: 1px solid var(--border); }
+.dms-group { flex: 1 1 240px; min-width: 0; display: grid; grid-template-columns: repeat(var(--dms-cols, 3), minmax(0, 1fr)); gap: 6px; }
+.dms-group__col { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.dms-group__label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-align: center; }
+
+/* ช่องหมู่เลือด — ปกติ: พื้นขาว ขอบเทา · สีใช้เฉพาะช่องที่มีปัญหา (มีไอคอน + % กำกับเสมอ) */
+.dms-cell {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  width: 100%; height: 46px; min-width: 0; padding: 2px 4px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  font: inherit; color: var(--text-primary); cursor: pointer;
+  transition: box-shadow .15s;
+}
+button.dms-cell:hover { box-shadow: var(--shadow-md); }
 .dms-cell:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-.dms-cell .plasm-ms-bar { display: block; width: 100%; }
-.dms-cell__nums { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
-.dms-cell__nums strong { font-size: 16px; font-weight: 700; color: var(--text-primary); }
-.dms-cell__pct { font-size: 11px; color: var(--ms-ink); }
+.dms-cell--danger, .dms-cell--warning { background: var(--ms-bg); border-color: var(--ms-border); }
+.dms-cell--none { color: var(--text-secondary); }
+.dms-cell__nums { font-size: 14px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dms-cell__nums--long { font-size: 11px; }
+.dms-cell--none .dms-cell__nums { font-weight: 500; }
+.dms-cell__pct { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; line-height: 1.2; color: var(--ms-ink); font-variant-numeric: tabular-nums; }
+.dms-cell__pct svg { color: var(--ms-bar); }
 /* ช่องที่ไม่ผ่านตัวกรอง */
 .dms-cell--off { background: transparent; border: 1px dashed var(--border); cursor: default; }
-.dms-cell--off:hover { box-shadow: none; transform: none; }
-/* ไฮไลต์จาก ?cell= (3 วินาที) */
+/* ไฮไลต์จาก ?cell= (3 วินาที): ring + pulse */
 .dms-cell.is-highlight { box-shadow: 0 0 0 3px var(--primary); animation: dms-pulse 1s ease-in-out 3; }
 @keyframes dms-pulse {
   0%, 100% { box-shadow: 0 0 0 3px var(--primary); }
-  50% { box-shadow: 0 0 0 3px var(--primary), 0 0 0 9px rgba(37, 99, 235, 0.22); }
+  50% { box-shadow: 0 0 0 3px var(--primary), 0 0 0 9px color-mix(in oklch, var(--primary) 22%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
   .dms-cell.is-highlight { animation: none; }
-  .dms-cell:hover { transform: none; }
+  .dms-row__chev { transition: none; }
 }
+
+/* ท้ายรายการ */
+.dms-card__foot-end { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; font-size: 13px; color: var(--text-secondary); }
+.dms-textbtn { min-height: 44px; padding: 0 6px; border: none; background: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.dms-textbtn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
 
 /* ── ต้องเติมก่อน ── */
 .dms-refill { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
