@@ -14,6 +14,8 @@ import {
   type MinStockStatusItem, type MinStockType,
 } from '../../../helpers/minStock'
 
+export interface TodaySummary { units: number; count: number; lastAt: Date | null }
+
 export interface MinFilters { type: string; group: string; onlyDanger: boolean }
 const NO_FILTERS: MinFilters = { type: '', group: '', onlyDanger: false }
 
@@ -37,17 +39,37 @@ export default function useDashboard() {
   const [dailyData, setDailyData] = useState<DailyData[]>([])
   const [logEntries, setLogEntries] = useState<LogEntryItem[]>([])
   const [loadingOther, setLoadingOther] = useState(true)
-  const { status, loading: loadingStatus, error: statusError } = useMinStockStatus()
+  const [fetchedAt, setFetchedAt] = useState<Date | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const { status, loading: loadingStatus, error: statusError, refetch: refetchStatus } = useMinStockStatus()
 
-  useEffect(() => {
-    // กราฟรายวันและกิจกรรมล่าสุดเป็นส่วนเสริม — ดึงไม่ได้ให้แสดงส่วนอื่นของแดชบอร์ดต่อ (ค่าเริ่มต้น = ว่าง)
-    Promise.allSettled([dashboardService.getStockDaily(7), dashboardService.getRecentLog()])
+  const fetchOther = useCallback(() => {
+    return Promise.allSettled([dashboardService.getStockDaily(7), dashboardService.getRecentLog()])
       .then(([daily, log]) => {
         if (daily.status === 'fulfilled') setDailyData(daily.value)
         if (log.status === 'fulfilled') setLogEntries(log.value)
       })
-      .finally(() => setLoadingOther(false))
   }, [])
+
+  useEffect(() => {
+    // กราฟรายวันและกิจกรรมล่าสุดเป็นส่วนเสริม — ดึงไม่ได้ให้แสดงส่วนอื่นของแดชบอร์ดต่อ (ค่าเริ่มต้น = ว่าง)
+    fetchOther().finally(() => setLoadingOther(false))
+  }, [fetchOther])
+
+  // ตั้ง fetchedAt เมื่อโหลดเสร็จ (ทั้ง status + other)
+  useEffect(() => {
+    if (!loadingStatus && !loadingOther) setFetchedAt(new Date())
+  }, [loadingStatus, loadingOther])
+
+  const reload = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      await Promise.all([refetchStatus(), fetchOther()])
+      setFetchedAt(new Date())
+    } finally {
+      setRefreshing(false)
+    }
+  }, [refetchStatus, fetchOther])
 
   const items = useMemo(() => status?.items ?? [], [status])
   const types = useMemo(() => status?.types ?? [], [status])
@@ -184,6 +206,37 @@ export default function useDashboard() {
     return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); window.clearTimeout(t) }
   }, [cellParam, ready])
 
+  // ── ค่าคำนวณ: หมู่ 12 หมู่ · สรุปวันนี้ ──
+  const byGroup = useMemo<Record<string, number>>(() => {
+    const map: Record<string, number> = {}
+    for (const i of items) {
+      map[i.group] = (map[i.group] || 0) + i.stock
+    }
+    return map
+  }, [items])
+
+  const todayIn = useMemo<TodaySummary>(() => {
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const entries = logEntries.filter((e) => e.action === 'store' && e.timestamp.startsWith(todayStr))
+    const units = entries.reduce((s, e) => s + (e.unitCount ?? 0), 0)
+    const lastTs = entries.length > 0 ? entries.reduce((latest, e) => {
+      const t = new Date(e.timestamp)
+      return t > latest ? t : latest
+    }, new Date(0)) : null
+    return { units, count: entries.length, lastAt: lastTs }
+  }, [logEntries])
+
+  const todayOut = useMemo<TodaySummary>(() => {
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const entries = logEntries.filter((e) => e.action === 'withdraw' && e.timestamp.startsWith(todayStr))
+    const units = entries.reduce((s, e) => s + (e.unitCount ?? 0), 0)
+    const lastTs = entries.length > 0 ? entries.reduce((latest, e) => {
+      const t = new Date(e.timestamp)
+      return t > latest ? t : latest
+    }, new Date(0)) : null
+    return { units, count: entries.length, lastAt: lastTs }
+  }, [logEntries])
+
   return {
     loading: loadingOther || loadingStatus,
     statusError: statusError && !status,
@@ -192,6 +245,8 @@ export default function useDashboard() {
     total: status?.totalStock ?? 0,
     configured: status?.configured ?? false,
     counts, dangerItems, rows, passes,
+    byGroup, todayIn, todayOut,
+    fetchedAt, refreshing, reload,
     draft, filters, patchDraft, search, applyNow, resetFilters, isDirty, isFiltered,
     idleCodes, showIdle, setShowIdle,
     isOpen, toggleRow, setAllOpen,
